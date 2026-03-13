@@ -44,9 +44,9 @@ chrome.action.onClicked.addListener(async (tab) => {
       target: { tabId: tab.id },
     });
 
-    console.log("[live-css] picker injected:", results[0]?.result);
+    console.log("[style-capture] picker injected:", results[0]?.result);
   } catch (error) {
-    console.error("[live-css] injection failed:", error);
+    console.error("[style-capture] injection failed:", error);
     await setDefaultIcon(tab.id);
   }
 });
@@ -82,12 +82,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function setActiveIcon(tabId: number): Promise<void> {
   await chrome.action.setIcon({ path: ICON_ACTIVE, tabId });
-  await chrome.action.setTitle({ tabId, title: "Live CSS — inspecting" });
+  await chrome.action.setTitle({ tabId, title: "Style Capture — inspecting" });
 }
 
 async function setDefaultIcon(tabId: number): Promise<void> {
   await chrome.action.setIcon({ path: ICON_DEFAULT, tabId });
-  await chrome.action.setTitle({ tabId, title: "Live CSS" });
+  await chrome.action.setTitle({ tabId, title: "Style Capture" });
 }
 
 async function handleCaptureCompleted(
@@ -126,12 +126,49 @@ async function handleCaptureCompleted(
   }
 }
 
-function copyToClipboard(text: string): void {
+async function copyToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Fall back to the legacy textarea flow when clipboard permissions fail.
+    }
+  }
+
+  const mountRoot = document.body ?? document.documentElement;
   const textarea = document.createElement("textarea");
+  const activeElement =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+  const selection = document.getSelection();
+  const previousRange =
+    selection && selection.rangeCount > 0
+      ? selection.getRangeAt(0).cloneRange()
+      : null;
+
   textarea.value = text;
-  textarea.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
-  document.body.appendChild(textarea);
+  textarea.setAttribute("readonly", "true");
+  textarea.style.cssText =
+    "position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none";
+  mountRoot.append(textarea);
+  textarea.focus();
   textarea.select();
-  document.execCommand("copy");
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  const didCopy = document.execCommand("copy");
+
   textarea.remove();
+
+  if (selection && previousRange) {
+    selection.removeAllRanges();
+    selection.addRange(previousRange);
+  }
+
+  activeElement?.focus();
+
+  if (!didCopy) {
+    throw new Error("Copy failed.");
+  }
 }

@@ -22,19 +22,19 @@ Turn the current picker into a lightweight inspect flow:
 
 - Keep the core capture contract: click still captures the selected DOM subtree and stores the same payload shape.
 - Simplify the popup aggressively. The results page already owns review, export, and detailed payload inspection.
-- Remove the large bottom-left picker HUD in [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/live-css/src/runtime/run-picker.ts).
+- Remove the large bottom-left picker HUD in [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/style-capture/src/runtime/run-picker.ts).
 - Introduce a dedicated hover-label formatter instead of reusing the persisted selector formatter.
 - Prefer a compact breadcrumb in the tooltip, but keep the existing fuller selector for stored capture metadata.
 - Treat the inspect cursor as part of picker lifecycle and restore the previous cursor on cleanup.
 
 ## Research Notes
 
-### Current `live-css` constraints
+### Current `style-capture` constraints
 
-- Popup copy and flow are concentrated in [`src/popup/popup-app.tsx`](/Users/mblode/Code/mblode/live-css/src/popup/popup-app.tsx).
-- Capture start/status orchestration lives in [`src/background/index.ts`](/Users/mblode/Code/mblode/live-css/src/background/index.ts).
-- The injected picker already has the important primitives: a Shadow DOM host, a highlight frame, event interception, selector generation, and capture serialization in [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/live-css/src/runtime/run-picker.ts).
-- Existing automated coverage is thin. Runtime interaction tests are minimal in [`src/runtime/run-picker.test.ts`](/Users/mblode/Code/mblode/live-css/src/runtime/run-picker.test.ts).
+- Popup copy and flow are concentrated in [`src/popup/popup-app.tsx`](/Users/mblode/Code/mblode/style-capture/src/popup/popup-app.tsx).
+- Capture start/status orchestration lives in [`src/background/index.ts`](/Users/mblode/Code/mblode/style-capture/src/background/index.ts).
+- The injected picker already has the important primitives: a Shadow DOM host, a highlight frame, event interception, selector generation, and capture serialization in [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/style-capture/src/runtime/run-picker.ts).
+- Existing automated coverage is thin. Runtime interaction tests are minimal in [`src/runtime/run-picker.test.ts`](/Users/mblode/Code/mblode/style-capture/src/runtime/run-picker.test.ts).
 
 ### `react-grab` patterns worth borrowing
 
@@ -58,15 +58,15 @@ Sources:
 
 ### Popup team
 
-Owns [`src/popup/popup-app.tsx`](/Users/mblode/Code/mblode/live-css/src/popup/popup-app.tsx).
+Owns [`src/popup/popup-app.tsx`](/Users/mblode/Code/mblode/style-capture/src/popup/popup-app.tsx).
 
 ### Runtime overlay team
 
-Owns [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/live-css/src/runtime/run-picker.ts).
+Owns [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/style-capture/src/runtime/run-picker.ts).
 
 ### Integration team
 
-Owns [`src/background/index.ts`](/Users/mblode/Code/mblode/live-css/src/background/index.ts), status messaging, and any results-page handoff changes.
+Owns [`src/background/index.ts`](/Users/mblode/Code/mblode/style-capture/src/background/index.ts), status messaging, and any results-page handoff changes.
 
 ### Verification team
 
@@ -88,7 +88,7 @@ Exit criteria:
 
 ## Phase 2: Simplify the popup into a launcher
 
-- [ ] Remove the explanatory shell copy about the capture workflow and injection model from [`src/popup/popup-app.tsx`](/Users/mblode/Code/mblode/live-css/src/popup/popup-app.tsx).
+- [ ] Remove the explanatory shell copy about the capture workflow and injection model from [`src/popup/popup-app.tsx`](/Users/mblode/Code/mblode/style-capture/src/popup/popup-app.tsx).
 - [ ] Collapse the current “Capture flow” card into a simpler launcher layout.
 - [ ] Keep one dominant CTA such as `Start inspect` or `Inspect page`.
 - [ ] Keep one compact status line for `idle`, `arming`, `capturing`, `completed`, and `error`.
@@ -102,7 +102,7 @@ Exit criteria:
 
 ## Phase 3: Replace the fixed picker HUD with an inspect overlay
 
-- [ ] Remove the current bottom-left HUD panel from [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/live-css/src/runtime/run-picker.ts).
+- [ ] Remove the current bottom-left HUD panel from [`src/runtime/run-picker.ts`](/Users/mblode/Code/mblode/style-capture/src/runtime/run-picker.ts).
 - [ ] Keep the existing bounding frame primitive and restyle it for inspect mode if needed.
 - [ ] Ensure the entire overlay root stays `pointer-events: none`.
 - [ ] Make sure hit-testing still resolves the real page element even when the tooltip is near the pointer.

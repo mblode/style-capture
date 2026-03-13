@@ -171,7 +171,7 @@ describe("background service worker", () => {
       );
       expect(chrome.action.setTitle).toHaveBeenCalledWith({
         tabId: 42,
-        title: "Live CSS — inspecting",
+        title: "Style Capture — inspecting",
       });
       expect(executeScript).toHaveBeenCalledWith({
         args: [settings],

@@ -5,6 +5,8 @@ import { getSettings, saveSettings } from "./storage.ts";
 describe("getSettings", () => {
   beforeEach(() => {
     vi.mocked(chrome.storage.local.get).mockReset();
+    vi.mocked(chrome.storage.local.remove).mockReset();
+    vi.mocked(chrome.storage.local.set).mockReset();
   });
 
   it("returns default settings when storage is empty", async () => {
@@ -25,7 +27,7 @@ describe("getSettings", () => {
     vi.mocked(chrome.storage.local.get).mockImplementation(
       async () =>
         ({
-          "live-css.settings": { captureMode: "full" },
+          "style-capture.settings": { captureMode: "full" },
         }) as never
     );
 
@@ -33,6 +35,29 @@ describe("getSettings", () => {
 
     expect(settings.captureMode).toBe("full");
     expect(settings.includePseudoElements).toBe(true);
+  });
+
+  it("migrates legacy settings to the new storage key", async () => {
+    vi.mocked(chrome.storage.local.get).mockImplementation(
+      async () =>
+        ({
+          "live-css.settings": { includeHiddenElements: true },
+        }) as never
+    );
+
+    const settings = await getSettings();
+
+    expect(settings).toEqual({
+      captureMode: "curated",
+      includeHiddenElements: true,
+      includePseudoElements: true,
+    });
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({
+      "style-capture.settings": settings,
+    });
+    expect(chrome.storage.local.remove).toHaveBeenCalledWith(
+      "live-css.settings"
+    );
   });
 });
 
@@ -49,7 +74,7 @@ describe("saveSettings", () => {
     });
 
     expect(chrome.storage.local.set).toHaveBeenCalledWith({
-      "live-css.settings": {
+      "style-capture.settings": {
         captureMode: "full",
         includeHiddenElements: true,
         includePseudoElements: false,
