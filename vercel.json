@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "turbo run build --filter=@style-capture/web",
-  "outputDirectory": "apps/web/.next",
-  "framework": "nextjs",
-  "installCommand": "rm -f package-lock.json && npm install"
-}
