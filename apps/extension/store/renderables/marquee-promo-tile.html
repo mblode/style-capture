@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Style Capture Marquee Promo Tile</title>
+    <link rel="stylesheet" href="./store-assets.css">
+  </head>
+  <body>
+    <div class="tile-shell" style="padding: 24px;">
+      <div class="tile" style="padding: 34px 38px;">
+        <div class="marquee">
+          <div>
+            <div class="eyebrow">Style Capture</div>
+            <h1>Computed CSS from the live page.</h1>
+            <p>
+              Capture a DOM subtree, keep sanitized HTML and computed styles as
+              ground truth, then paste a Claude-ready export with Tailwind
+              hints.
+            </p>
+            <div class="chip-row">
+              <div class="chip">Local-only processing</div>
+              <div class="chip">Clipboard-first flow</div>
+              <div class="chip">No persistent host permissions</div>
+            </div>
+          </div>
+
+          <div class="browser" style="height: 100%; border-radius: 24px;">
+            <div class="browser__topbar">
+              <div class="traffic"><span></span><span></span><span></span></div>
+              <div class="address">https://example.com/card</div>
+              <div class="badge">Copied prompt to clipboard</div>
+            </div>
+            <div
+              class="content"
+              style="grid-template-columns: 0.95fr 1.05fr; padding: 18px; gap: 18px;"
+            >
+              <div class="card page-card">
+                <div class="eyebrow">Selection</div>
+                <h2 class="page-card__title">Hero card</h2>
+                <p class="page-card__copy">
+                  Live layout, spacing, color, and typography captured after a
+                  single click.
+                </p>
+                <div
+                  class="highlight"
+                  style="top: 108px; left: 16px; right: 16px; height: 152px;"
+                ></div>
+              </div>
+              <div class="card prompt">
+                <div class="prompt__label">Export</div>
+                <pre>&lt;style_capture ...&gt;
+&lt;tailwind_hints&gt;
+0=rounded-[20px] px-8 py-7
+1=text-[2rem] tracking-[-0.05em]
+&lt;/tailwind_hints&gt;</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

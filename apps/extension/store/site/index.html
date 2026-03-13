@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Style Capture Support</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <div class="nav">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">SC</span>
+          <span>Style Capture</span>
+        </div>
+        <div class="nav-links">
+          <a class="nav-link" href="./privacy/">Privacy</a>
+          <span class="nav-link nav-link-static">Local-only extension</span>
+        </div>
+      </div>
+
+      <section class="hero">
+        <article class="panel panel-hero">
+          <span class="eyebrow">Chrome Extension Support</span>
+          <h1>Capture live CSS without permanent host access.</h1>
+          <p>
+            Style Capture lets you click an element on the current tab, inspect
+            its computed CSS, and copy a Claude-ready prompt for Tailwind
+            conversion or UI recreation.
+          </p>
+          <div class="actions">
+            <span class="button button-primary button-static"
+              >Runs only when you click the toolbar icon</span
+            >
+            <a class="button button-secondary" href="./privacy/"
+              >Read the privacy policy</a
+            >
+          </div>
+
+          <div class="fact-list">
+            <div class="fact">
+              <div>01</div>
+              <div>
+                <strong>Local-first capture</strong>
+                Captured page content is processed locally and copied to your
+                clipboard. The extension does not upload captures to a backend.
+              </div>
+            </div>
+            <div class="fact">
+              <div>02</div>
+              <div>
+                <strong>Minimal permissions</strong>
+                The extension uses only <code>activeTab</code>,
+                <code>scripting</code>, and <code>storage</code>.
+              </div>
+            </div>
+            <div class="fact">
+              <div>03</div>
+              <div>
+                <strong>No account required</strong>
+                There is no sign-in flow, no analytics, and no remote sync.
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="panel panel-hero">
+          <span class="eyebrow">Common help</span>
+          <h2>Quick answers</h2>
+          <p>
+            If the picker does not appear, make sure you are on a normal web
+            page. Chrome blocks extensions from running on restricted pages such
+            as <code>chrome://</code> URLs and the Chrome Web Store itself.
+          </p>
+          <p>
+            If clipboard copy fails, try again on a standard page and paste into
+            any text editor to confirm the capture output.
+          </p>
+          <p>
+            Use the options page to change capture depth and whether
+            pseudo-elements or hidden elements should be included.
+          </p>
+          <p class="footer">
+            Use the Chrome Web Store listing support contact if direct follow-up
+            is needed.
+          </p>
+        </aside>
+      </section>
+    </div>
+  </body>
+</html>

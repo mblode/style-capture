@@ -1,0 +1,10 @@
+[
+  {
+    "title": "Chrome Web Store: unlock API access",
+    "notes": "Sign in to the Chrome Web Store dashboard with the publishing Google account, confirm the developer account and 2-Step Verification are fully set up, add `chrome-web-store-publisher@matthew-blode.iam.gserviceaccount.com` as a publisher account user if Chrome requires it, and record the publisher identifier needed for `CWS_PUBLISHER_ID`."
+  },
+  {
+    "title": "Chrome Web Store: complete listing and privacy tabs",
+    "notes": "Use `docs/chrome-web-store/listing.md`, `docs/chrome-web-store/privacy-policy.md`, `docs/chrome-web-store/support.md`, and the generated screenshots under `store/screenshots/` plus `store/generated/` to complete the Store listing, Privacy practices, Distribution, and reviewer instruction fields, then submit the first review."
+  }
+]

@@ -1,6 +1,10 @@
-# Style Capture
+<p align="center">
+  <img src=".github/assets/logo.png" width="80" height="80" alt="Style Capture logo" />
+</p>
 
-Chrome extension that captures computed CSS from a selected DOM subtree and prepares it for Tailwind conversion.
+<h1 align="center">Style Capture</h1>
+
+<p align="center">Chrome extension that captures computed CSS from a selected DOM subtree and prepares it for Tailwind conversion.</p>
 
 ## Stack
 
@@ -27,7 +31,7 @@ npm run dev
 1. Click the toolbar icon on the page you want to inspect
 2. Hover over elements on the active tab while the picker highlights the DOM subtree
 3. Click to capture the computed CSS
-4. Paste the copied Claude-ready markdown export into Claude Code or another agent
+4. Paste the copied Claude-ready `style_capture` export into Claude Code or another agent
 
 The extension uses `activeTab` and `chrome.scripting.executeScript()` so it requires no persistent host permissions.
 
@@ -44,6 +48,7 @@ The extension uses `activeTab` and `chrome.scripting.executeScript()` so it requ
 | `npm run fix` | Ultracite auto-fix |
 | `npm run test` | Run Vitest unit tests |
 | `npm run test:watch` | Vitest watch mode |
+| `npm run eval:format` | Compare capture prompt formats and write eval summaries to `evals/results/` |
 
 ## Project Structure
 
@@ -62,8 +67,21 @@ src/
 - The picker is injected on demand via `chrome.scripting.executeScript()` — no persistent content scripts
 - Tailwind CSS runs only inside extension pages; the picker uses isolated inline styles to avoid Preflight leaks
 - Extension manifest is defined programmatically in `manifest.config.ts`
-- Captures are copied to the clipboard immediately as structured markdown with HTML, CSS, and Tailwind hints
+- Captures are copied to the clipboard immediately as a structured `style_capture` payload with HTML, CSS, and Tailwind hints
 - See `docs/technical-spec.md` and `docs/implementation-plan.md` for architecture details and phased execution status
+
+## Format Evals
+
+Use `npm run eval:format -- --dry-run` to preview the fixture set, serializers, and token counts.
+
+Use `npm run eval:format` to run the full model-backed comparison. The script:
+
+- compares the shipped `style_capture` format against generic alternatives
+- mirrors the `linktree-cli` format-eval workflow with exact and judge scoring
+- writes detailed results to `evals/results/format-eval-results.json`
+- writes aggregate summaries to `evals/results/format-eval-summary.json`
+
+Live evals require `OPENAI_API_KEY`.
 
 ## License
 
