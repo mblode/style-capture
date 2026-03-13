@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Style Capture",
   description: "Style Capture Chrome Extension",
+  verification: {
+    google: "mFwyBIbXTaKK4uF_NA0MzVWFyY40hPgBjFObg3rje04",
+  },
   other: {
     "apple-mobile-web-app-title": "Style Capture",
   },
