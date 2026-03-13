@@ -2,7 +2,7 @@
 
 ## Context and Constraints
 
-`Style Capture` is a Chrome extension that captures the computed CSS of a selected DOM subtree, maps it to Tailwind utilities, and copies a Claude-ready markdown prompt to the clipboard. The scaffold prioritizes:
+`Style Capture` is a Chrome extension that captures the computed CSS of a selected DOM subtree, maps it to Tailwind utilities, and copies a Claude-ready `style_capture` prompt to the clipboard. The scaffold prioritizes:
 
 - Manifest V3
 - Least-privilege access with `activeTab`
@@ -31,7 +31,7 @@ src/
 - `options.html`
   Stores default extraction behavior in `chrome.storage.local`.
 - `src/background/index.ts`
-  Listens for `chrome.action.onClicked`, injects the picker, processes capture results, copies markdown to clipboard, and shows a toast notification.
+  Listens for `chrome.action.onClicked`, injects the picker, processes capture results, copies the structured prompt to clipboard, and shows a toast notification.
 
 ### Injection Model
 
@@ -55,8 +55,9 @@ Why this shape:
    - computed longhand styles
    - bounding boxes
    - pseudo-elements when enabled
+   - compact capture metadata for downstream formatting and evals
    - stable node ids plus parent/child relations
-6. Background receives the capture, runs Tailwind mapping, formats the Claude markdown export, and injects a clipboard-write script into the active tab.
+6. Background receives the capture, runs Tailwind mapping, formats the Claude `style_capture` export, and injects a clipboard-write script into the active tab.
 7. A toast notification confirms the copy via an injected Shadow DOM overlay.
 
 ## Data Contract
@@ -67,10 +68,10 @@ Why this shape:
 interface CaptureResult {
   elements: Record<string, ElementSnapshot>;
   metadata: {
-    capturedAt: string;
-    title: string;
     url: string;
-    userAgent: string;
+    capturedAt?: string;
+    title?: string;
+    userAgent?: string;
   };
   order: string[];
   rootElementId: string;
@@ -109,12 +110,11 @@ The Tailwind conversion pass is derived from `CaptureResult` and does not mutate
 
 The mapping feeds the Claude export formatter, which packages:
 
-- a task summary block
-- capture metadata
+- a top-level `style_capture` block
 - sanitized subtree HTML
 - computed CSS grouped by captured element
 - Tailwind suggestions plus open questions
-- a final request block
+- a compact instruction-first handoff structure
 
 Mapping rules prefer:
 
@@ -159,7 +159,7 @@ npm run build
 - Theme-token lookup against a project Tailwind config is not implemented yet.
 - Cross-frame capture is not implemented yet.
 - Closed shadow roots remain inaccessible.
-- DOMParser is unavailable in the MV3 service worker, so the Claude export falls back to original CSS selectors instead of `data-live-css-node` annotations when run from the background.
+- DOMParser is unavailable in the MV3 service worker, so the Claude export falls back to original CSS selectors instead of `data-lc` annotations when run from the background.
 
 ## Sources
 

@@ -25,11 +25,11 @@ Execution progress:
 ## Phase 3: Results UX and Claude-friendly export
 
 - [x] Move the primary handoff format away from raw JSON
-- [x] Follow Agentation's documented clipboard direction by emitting structured markdown instead of a JSON dump
-- [x] Package sanitized HTML and computed CSS in fenced blocks for LLM consumption
-- [x] Include Tailwind suggestions and review cues in the markdown export
-- [x] Add copy and download actions for the markdown export in the results page
-- [x] Add unit coverage for the markdown formatter
+- [x] Replace the raw JSON dump with a structured `style_capture` export
+- [x] Package sanitized HTML and computed CSS in compact tagged sections for LLM consumption
+- [x] Include Tailwind suggestions and review cues in the exported prompt
+- [x] Add copy and download actions for the exported prompt in the results page
+- [x] Add unit coverage for the export formatter
 - [x] Update README and technical spec to reflect the new export path
 
 ## Phase 4: Cross-frame capture and deeper integration coverage
@@ -40,14 +40,15 @@ Execution progress:
 
 ## Format Decision
 
-- Primary agent handoff: structured markdown
-- Embedded source blocks: `html` and `css`
+- Primary agent handoff: structured `style_capture`
+- Embedded source blocks: `html_capture` and `css_capture`
 - Secondary review artifact: Tailwind mapping JSON
 - Rejected option: HAML
+- Format comparison workflow: see `docs/prompt-format-eval-plan.md` and `evals/format-eval.ts`
 
 Why this shape:
 
-- Agentation documents its clipboard output as structured markdown, not a raw JSON payload.
+- XML-like tags keep the capture compact without paying extra structure cost that the eval did not justify.
 - HTML plus CSS keeps the handoff closer to the artifact Claude Code needs to reason about.
 - The results page can keep mapping JSON for inspection without exposing raw capture JSON as a user-facing fallback.
 - HAML adds translation work without improving fidelity or interoperability.

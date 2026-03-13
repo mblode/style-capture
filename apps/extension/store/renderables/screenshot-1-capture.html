@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Style Capture Screenshot 1</title>
+    <link rel="stylesheet" href="./store-assets.css">
+  </head>
+  <body>
+    <div class="frame">
+      <div class="browser">
+        <div class="browser__topbar">
+          <div class="traffic"><span></span><span></span><span></span></div>
+          <div class="address">https://example.com/pricing</div>
+          <div class="badge">Toolbar click starts capture</div>
+        </div>
+        <div class="content">
+          <div class="hero">
+            <div>
+              <div class="eyebrow">Live page selection</div>
+              <h1 class="headline">Pick the exact subtree you want.</h1>
+              <p class="lede">
+                Hover the rendered page, climb to the parent with Shift, or move
+                down with Alt before you capture.
+              </p>
+            </div>
+
+            <div class="mini-grid">
+              <div class="card page-card">
+                <div class="badge">Sample page</div>
+                <h2 class="page-card__title">Pro plan</h2>
+                <p class="page-card__copy">
+                  A compact pricing card with spacing, borders, shadows, button
+                  styles, and responsive layout already rendered by the browser.
+                </p>
+                <div class="cta-row">
+                  <div class="button button--primary">Start trial</div>
+                  <div class="button">Compare plans</div>
+                </div>
+                <div class="metric-grid">
+                  <div class="metric">
+                    <span>Gap</span><strong>24px</strong>
+                  </div>
+                  <div class="metric">
+                    <span>Radius</span><strong>20px</strong>
+                  </div>
+                  <div class="metric">
+                    <span>Shadow</span><strong>Soft</strong>
+                  </div>
+                </div>
+                <div
+                  class="highlight"
+                  style="top: 112px; left: 18px; width: 364px; height: 194px;"
+                ></div>
+                <div class="tooltip" style="top: 72px; left: 116px;">
+                  section.pricing &gt; article.card
+                </div>
+              </div>
+
+              <div class="stack">
+                <div class="card panel">
+                  <h3>Why this matters</h3>
+                  <p>
+                    Style Capture reads the computed result, not the design file
+                    or guessed source styles.
+                  </p>
+                </div>
+                <div class="card panel">
+                  <h3>Permissions stay tight</h3>
+                  <ul class="list">
+                    <li>`activeTab` after explicit click</li>
+                    <li>No persistent host access</li>
+                    <li>No always-on content script</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card prompt">
+              <div class="prompt__label">What gets captured</div>
+              <pre>&lt;style_capture url="https://example.com/pricing"
+mode="curated" root_ref="0"&gt;
+&lt;html_capture&gt;&lt;article class="card"&gt;...&lt;/article&gt;&lt;/html_capture&gt;
+&lt;css_capture&gt;
+[data-lc="0"] {
+  display: grid;
+  gap: 24px;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 16px 32px rgba(0,0,0,.08);
+}
+&lt;/css_capture&gt;
+&lt;/style_capture&gt;</pre>
+            </div>
+            <div class="card panel">
+              <h3>Clipboard-first flow</h3>
+              <p>
+                Click once, copy immediately, and paste the result into Claude
+                Code or another coding agent.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

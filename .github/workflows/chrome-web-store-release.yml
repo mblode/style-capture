@@ -1,0 +1,58 @@
+name: Chrome Web Store Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_target:
+        description: Chrome Web Store publish target
+        required: true
+        default: trustedTesters
+        type: choice
+        options:
+          - trustedTesters
+          - default
+      skip_publish:
+        description: Upload only
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx turbo run build --filter=@style-capture/extension
+
+      - name: Upload and optionally publish
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_SERVICE_ACCOUNT_EMAIL: ${{ secrets.CWS_SERVICE_ACCOUNT_EMAIL }}
+          CWS_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_PRIVATE_KEY }}
+          CWS_PUBLISH_TARGET: ${{ inputs.publish_target }}
+        run: |
+          if [ "${{ inputs.skip_publish }}" = "true" ]; then
+            if [ -n "$CWS_EXTENSION_ID" ]; then
+              node apps/extension/scripts/chrome-web-store-publish.mjs update-v1
+            else
+              node apps/extension/scripts/chrome-web-store-publish.mjs create-v1
+            fi
+          else
+            node apps/extension/scripts/chrome-web-store-publish.mjs release --target "$CWS_PUBLISH_TARGET"
+          fi

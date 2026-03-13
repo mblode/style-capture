@@ -1,0 +1,82 @@
+{
+  "byCategory": {
+    "extraction_accuracy": {
+      "style_capture": 0.989,
+      "style_capture_with_url": 0.989,
+      "style_capture_data_first": 0.989,
+      "style_capture_nested": 0.989,
+      "markdown_sections": 0.989
+    },
+    "grounding_clarity": {
+      "style_capture": 0.896,
+      "style_capture_with_url": 0.778,
+      "style_capture_data_first": 0.844,
+      "style_capture_nested": 0.756,
+      "markdown_sections": 0.267
+    },
+    "implementation_safety": {
+      "style_capture": 0.467,
+      "style_capture_with_url": 0.467,
+      "style_capture_data_first": 0.533,
+      "style_capture_nested": 0.467,
+      "markdown_sections": 0.467
+    },
+    "handoff_quality": {
+      "style_capture": 1,
+      "style_capture_with_url": 0.917,
+      "style_capture_data_first": 1,
+      "style_capture_nested": 0.917,
+      "markdown_sections": 0.917
+    }
+  },
+  "byFixture": {
+    "docs-cli-paragraph": {
+      "style_capture": 0.867,
+      "style_capture_with_url": 0.839,
+      "style_capture_data_first": 0.867,
+      "style_capture_nested": 0.867,
+      "markdown_sections": 0.617
+    },
+    "annotated-card": {
+      "style_capture": 0.879,
+      "style_capture_with_url": 0.879,
+      "style_capture_data_first": 0.779,
+      "style_capture_nested": 0.748,
+      "markdown_sections": 0.629
+    },
+    "hero-stack": {
+      "style_capture": 0.83,
+      "style_capture_with_url": 0.711,
+      "style_capture_data_first": 0.904,
+      "style_capture_nested": 0.778,
+      "markdown_sections": 0.644
+    }
+  },
+  "byFormat": {
+    "style_capture": {
+      "avgScore": 0.858,
+      "avgTokens": 469,
+      "scorePerToken": 0.00183
+    },
+    "style_capture_with_url": {
+      "avgScore": 0.807,
+      "avgTokens": 478,
+      "scorePerToken": 0.001687
+    },
+    "style_capture_data_first": {
+      "avgScore": 0.853,
+      "avgTokens": 486,
+      "scorePerToken": 0.001753
+    },
+    "style_capture_nested": {
+      "avgScore": 0.799,
+      "avgTokens": 502,
+      "scorePerToken": 0.001591
+    },
+    "markdown_sections": {
+      "avgScore": 0.63,
+      "avgTokens": 476,
+      "scorePerToken": 0.001325
+    }
+  }
+}
