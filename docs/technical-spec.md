@@ -2,7 +2,7 @@
 
 ## Context and Constraints
 
-`live-css` is a Chrome extension that captures the computed CSS of a selected DOM subtree, maps it to Tailwind utilities, and copies a Claude-ready markdown prompt to the clipboard. The scaffold prioritizes:
+`Style Capture` is a Chrome extension that captures the computed CSS of a selected DOM subtree, maps it to Tailwind utilities, and copies a Claude-ready markdown prompt to the clipboard. The scaffold prioritizes:
 
 - Manifest V3
 - Least-privilege access with `activeTab`

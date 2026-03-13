@@ -1,5 +1,5 @@
 export function showToast(message: string, isError: boolean): void {
-  const HOST_ID = "__live-css-toast__";
+  const HOST_ID = "__style-capture-toast__";
 
   const existing = document.getElementById(HOST_ID);
   if (existing) {

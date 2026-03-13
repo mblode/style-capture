@@ -4,7 +4,7 @@ import packageJson from "./package.json" with { type: "json" };
 
 export default defineManifest({
   manifest_version: 3,
-  name: "Live CSS",
+  name: "Style Capture",
   version: packageJson.version,
   description:
     "Capture computed CSS from a selected DOM subtree and prepare it for Tailwind conversion.",
@@ -15,7 +15,7 @@ export default defineManifest({
       48: "public/icons/icon-48.png",
       128: "public/icons/icon-128.png",
     },
-    default_title: "Live CSS",
+    default_title: "Style Capture",
   },
   icons: {
     16: "public/icons/icon-16.png",

@@ -178,40 +178,38 @@ function createMapping(): TailwindMappingResult {
 }
 
 describe("formatCaptureForClaudeMarkdown", () => {
-  it("formats a coding-agent handoff with source, html, css, hints, and questions", () => {
+  it("formats a compact coding-agent handoff with annotated html, css, hints, and questions", () => {
     const markdown = formatCaptureForClaudeMarkdown(
       createCapture(),
       createMapping()
     );
 
-    expect(markdown).toContain("<live_css_capture>");
-    expect(markdown).toContain("<task_summary>");
-    expect(markdown).toContain("<source>");
-    expect(markdown).toContain("capture_mode: curated");
-    expect(markdown).toContain("element_count: 2");
-    expect(markdown).toContain("pseudo_element_count: 1");
-    expect(markdown).toContain("url: https://example.com/card");
+    expect(markdown).toContain("<live_css_capture ");
+    expect(markdown).toContain('url="https://example.com/card"');
+    expect(markdown).toContain('mode="curated"');
+    expect(markdown).toContain('root_ref="0"');
+    expect(markdown).toContain('root_selector="#app"');
+    expect(markdown).toContain('elements="2"');
+    expect(markdown).toContain('pseudos="1"');
     expect(markdown).not.toContain("capturedAt");
     expect(markdown).not.toContain("userAgent");
-    expect(markdown).toContain("<html>");
-    expect(markdown).toContain("```html");
-    expect(markdown).toContain('data-live-css-node="node-0"');
-    expect(markdown).toContain('data-live-css-node="node-1"');
-    expect(markdown).toContain("<css>");
-    expect(markdown).toContain("```css");
-    expect(markdown).toContain('[data-live-css-node="node-0"] {');
-    expect(markdown).toContain("display: flex;");
-    expect(markdown).toContain('[data-live-css-node="node-1"]::before {');
-    expect(markdown).toContain('content: "*";');
+    expect(markdown).not.toContain("```");
+    expect(markdown).not.toContain("/*");
+    expect(markdown).not.toContain("data-live-css-node");
+    expect(markdown).toContain("<html_capture>");
+    expect(markdown).toContain('data-lc="0"');
+    expect(markdown).toContain('data-lc="1"');
+    expect(markdown).toContain("<css_capture>");
+    expect(markdown).toContain('[data-lc="0"]{');
+    expect(markdown).toContain("display:flex");
+    expect(markdown).toContain('[data-lc="1"]::before{');
+    expect(markdown).toContain('content:"*"');
     expect(markdown).toContain("<tailwind_hints>");
-    expect(markdown).toContain("root_suggestion: `flex gap-4 bg-white`");
-    expect(markdown).toContain("suggested_class_strings:");
+    expect(markdown).toContain("root=flex gap-4 bg-white");
+    expect(markdown).toContain("1=text-sm text-slate-900");
     expect(markdown).toContain("<open_questions>");
-    expect(markdown).toContain("Pseudo-element content requires review");
-    expect(markdown).toContain("<final_request>");
-    expect(markdown).toContain(
-      "Treat <html> and <css> as the source of truth."
-    );
+    expect(markdown).toContain("1:Pseudo-element content requires review");
+    expect(markdown).toContain("html_capture + css_capture are ground truth.");
   });
 
   it("omits tailwind and open_questions when no mapping is provided", () => {
@@ -219,8 +217,37 @@ describe("formatCaptureForClaudeMarkdown", () => {
 
     expect(markdown).not.toContain("<tailwind_hints>");
     expect(markdown).not.toContain("<open_questions>");
-    expect(markdown).toContain("<html>");
-    expect(markdown).toContain("<css>");
-    expect(markdown).toContain("<final_request>");
+    expect(markdown).toContain("<html_capture>");
+    expect(markdown).toContain("<css_capture>");
+  });
+
+  it("falls back to compact raw html and selectors when DOMParser is unavailable", () => {
+    const originalDOMParser = globalThis.DOMParser;
+
+    Object.defineProperty(globalThis, "DOMParser", {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      const markdown = formatCaptureForClaudeMarkdown(
+        createCapture(),
+        createMapping()
+      );
+
+      expect(markdown).not.toContain("data-lc=");
+      expect(markdown).toContain(
+        '<html_capture><div class="card shell"><span class="label">Hello</span></div></html_capture>'
+      );
+      expect(markdown).toContain("<css_capture>#app{");
+      expect(markdown).toContain(
+        '.label{color:rgb(17, 24, 39);font-size:14px}.label::before{color:rgb(17, 24, 39);content:"*"}'
+      );
+    } finally {
+      Object.defineProperty(globalThis, "DOMParser", {
+        configurable: true,
+        value: originalDOMParser,
+      });
+    }
   });
 });

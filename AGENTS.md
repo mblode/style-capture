@@ -1,6 +1,6 @@
-# live-css
+# style-capture
 
-Chrome extension that captures computed CSS from a selected DOM subtree for Tailwind conversion. Click the toolbar icon to start picking — results are copied to clipboard automatically. Manifest V3, React 19, Vite 7, TypeScript 5.9.
+Chrome extension that captures computed CSS from a selected DOM subtree for Tailwind conversion. Click the toolbar icon to start picking — results are copied to clipboard automatically. Manifest V3, React 19, Vite 8, TypeScript 5.9.
 
 ## Commands
 

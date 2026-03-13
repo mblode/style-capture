@@ -7,9 +7,11 @@ import type {
 
 interface HtmlAnnotationResult {
   html: string;
+  refs: Record<string, string>;
   selectors: Record<string, string>;
 }
 
+const CAPTURE_NODE_ATTRIBUTE = "data-lc";
 const MAX_TAILWIND_SUGGESTIONS = 6;
 const MAX_OPEN_QUESTION_ITEMS = 8;
 
@@ -18,112 +20,48 @@ export function formatCaptureForClaudeMarkdown(
   mapping: TailwindMappingResult | null
 ): string {
   const annotation = annotateCaptureHtml(capture);
-  const hasTailwindHints = Boolean(mapping);
-  const tailwindSection = formatTailwindSection(capture, mapping);
-  const openQuestionsSection = formatOpenQuestions(mapping);
+  const rootElement = capture.elements[capture.rootElementId];
+  const tailwindSection = formatTailwindSection(
+    capture,
+    mapping,
+    annotation.refs
+  );
+  const openQuestionsSection = formatOpenQuestions(mapping, annotation.refs);
 
   const sections = [
-    "<live_css_capture>",
-    "<task_summary>",
-    ...formatTaskSummary(hasTailwindHints),
-    "</task_summary>",
-    "",
-    "<source>",
-    formatCaptureSource(capture),
-    "</source>",
-    "",
-    "<html>",
-    "```html",
-    annotation.html,
-    "```",
-    "</html>",
-    "",
-    "<css>",
-    "```css",
-    formatCaptureCss(capture, annotation.selectors),
-    "```",
-    "</css>",
+    `<live_css_capture url="${escapeXmlAttribute(capture.metadata.url)}" mode="${capture.settings.captureMode}" root_ref="${annotation.refs[capture.rootElementId] ?? capture.rootElementId}" root_selector="${escapeXmlAttribute(rootElement?.selector ?? "Unavailable")}" elements="${capture.summary.elementCount}" pseudos="${capture.summary.pseudoElementCount}">`,
+    "Recreate or refactor this UI faithfully. html_capture + css_capture are ground truth. Preserve structure unless simplifying is clearly better. Tailwind hints are hints. Use the smallest codebase-ready change and state ambiguities instead of inventing details.",
+    `<html_capture>${annotation.html}</html_capture>`,
+    `<css_capture>${formatCaptureCss(capture, annotation.selectors)}</css_capture>`,
   ];
 
   if (tailwindSection) {
-    sections.push("", tailwindSection);
+    sections.push(tailwindSection);
   }
 
   if (openQuestionsSection) {
-    sections.push("", openQuestionsSection);
+    sections.push(openQuestionsSection);
   }
 
-  sections.push(
-    "",
-    "<final_request>",
-    ...formatFinalRequest(Boolean(openQuestionsSection)),
-    "</final_request>",
-    "</live_css_capture>"
-  );
-
+  sections.push("</live_css_capture>");
   return sections.join("\n").trim();
 }
 
-function formatTaskSummary(hasTailwindHints: boolean): string[] {
-  const lines = [
-    "Recreate or refactor this UI from the captured subtree below.",
-    "Treat <html> and <css> as the source of truth.",
-    "Preserve the captured structure unless there is a clear reason to simplify it.",
-  ];
-
-  if (hasTailwindHints) {
-    lines.push(
-      "Treat <tailwind_hints> as implementation hints, not ground truth."
-    );
-  }
-
-  lines.push("Call out ambiguity instead of inventing missing details.");
-  return lines;
-}
-
-function formatFinalRequest(hasOpenQuestions: boolean): string[] {
-  const lines = [
-    "Implement this in a codebase-ready form.",
-    "Prefer the smallest change set that faithfully matches the capture.",
-    "Keep custom CSS where Tailwind would be misleading or overly arbitrary.",
-  ];
-
-  if (hasOpenQuestions) {
-    lines.push(
-      "Address the items in <open_questions> explicitly before guessing."
-    );
-  }
-
-  lines.push("Return assumptions clearly if anything remains unresolved.");
-  return lines;
-}
-
-function formatCaptureSource(capture: CaptureResult): string {
-  const rootElement = capture.elements[capture.rootElementId];
-  const lines = [
-    `title: ${capture.metadata.title}`,
-    `url: ${capture.metadata.url}`,
-    `capture_mode: ${capture.settings.captureMode}`,
-    `root_element_id: ${capture.rootElementId}`,
-    `root_selector: ${rootElement?.selector ?? "Unavailable"}`,
-    `element_count: ${capture.summary.elementCount}`,
-    `pseudo_element_count: ${capture.summary.pseudoElementCount}`,
-  ];
-
-  return lines.join("\n");
-}
-
 function annotateCaptureHtml(capture: CaptureResult): HtmlAnnotationResult {
+  const refs = buildCompactRefs(capture.order);
+
   if (!capture.rootOuterHtml.trim()) {
     return {
       html: "",
+      refs,
       selectors: buildFallbackSelectors(capture),
     };
   }
 
   if (typeof DOMParser === "undefined") {
     return {
-      html: capture.rootOuterHtml,
+      html: minifyHtmlString(capture.rootOuterHtml),
+      refs,
       selectors: buildFallbackSelectors(capture),
     };
   }
@@ -134,10 +72,13 @@ function annotateCaptureHtml(capture: CaptureResult): HtmlAnnotationResult {
 
   if (!root) {
     return {
-      html: capture.rootOuterHtml,
+      html: minifyHtmlString(capture.rootOuterHtml),
+      refs,
       selectors: buildFallbackSelectors(capture),
     };
   }
+
+  stripCommentNodes(root);
 
   const candidates = [root, ...Array.from(root.querySelectorAll("*"))];
   const selectors = buildFallbackSelectors(capture);
@@ -145,8 +86,9 @@ function annotateCaptureHtml(capture: CaptureResult): HtmlAnnotationResult {
 
   for (const elementId of capture.order) {
     const snapshot = capture.elements[elementId];
+    const ref = refs[elementId];
 
-    if (!snapshot) {
+    if (!(snapshot && ref)) {
       continue;
     }
 
@@ -161,15 +103,30 @@ function annotateCaptureHtml(capture: CaptureResult): HtmlAnnotationResult {
     }
 
     const element = candidates[matchIndex];
-    element.setAttribute("data-live-css-node", elementId);
-    selectors[elementId] = `[data-live-css-node="${elementId}"]`;
+    element.setAttribute(CAPTURE_NODE_ATTRIBUTE, ref);
+    selectors[elementId] = buildCompactSelector(ref);
     searchStartIndex = matchIndex + 1;
   }
 
   return {
-    html: root.outerHTML,
+    html: minifyHtmlString(root.outerHTML),
+    refs,
     selectors,
   };
+}
+
+function buildCompactRefs(order: string[]): Record<string, string> {
+  const refs: Record<string, string> = {};
+
+  order.forEach((elementId, index) => {
+    refs[elementId] = index.toString(36);
+  });
+
+  return refs;
+}
+
+function buildCompactSelector(ref: string): string {
+  return `[${CAPTURE_NODE_ATTRIBUTE}="${ref}"]`;
 }
 
 function buildFallbackSelectors(
@@ -184,10 +141,43 @@ function buildFallbackSelectors(
       continue;
     }
 
-    selectors[elementId] = snapshot.selector;
+    selectors[elementId] = compactSelector(snapshot.selector);
   }
 
   return selectors;
+}
+
+function stripCommentNodes(root: Element): void {
+  const walker = root.ownerDocument.createTreeWalker(
+    root,
+    NodeFilter.SHOW_COMMENT
+  );
+  const comments: Comment[] = [];
+
+  while (walker.nextNode()) {
+    if (walker.currentNode instanceof Comment) {
+      comments.push(walker.currentNode);
+    }
+  }
+
+  for (const comment of comments) {
+    comment.remove();
+  }
+}
+
+function minifyHtmlString(html: string): string {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/>\s+</g, "><")
+    .trim();
+}
+
+function compactSelector(selector: string): string {
+  return selector
+    .replace(/\s*([>+~])\s*/g, "$1")
+    .replace(/,\s+/g, ",")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function findMatchingElementIndex(
@@ -235,51 +225,34 @@ function formatCaptureCss(
   capture: CaptureResult,
   selectors: Record<string, string>
 ): string {
-  const blocks: string[] = [];
+  return capture.order
+    .map((elementId) => {
+      const snapshot = capture.elements[elementId];
 
-  for (const elementId of capture.order) {
-    const snapshot = capture.elements[elementId];
+      if (!snapshot) {
+        return "";
+      }
 
-    if (!snapshot) {
-      continue;
-    }
-
-    const selector = selectors[elementId] ?? snapshot.selector;
-    const elementBlock = formatElementCssBlock(elementId, snapshot, selector);
-
-    if (elementBlock) {
-      blocks.push(elementBlock);
-    }
-  }
-
-  return blocks.join("\n\n").trim();
+      return formatElementCssBlock(
+        snapshot,
+        selectors[elementId] ?? snapshot.selector
+      );
+    })
+    .filter(Boolean)
+    .join("");
 }
 
 function formatElementCssBlock(
-  elementId: string,
   snapshot: ElementSnapshot,
   selector: string
 ): string {
+  const parts: string[] = [];
   const declarationBlock = formatDeclarationBlock(snapshot.styles);
   const beforeBlock = formatPseudoBlock(selector, snapshot.pseudo.before);
   const afterBlock = formatPseudoBlock(selector, snapshot.pseudo.after);
 
-  if (!(declarationBlock || beforeBlock || afterBlock)) {
-    return "";
-  }
-
-  const parts: string[] = [];
-  const label = [snapshot.tagName, ...snapshot.classList]
-    .filter(Boolean)
-    .join(".");
-
   if (declarationBlock) {
-    parts.push(
-      `/* ${elementId} | ${label || snapshot.selector} | original: ${snapshot.selector} */`
-    );
-    parts.push(`${selector} {`);
-    parts.push(declarationBlock);
-    parts.push("}");
+    parts.push(`${selector}{${declarationBlock}}`);
   }
 
   if (beforeBlock) {
@@ -290,7 +263,7 @@ function formatElementCssBlock(
     parts.push(afterBlock);
   }
 
-  return parts.join("\n");
+  return parts.join("");
 }
 
 function formatPseudoBlock(
@@ -306,18 +279,18 @@ function formatPseudoBlock(
     return "";
   }
 
-  return [`${selector}::${pseudo.kind} {`, declarationBlock, "}"].join("\n");
+  return `${selector}::${pseudo.kind}{${declarationBlock}}`;
 }
 
 function formatDeclarationBlock(styles: Record<string, string>): string {
-  const declarations = Object.entries(styles)
+  return Object.entries(styles)
     .filter(([, value]) => value.trim().length > 0)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(
-      ([property, value]) => `  ${formatCssPropertyName(property)}: ${value};`
-    );
-
-  return declarations.join("\n");
+      ([property, value]) =>
+        `${formatCssPropertyName(property)}:${compactInlineText(value)}`
+    )
+    .join(";");
 }
 
 function formatCssPropertyName(property: string): string {
@@ -330,7 +303,8 @@ function formatCssPropertyName(property: string): string {
 
 function formatTailwindSection(
   capture: CaptureResult,
-  mapping: TailwindMappingResult | null
+  mapping: TailwindMappingResult | null,
+  refs: Record<string, string>
 ): string {
   if (!mapping) {
     return "";
@@ -338,54 +312,37 @@ function formatTailwindSection(
 
   const lines = ["<tailwind_hints>"];
   const rootMapping = mapping.elements[capture.rootElementId];
-  const reviewOnlyItems: string[] = [];
 
-  if (rootMapping) {
+  if (rootMapping?.suggestedClassName || rootMapping?.className) {
     lines.push(
-      `root_suggestion: \`${rootMapping.suggestedClassName || "None"}\``
+      `root=${compactInlineText(rootMapping.suggestedClassName || rootMapping.className)}`
     );
-
-    if (rootMapping.reviewClassName) {
-      reviewOnlyItems.push(
-        `- \`${capture.rootElementId}\` (${rootMapping.selector}): \`${rootMapping.reviewClassName}\``
-      );
-    }
   }
 
   const topSuggestions = capture.order
+    .filter((elementId) => elementId !== capture.rootElementId)
     .map((elementId) => mapping.elements[elementId])
     .filter((element): element is NonNullable<typeof element> =>
       Boolean(element?.suggestedClassName || element?.className)
     )
     .slice(0, MAX_TAILWIND_SUGGESTIONS);
 
-  if (topSuggestions.length > 0) {
-    lines.push("suggested_class_strings:");
-
-    for (const suggestion of topSuggestions) {
-      const cleanSuggestion = suggestion.suggestedClassName || "None";
-      lines.push(
-        `- \`${suggestion.elementId}\` (${suggestion.selector}): \`${cleanSuggestion}\``
-      );
-
-      if (suggestion.reviewClassName) {
-        reviewOnlyItems.push(
-          `- \`${suggestion.elementId}\` (${suggestion.selector}): \`${suggestion.reviewClassName}\``
-        );
-      }
-    }
-  }
-
-  if (reviewOnlyItems.length > 0) {
-    lines.push("review_only:");
-    lines.push(...reviewOnlyItems.slice(0, MAX_OPEN_QUESTION_ITEMS));
+  for (const suggestion of topSuggestions) {
+    lines.push(
+      `${refs[suggestion.elementId] ?? suggestion.elementId}=${compactInlineText(
+        suggestion.suggestedClassName || suggestion.className
+      )}`
+    );
   }
 
   lines.push("</tailwind_hints>");
-  return lines.join("\n").trim();
+  return lines.length > 2 ? lines.join("\n") : "";
 }
 
-function formatOpenQuestions(mapping: TailwindMappingResult | null): string {
+function formatOpenQuestions(
+  mapping: TailwindMappingResult | null,
+  refs: Record<string, string>
+): string {
   if (!mapping || mapping.reviewQueue.length === 0) {
     return "";
   }
@@ -394,10 +351,24 @@ function formatOpenQuestions(mapping: TailwindMappingResult | null): string {
 
   for (const item of mapping.reviewQueue.slice(0, MAX_OPEN_QUESTION_ITEMS)) {
     lines.push(
-      `- \`${item.elementId}\` (${item.selector}): ${item.reasons.join("; ")}`
+      `${refs[item.elementId] ?? item.elementId}:${compactInlineText(
+        item.reasons.join("; ")
+      )}`
     );
   }
 
   lines.push("</open_questions>");
-  return lines.join("\n").trim();
+  return lines.join("\n");
+}
+
+function compactInlineText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function escapeXmlAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }

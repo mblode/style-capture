@@ -70,7 +70,9 @@ function createPointerEvent(
 }
 
 function getPickerHost(): HTMLDivElement {
-  const host = document.querySelector<HTMLDivElement>("#live-css-picker-host");
+  const host = document.querySelector<HTMLDivElement>(
+    "#style-capture-picker-host"
+  );
   if (!host) {
     throw new Error("Picker host was not mounted.");
   }
@@ -90,14 +92,14 @@ function getTooltip(host: HTMLDivElement): HTMLDivElement {
 describe("runPicker", () => {
   beforeEach(() => {
     const view = window as Window & {
-      __LIVE_CSS_PICKER__?: {
+      __STYLE_CAPTURE_PICKER__?: {
         cleanup: () => void;
       };
     };
 
-    view.__LIVE_CSS_PICKER__?.cleanup();
+    view.__STYLE_CAPTURE_PICKER__?.cleanup();
     document.body.innerHTML = "";
-    document.querySelector("#live-css-picker-cursor-style")?.remove();
+    document.querySelector("#style-capture-picker-cursor-style")?.remove();
     vi.restoreAllMocks();
     Object.defineProperty(document, "elementFromPoint", {
       configurable: true,
@@ -127,7 +129,7 @@ describe("runPicker", () => {
     expect(host.shadowRoot?.querySelector(".frame")).not.toBeNull();
     expect(host.shadowRoot?.querySelector(".tooltip")).not.toBeNull();
     expect(
-      document.querySelector("#live-css-picker-cursor-style")
+      document.querySelector("#style-capture-picker-cursor-style")
     ).not.toBeNull();
     expect(runPicker(settings)).toBe("already-active");
 
@@ -143,8 +145,10 @@ describe("runPicker", () => {
     const payload = message as CaptureCancelledMessage | undefined;
 
     expect(payload?.type).toBe(MESSAGE_TYPE_CAPTURE_CANCELLED);
-    expect(document.querySelector("#live-css-picker-host")).toBeNull();
-    expect(document.querySelector("#live-css-picker-cursor-style")).toBeNull();
+    expect(document.querySelector("#style-capture-picker-host")).toBeNull();
+    expect(
+      document.querySelector("#style-capture-picker-cursor-style")
+    ).toBeNull();
   });
 
   it("updates the bounding frame and tooltip label while hovering", () => {
@@ -254,8 +258,10 @@ describe("runPicker", () => {
     expect(payload?.capture.rootOuterHtml).not.toContain("srcset=");
     expect(payload?.capture.rootOuterHtml).not.toContain("<script");
     expect(payload?.capture.rootOuterHtml).not.toContain("secret value");
-    expect(document.querySelector("#live-css-picker-host")).toBeNull();
-    expect(document.querySelector("#live-css-picker-cursor-style")).toBeNull();
+    expect(document.querySelector("#style-capture-picker-host")).toBeNull();
+    expect(
+      document.querySelector("#style-capture-picker-cursor-style")
+    ).toBeNull();
   });
 
   it("strips browser defaults and repeated inherited values in curated captures", async () => {
