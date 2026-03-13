@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-zip
+release
+coverage
+*.log
+.DS_Store
+*.tsbuildinfo

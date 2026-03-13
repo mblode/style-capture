@@ -1,0 +1,12 @@
+{
+  "entry": [
+    "manifest.config.ts",
+    "src/background/index.ts",
+    "src/options/main.tsx"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreDependencies": [
+    "@fontsource/ibm-plex-mono",
+    "@fontsource/space-grotesk"
+  ]
+}
