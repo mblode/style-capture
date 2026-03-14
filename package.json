@@ -19,6 +19,7 @@
     "fix": "ultracite fix",
     "changeset": "changeset",
     "version": "changeset version",
+    "release": "turbo build && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
