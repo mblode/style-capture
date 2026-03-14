@@ -138,7 +138,7 @@ describe("mapCaptureToTailwind", () => {
         "w-[352px]: Computed size values are often layout-dependent.",
         "h-8: Computed size values are often layout-dependent.",
         '[font-family:glide,"glide_Fallback"]: Font family required an arbitrary property utility.',
-        "origin-[176px_16px]: Transform origin required an arbitrary value.",
+        "origin-[176px_16px]: transform-origin required an arbitrary value.",
       ])
     );
   });

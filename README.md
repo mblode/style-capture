@@ -4,20 +4,60 @@
 
 <h1 align="center">Style Capture</h1>
 
-<p align="center">Chrome extension that captures CSS from any element and maps it to Tailwind, ready to paste into your AI coding agent.</p>
+<p align="center">Capture CSS from any element and map it to Tailwind — as a Chrome extension, CLI, or AI agent skill.</p>
 
 ## Install
+
+### Chrome Extension
 
 1. Download `style-capture.zip` from the [latest release](https://github.com/mblode/style-capture/releases/latest)
 2. Unzip, open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**
 
+### Agent Skill
+
+Add Style Capture as a skill for Claude Code, Cursor, or any compatible AI agent:
+
+```bash
+npx skills add mblode/style-capture
+```
+
+Then use it with `/style-capture`:
+
+```
+/style-capture https://example.com .hero
+```
+
+### CLI
+
+```bash
+# Run directly via npx
+npx @style-capture/cli https://example.com "main" --mode curated
+
+# Or install globally
+npm i -g @style-capture/cli
+style-capture https://example.com ".hero"
+```
+
 ## Usage
+
+### Chrome Extension
 
 1. Click the Style Capture icon on any website
 2. Hover and click the element you want to capture
 3. Paste into Claude Code, Cursor, or any AI agent
 
 Use **Shift** to select a parent, **Alt** for a child, **Escape** to cancel.
+
+### CLI / Agent Skill
+
+Provide a URL and a CSS selector. The tool launches a headless browser, captures computed CSS from the element subtree, maps it to Tailwind utilities, and outputs a structured `<style_capture>` prompt.
+
+```
+style-capture <url> <selector> [--mode curated|full]
+```
+
+- `curated` (default) — common visual properties only
+- `full` — all computed styles
 
 ## Privacy
 
