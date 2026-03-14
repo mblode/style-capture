@@ -9,9 +9,5 @@ export default function StoreLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <div className="h-screen w-screen overflow-hidden [&_#agentation-root]:hidden [&_nextjs-portal]:hidden">
-      {children}
-    </div>
-  );
+  return <div className="h-screen w-screen overflow-hidden">{children}</div>;
 }

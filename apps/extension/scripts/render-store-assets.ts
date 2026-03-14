@@ -61,7 +61,7 @@ function getBaseUrl(): string {
   if (idx !== -1 && process.argv[idx + 1]) {
     return process.argv[idx + 1];
   }
-  return "http://localhost:3000";
+  return "http://style-capture.localhost:1355";
 }
 
 async function main() {
@@ -91,6 +91,24 @@ async function main() {
 
       await page.goto(`${baseUrl}${job.path}`, { waitUntil: "networkidle" });
       await page.evaluate(() => document.fonts.ready);
+      // Hide Next.js dev indicators before capture
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll(
+          "nextjs-portal, [data-nextjs-toast], [data-next-mark]"
+        )) {
+          (el as HTMLElement).style.display = "none";
+        }
+        for (const el of document.body.querySelectorAll("*")) {
+          const style = window.getComputedStyle(el);
+          if (
+            style.position === "fixed" &&
+            (style.zIndex === "2147483647" ||
+              Number.parseInt(style.zIndex, 10) > 99_999)
+          ) {
+            (el as HTMLElement).style.display = "none";
+          }
+        }
+      });
       await page.screenshot({
         path: join(OUTPUT_DIR, job.output),
         type: "png",

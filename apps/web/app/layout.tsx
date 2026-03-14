@@ -1,4 +1,3 @@
-import { Agentation } from "agentation";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -32,10 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html className={glide.variable} lang="en">
-      <body className="antialiased">
-        {children}
-        {process.env.NODE_ENV === "development" && <Agentation />}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
