@@ -30,11 +30,12 @@ Then use it with `/style-capture`:
 ### CLI
 
 ```bash
-# Interactive mode (prompts for URL, selector, options)
-cd apps/cli && npx tsx src/index.ts
+# Run directly via npx
+npx @style-capture/cli https://example.com "main" --mode curated
 
-# Non-interactive (pipe-friendly)
-cd apps/cli && npx tsx src/run.ts https://example.com "main" --mode curated
+# Or install globally
+npm i -g @style-capture/cli
+style-capture https://example.com ".hero"
 ```
 
 ## Usage

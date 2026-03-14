@@ -3,7 +3,7 @@ name: style-capture
 description: Capture computed CSS and HTML from any web page element, map it to Tailwind utilities, and return a structured prompt for recreating the UI. Use when the user wants to clone, replicate, or reference a live website's design.
 user-invocable: true
 argument-hint: <url> <css-selector> [--mode curated|full]
-allowed-tools: Bash(npx *), Read
+allowed-tools: Bash(npx *)
 ---
 
 # Style Capture
@@ -15,7 +15,7 @@ Capture the computed CSS and HTML of a DOM element from a live URL, map it to Ta
 Run the capture CLI with the provided arguments:
 
 ```bash
-cd ${CLAUDE_SKILL_DIR}/../../apps/cli && npx tsx src/run.ts $ARGUMENTS
+npx @style-capture/cli $ARGUMENTS
 ```
 
 If no arguments were provided, ask the user for:
@@ -25,7 +25,7 @@ If no arguments were provided, ask the user for:
 Then run:
 
 ```bash
-cd ${CLAUDE_SKILL_DIR}/../../apps/cli && npx tsx src/run.ts "<url>" "<selector>"
+npx @style-capture/cli "<url>" "<selector>"
 ```
 
 ## Options
