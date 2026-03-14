@@ -71,7 +71,7 @@ export function formatCaptureForClaudeMarkdown(
   const prompt = buildClaudeCapturePrompt(capture, mapping);
 
   const sections = [
-    `<style_capture mode="${prompt.metadata.mode}" root_ref="${prompt.metadata.rootRef}" root_selector="${escapeXmlAttribute(prompt.metadata.rootSelector)}" elements="${prompt.metadata.elementCount}" pseudos="${prompt.metadata.pseudoCount}">`,
+    `<style_capture url="${escapeXmlAttribute(prompt.metadata.url)}" mode="${prompt.metadata.mode}" root_ref="${prompt.metadata.rootRef}" root_selector="${escapeXmlAttribute(prompt.metadata.rootSelector)}" elements="${prompt.metadata.elementCount}" pseudos="${prompt.metadata.pseudoCount}">`,
     prompt.instruction,
     `<html_capture>${prompt.htmlCapture}</html_capture>`,
     `<css_capture>${prompt.cssCapture}</css_capture>`,

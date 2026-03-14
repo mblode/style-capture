@@ -92,7 +92,10 @@ export function OptionsApp(): React.JSX.Element {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen px-4 py-6 text-foreground" id="main-content">
+    <main
+      className="min-h-screen bg-background px-4 py-6 text-foreground"
+      id="main-content"
+    >
       <div className="mx-auto flex w-full max-w-md flex-col gap-4">
         <h1 className="font-display text-foreground text-xl tracking-[-0.03em]">
           Settings

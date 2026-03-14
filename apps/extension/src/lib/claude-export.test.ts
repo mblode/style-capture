@@ -222,6 +222,7 @@ describe("formatCaptureForClaudeMarkdown", () => {
     );
 
     expect(markdown).toContain("<style_capture ");
+    expect(markdown).toContain('url="https://example.com/card"');
     expect(markdown).toContain('mode="curated"');
     expect(markdown).toContain('root_ref="0"');
     expect(markdown).toContain('root_selector="#app"');

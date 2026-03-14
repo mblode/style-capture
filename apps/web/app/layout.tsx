@@ -1,16 +1,13 @@
 import { Agentation } from "agentation";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const glide = localFont({
+  src: [{ path: "../public/glide-variable.woff2" }],
+  variable: "--font-glide",
+  weight: "400 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -34,10 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html className={glide.variable} lang="en">
+      <body className="antialiased">
         {children}
         {process.env.NODE_ENV === "development" && <Agentation />}
       </body>

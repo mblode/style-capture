@@ -1,127 +1,82 @@
-import { createReadStream } from "node:fs";
-import { mkdir, stat } from "node:fs/promises";
-import http from "node:http";
-import { extname, join, resolve } from "node:path";
+import { mkdir } from "node:fs/promises";
+import { join, resolve } from "node:path";
 
 import { chromium } from "playwright-core";
 
-const RENDERABLES_ROOT = resolve(process.cwd(), "store/renderables");
 const OUTPUT_DIR = resolve(process.cwd(), "store/generated");
 const CHROME_EXECUTABLE =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-
-const CONTENT_TYPES = new Map<string, string>([
-  [".css", "text/css; charset=utf-8"],
-  [".html", "text/html; charset=utf-8"],
-  [".js", "text/javascript; charset=utf-8"],
-  [".png", "image/png"],
-  [".svg", "image/svg+xml"],
-  [".woff", "font/woff"],
-  [".woff2", "font/woff2"],
-]);
-
-const LEADING_SLASHES = /^\/+/;
+const TRAILING_SLASHES = /\/+$/;
 
 interface RenderJob {
-  html: string;
   output: string;
+  path: string;
   viewport: { width: number; height: number };
 }
 
 const JOBS: RenderJob[] = [
   {
-    html: "screenshot-1-capture.html",
+    path: "/store/screenshot-1-capture",
     output: "screenshot-1-capture.png",
     viewport: { width: 1280, height: 800 },
   },
   {
-    html: "screenshot-2-export.html",
+    path: "/store/screenshot-2-export",
     output: "screenshot-2-export.png",
     viewport: { width: 1280, height: 800 },
   },
   {
-    html: "screenshot-3-settings.html",
+    path: "/store/screenshot-3-settings",
     output: "screenshot-3-settings.png",
     viewport: { width: 1280, height: 800 },
   },
   {
-    html: "screenshot-4-tailwind.html",
+    path: "/store/screenshot-4-tailwind",
     output: "screenshot-4-tailwind.png",
     viewport: { width: 1280, height: 800 },
   },
   {
-    html: "screenshot-5-privacy.html",
+    path: "/store/screenshot-5-privacy",
     output: "screenshot-5-privacy.png",
     viewport: { width: 1280, height: 800 },
   },
   {
-    html: "small-promo-tile.html",
+    path: "/store/small-promo-tile",
     output: "small-promo-tile.png",
     viewport: { width: 440, height: 280 },
   },
   {
-    html: "marquee-promo-tile.html",
+    path: "/store/marquee-promo-tile",
     output: "marquee-promo-tile.png",
     viewport: { width: 1400, height: 560 },
   },
 ];
 
-function createStaticServer(root: string) {
-  return http.createServer(async (request, response) => {
-    const requestPath =
-      request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
-
-    // Resolve against the extension root for font paths like ../../public/
-    const extensionRoot = resolve(root, "../..");
-    let filePath = resolve(root, `.${requestPath}`);
-
-    if (!filePath.startsWith(root)) {
-      // Try resolving relative to extension root for font references
-      filePath = resolve(
-        extensionRoot,
-        requestPath.replace(LEADING_SLASHES, "")
-      );
-      if (!filePath.startsWith(extensionRoot)) {
-        response.writeHead(403);
-        response.end("Forbidden");
-        return;
-      }
-    }
-
-    try {
-      const fileStats = await stat(filePath);
-      if (!fileStats.isFile()) {
-        response.writeHead(404);
-        response.end("Not found");
-        return;
-      }
-
-      const contentType =
-        CONTENT_TYPES.get(extname(filePath).toLowerCase()) ??
-        "application/octet-stream";
-      response.writeHead(200, { "Content-Type": contentType });
-      createReadStream(filePath).pipe(response);
-    } catch {
-      response.writeHead(404);
-      response.end("Not found");
-    }
-  });
+function getBaseUrl(): string {
+  const flag = process.argv.find((arg) => arg.startsWith("--base-url="));
+  if (flag) {
+    return flag.split("=")[1];
+  }
+  const idx = process.argv.indexOf("--base-url");
+  if (idx !== -1 && process.argv[idx + 1]) {
+    return process.argv[idx + 1];
+  }
+  return "http://localhost:3000";
 }
 
 async function main() {
+  const baseUrl = getBaseUrl().replace(TRAILING_SLASHES, "");
   await mkdir(OUTPUT_DIR, { recursive: true });
 
-  const server = createStaticServer(RENDERABLES_ROOT);
-  await new Promise<void>((resolveServer) => {
-    server.listen(0, "127.0.0.1", () => resolveServer());
-  });
-
-  const address = server.address();
-  if (!(address && typeof address === "object")) {
-    throw new Error("Failed to start render server.");
+  // Preflight: verify the dev server is reachable
+  try {
+    await fetch(baseUrl, { signal: AbortSignal.timeout(5000) });
+  } catch {
+    throw new Error(
+      `Cannot reach ${baseUrl}. Start the Next.js dev server first:\n  npm run dev --filter=@style-capture/web`
+    );
   }
 
-  const baseUrl = `http://127.0.0.1:${address.port}`;
   const browser = await chromium.launch({
     executablePath: CHROME_EXECUTABLE,
     headless: true,
@@ -134,7 +89,7 @@ async function main() {
         viewport: job.viewport,
       });
 
-      await page.goto(`${baseUrl}/${job.html}`, { waitUntil: "networkidle" });
+      await page.goto(`${baseUrl}${job.path}`, { waitUntil: "networkidle" });
       await page.evaluate(() => document.fonts.ready);
       await page.screenshot({
         path: join(OUTPUT_DIR, job.output),
@@ -148,16 +103,6 @@ async function main() {
     }
   } finally {
     await browser.close();
-    await new Promise<void>((resolveServer, rejectServer) => {
-      server.close((error) => {
-        if (error) {
-          rejectServer(error);
-          return;
-        }
-
-        resolveServer();
-      });
-    });
   }
 }
 
