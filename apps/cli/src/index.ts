@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 
 import {
   cancel,
@@ -17,6 +17,7 @@ import {
   mapCaptureToTailwind,
 } from "@style-capture/core";
 import { chromium } from "playwright";
+
 import { captureElement } from "./capture.ts";
 
 async function main(): Promise<void> {

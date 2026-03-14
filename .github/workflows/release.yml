@@ -1,28 +1,38 @@
-name: GitHub Release
+name: Release
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
-  group: github-release
+  group: release
   cancel-in-progress: false
 
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v5
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@11.5.1
 
       - name: Install dependencies
         run: npm ci
@@ -32,9 +42,12 @@ jobs:
         uses: changesets/action@v1
         with:
           version: npm run version
+          publish: npm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
 
+      # GitHub Release for the extension (versioned independently of npm)
       - name: Get extension version
         if: steps.changesets.outputs.hasChangesets == 'false'
         id: version
@@ -51,10 +64,6 @@ jobs:
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Build extension
-        if: steps.changesets.outputs.hasChangesets == 'false' && steps.check_release.outputs.exists == 'false'
-        run: npx turbo run build --filter=@style-capture/extension
 
       - name: Create GitHub Release
         if: steps.changesets.outputs.hasChangesets == 'false' && steps.check_release.outputs.exists == 'false'

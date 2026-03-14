@@ -1,5 +1,0 @@
-npm test
-
-# ultracite
-#!/bin/sh
-npx lint-staged

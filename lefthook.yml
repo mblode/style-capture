@@ -1,0 +1,6 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: ultracite
+      glob: "*.{js,ts,jsx,tsx,json,jsonc}"
+      run: npx ultracite fix --staged {staged_files}

@@ -1,11 +1,11 @@
 {
-  "name": "@style-capture/cli",
-  "private": false,
+  "name": "style-capture",
   "version": "0.0.1",
-  "type": "module",
+  "private": false,
   "bin": {
-    "style-capture": "./dist/index.js"
+    "style-capture": "./src/index.ts"
   },
+  "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc -b",
@@ -23,6 +23,9 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.5",
     "@types/node": "^24.12.0",
+    "lefthook": "^2.1.4",
+    "oxfmt": "^0.40.0",
+    "oxlint": "^1.55.0",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",
     "ultracite": "^7.3.0"
