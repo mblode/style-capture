@@ -4,85 +4,52 @@
 
 <h1 align="center">Style Capture</h1>
 
-<p align="center">Chrome extension that captures computed CSS from a selected DOM subtree and prepares it for Tailwind conversion.</p>
+<p align="center">Capture real CSS from any element. Get Tailwind classes. Paste into your AI coding agent.</p>
 
-## Stack
+## Install
 
-- Chrome Extension (Manifest V3)
-- Vite 8 + [CRXJS](https://crxjs.dev/vite-plugin/) for HMR
-- React 19 + TypeScript 5.9
-- Tailwind CSS v4 (extension pages only)
-- shadcn-style UI primitives
-- Biome + Ultracite
+1. Download `style-capture.zip` from the [latest release](https://github.com/mblode/style-capture/releases/latest)
+2. Unzip the file
+3. Open `chrome://extensions` in Chrome
+4. Enable **Developer mode** (top-right toggle)
+5. Click **Load unpacked** and select the unzipped folder
 
-## Getting Started
+## How It Works
 
-```bash
-npm install
-npm run dev
-```
+1. **Click** the Style Capture icon in your toolbar on any website
+2. **Hover** to preview elements — click to capture the one you want
+3. **Paste** the clipboard into Claude Code, Cursor, or any AI coding agent
 
-1. Open `chrome://extensions` and enable **Developer mode**
-2. Click **Load unpacked** and select the `dist/` directory
-3. Click the Style Capture toolbar icon to start picking on the active tab
+The captured output includes the element's HTML, computed CSS, and suggested Tailwind classes — structured and ready for your agent to use.
 
-## Usage
+## Features
 
-1. Click the toolbar icon on the page you want to inspect
-2. Hover over elements on the active tab while the picker highlights the DOM subtree
-3. Click to capture the computed CSS
-4. Paste the copied Claude-ready `style_capture` export into Claude Code or another agent
+- **Real rendered styles** — captures what the browser actually computed, not source CSS
+- **Automatic Tailwind mapping** — every CSS property mapped to Tailwind utilities with confidence scores
+- **Any site, zero config** — works on any webpage immediately
+- **Nothing leaves your device** — all processing happens locally
+- **Built for AI agents** — structured output designed for Claude Code, Cursor, and more
 
-The extension uses `activeTab` and `chrome.scripting.executeScript()` so it requires no persistent host permissions.
+## Keyboard Shortcuts
 
-## Commands
+While the picker is active:
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server with CRXJS HMR |
-| `npm run build` | Type-check and build to `dist/` |
-| `npm run check-types` | TypeScript type-check only |
-| `npm run lint` | Biome check (read-only) |
-| `npm run lint:fix` | Biome auto-fix |
-| `npm run check` | Ultracite full check (stricter) |
-| `npm run fix` | Ultracite auto-fix |
-| `npm run test` | Run Vitest unit tests |
-| `npm run test:watch` | Vitest watch mode |
-| `npm run eval:format` | Compare capture prompt formats and write eval summaries to `evals/results/` |
+- **Shift** — select the parent element
+- **Alt** — select the first child element
+- **Escape** — cancel
 
-## Project Structure
+## Settings
 
-```
-src/
-  background/   Service worker and message routing
-  components/   Shared UI primitives and page shell
-  lib/          Types, messages, storage, utilities
-  options/      Options page
-  runtime/      Injected picker bootstrap
-  styles/       Tailwind v4 theme and base styles
-```
+Right-click the extension icon and select **Options** to configure:
 
-## Architecture
+- **Capture mode** — *Curated* (default) captures design-relevant properties; *Full* captures everything
+- **Pseudo-elements** — include `::before` and `::after` styles
+- **Hidden elements** — include elements hidden with `display: none` or `visibility: hidden`
 
-- The picker is injected on demand via `chrome.scripting.executeScript()` — no persistent content scripts
-- Tailwind CSS runs only inside extension pages; the picker uses isolated inline styles to avoid Preflight leaks
-- Extension manifest is defined programmatically in `manifest.config.ts`
-- Captures are copied to the clipboard immediately as a structured `style_capture` payload with HTML, CSS, and Tailwind hints
-- See `docs/technical-spec.md` and `docs/implementation-plan.md` for architecture details and phased execution status
+## Privacy
 
-## Format Evals
-
-Use `npm run eval:format -- --dry-run` to preview the fixture set, serializers, and token counts.
-
-Use `npm run eval:format` to run the full model-backed comparison. The script:
-
-- compares the shipped `style_capture` format against generic alternatives
-- mirrors the `linktree-cli` format-eval workflow with exact and judge scoring
-- writes detailed results to `evals/results/format-eval-results.json`
-- writes aggregate summaries to `evals/results/format-eval-summary.json`
-
-Live evals require `OPENAI_API_KEY`.
+Style Capture processes everything locally. No data is sent to any server.
 
 ## License
 
-Private
+[MIT](LICENSE.md)
