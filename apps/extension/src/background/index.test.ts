@@ -200,24 +200,16 @@ describe("background service worker tests", () => {
       );
 
       expect(response).toStrictEqual({ ok: true });
-      // First call: clipboard copy, second call: toast
-      expect(executeScript).toHaveBeenCalledTimes(2);
-      expect(executeScript).toHaveBeenNthCalledWith(1, {
+      expect(executeScript).toHaveBeenCalledOnce();
+      expect(executeScript).toHaveBeenCalledWith({
         args: ["# Markdown export"],
-        func: expect.any(Function),
-        target: { tabId: 12 },
-      });
-      expect(executeScript).toHaveBeenNthCalledWith(2, {
-        args: ["Copied prompt to clipboard", false],
         func: expect.any(Function),
         target: { tabId: 12 },
       });
     });
 
-    it("shows an error toast when clipboard copy fails", async () => {
-      executeScript
-        .mockRejectedValueOnce(new Error("Clipboard failed"))
-        .mockResolvedValueOnce([]);
+    it("responds with ok:false when clipboard copy fails", async () => {
+      executeScript.mockRejectedValueOnce(new Error("Clipboard failed"));
 
       const response = await dispatchMessage(
         messageListener,
@@ -225,12 +217,8 @@ describe("background service worker tests", () => {
         { tab: { id: 12 } as chrome.tabs.Tab }
       );
 
-      expect(response).toStrictEqual({ ok: true });
-      expect(executeScript).toHaveBeenNthCalledWith(2, {
-        args: ["Failed to copy prompt to clipboard", true],
-        func: expect.any(Function),
-        target: { tabId: 12 },
-      });
+      expect(response).toStrictEqual({ ok: false });
+      expect(executeScript).toHaveBeenCalledOnce();
     });
   });
 
