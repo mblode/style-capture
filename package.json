@@ -24,10 +24,5 @@
     "portless": "^0.6.0",
     "turbo": "^2",
     "ultracite": "^7.3.0"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "npx ultracite fix"
-    ]
   }
 }
