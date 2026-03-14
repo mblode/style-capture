@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Style Capture Screenshot 4</title>
+    <link rel="stylesheet" href="./store-assets.css">
+  </head>
+  <body>
+    <div class="frame">
+      <div class="browser">
+        <div class="browser__topbar">
+          <div class="traffic"><span></span><span></span><span></span></div>
+          <div class="address">https://example.com/pricing</div>
+          <div class="badge">Tailwind mapping</div>
+        </div>
+        <div class="content">
+          <div class="hero">
+            <div>
+              <div class="eyebrow">Automatic conversion</div>
+              <h1 class="headline">Computed CSS to Tailwind.</h1>
+              <p class="lede">
+                Every captured property is mapped to the closest Tailwind
+                utility, with review notes for ambiguous values.
+              </p>
+            </div>
+
+            <div class="stack">
+              <div class="card prompt">
+                <div class="prompt__label">Computed CSS</div>
+                <pre>[data-lc="0"] {
+  display: grid;
+  gap: 24px;
+  padding: 32px;
+  border-radius: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 16px 32px rgba(0,0,0,.08);
+  font-size: 16px;
+  line-height: 1.5;
+}</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card prompt">
+              <div class="prompt__label">Tailwind hints</div>
+              <pre>&lt;tailwind_hints&gt;
+0=grid gap-6 p-8 rounded-[20px] bg-white
+  shadow-[0_16px_32px_rgba(0,0,0,0.08)]
+  text-base leading-normal
+&lt;/tailwind_hints&gt;</pre>
+            </div>
+            <div class="card panel">
+              <h3>Confidence levels</h3>
+              <ul class="list">
+                <li>Scale match — uses stock Tailwind tokens</li>
+                <li>Arbitrary value — exact value in brackets</li>
+                <li>Review needed — layout-derived values flagged</li>
+              </ul>
+            </div>
+            <div class="card panel">
+              <h3>Open questions</h3>
+              <p>
+                Width, height, and inset values that look layout-derived are
+                flagged so you can confirm responsive intent before committing.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

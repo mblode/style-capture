@@ -12,8 +12,8 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
   const PICKER_KEY = "__STYLE_CAPTURE_PICKER__";
   const CURSOR_STYLE_ID = "style-capture-picker-cursor-style";
   const INSPECT_CURSOR =
-    'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27%23d239c0%27 d=%27M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z%27/%3E%3C/svg%3E") 12 12, crosshair';
-  const GRAB_PURPLE_RGB = "210, 57, 192";
+    'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27%23000000%27 d=%27M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z%27/%3E%3C/svg%3E") 12 12, crosshair';
+  const GRAB_PURPLE_RGB = "0, 0, 0";
   const FRAME_BORDER_COLOR = `rgba(${GRAB_PURPLE_RGB}, 0.5)`;
   const FRAME_FILL_COLOR = `rgba(${GRAB_PURPLE_RGB}, 0.08)`;
   const LABEL_VIEWPORT_MARGIN = 8;

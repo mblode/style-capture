@@ -1,14 +1,13 @@
 :root {
-  --bg: #09111f;
-  --bg-panel: rgba(13, 24, 43, 0.78);
-  --bg-panel-strong: rgba(10, 20, 37, 0.94);
-  --border: rgba(181, 205, 255, 0.18);
-  --text: #f5f9ff;
-  --muted: #adc1ea;
-  --accent: #ff7a18;
-  --accent-soft: rgba(255, 122, 24, 0.18);
-  --accent-2: #5ce1e6;
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.36);
+  --bg: #fff;
+  --bg-panel: rgba(255, 255, 255, 0.82);
+  --bg-panel-strong: rgba(255, 255, 255, 0.94);
+  --border: rgba(0, 0, 0, 0.1);
+  --text: #000;
+  --muted: #666;
+  --accent: #000;
+  --accent-soft: rgba(0, 0, 0, 0.06);
+  --shadow: 0 30px 80px rgba(0, 0, 0, 0.06);
 }
 
 * {
@@ -26,18 +25,7 @@ body {
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(
-      circle at 15% 20%,
-      rgba(255, 122, 24, 0.25),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 85% 15%,
-      rgba(92, 225, 230, 0.22),
-      transparent 28%
-    ),
-    linear-gradient(180deg, #0b1324 0%, #08101c 100%);
+  background: #f8f8f8;
 }
 
 a {
@@ -75,15 +63,11 @@ a {
   height: 40px;
   font-size: 14px;
   font-weight: 800;
-  color: #07111e;
+  color: #fff;
   letter-spacing: 0.08em;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 122, 24, 0.94),
-    rgba(92, 225, 230, 0.9)
-  );
+  background: #000;
   border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .nav-links {
@@ -98,7 +82,7 @@ a {
   padding: 10px 14px;
   color: var(--muted);
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.03);
   border: 1px solid var(--border);
   border-radius: 999px;
 }
@@ -132,10 +116,10 @@ a {
   align-items: center;
   padding: 8px 12px;
   font-size: 12px;
-  color: #ffd6b8;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  background: var(--accent-soft);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 999px;
 }
 
@@ -180,14 +164,14 @@ a {
 
 .button-primary {
   font-weight: 700;
-  color: #1d1206;
-  background: linear-gradient(135deg, #ff7a18 0%, #ffb15b 100%);
+  color: #fff;
+  background: #000;
   border-color: transparent;
 }
 
 .button-secondary {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .fact-list {
@@ -200,7 +184,7 @@ a {
   display: flex;
   gap: 12px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border);
   border-radius: 18px;
 }
@@ -245,7 +229,7 @@ code {
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   font-size: 0.95em;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 8px;
 }
 

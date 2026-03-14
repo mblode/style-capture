@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "eval:format": "node --import tsx evals/format-eval.ts",
     "store:publish": "node scripts/chrome-web-store-publish.mjs",
+    "store:render": "node --import tsx scripts/render-store-assets.ts",
     "store:screenshots": "node --import tsx scripts/chrome-web-store-screenshots.ts",
     "check-types": "tsc -b --pretty false",
     "lint": "biome check .",
@@ -25,7 +26,6 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
-    "@fontsource/ibm-plex-mono": "^5.2.6",
     "blode-icons-react": "^0.3.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

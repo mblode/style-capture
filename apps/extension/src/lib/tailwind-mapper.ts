@@ -1,6 +1,6 @@
 import type { CaptureResult, ElementSnapshot } from "@/lib/types.ts";
 
-export type TailwindConfidenceLabel = "high" | "medium" | "low";
+type TailwindConfidenceLabel = "high" | "medium" | "low";
 type TailwindMatchStrategy = "arbitrary" | "heuristic" | "scale" | "semantic";
 
 export interface TailwindElementMapping {

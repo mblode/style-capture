@@ -1,15 +1,15 @@
 :root {
-  --bg: #f5f2ea;
+  --bg: #f8f8f8;
   --card: rgba(255, 255, 255, 0.84);
   --card-strong: #ffffff;
-  --ink: #1c251f;
-  --muted: #5c675f;
-  --line: rgba(28, 37, 31, 0.1);
-  --accent: #136f63;
-  --accent-strong: #0d4d45;
-  --warm: #fff0d9;
-  --shadow-soft: 0 18px 45px rgba(28, 37, 31, 0.08);
-  --shadow-strong: 0 26px 80px rgba(19, 111, 99, 0.18);
+  --ink: #000;
+  --muted: #666;
+  --line: rgba(0, 0, 0, 0.08);
+  --accent: #000;
+  --accent-strong: #000;
+  --warm: #f4f4f4;
+  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.06);
+  --shadow-strong: 0 26px 80px rgba(0, 0, 0, 0.1);
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   color-scheme: light;
 }
@@ -22,18 +22,7 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(19, 111, 99, 0.22),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at top right,
-      rgba(255, 255, 255, 0.68),
-      transparent 28%
-    ),
-    linear-gradient(180deg, #f7f3ec 0%, var(--bg) 100%);
+  background: #f8f8f8;
 }
 
 body::before {
@@ -42,8 +31,8 @@ body::before {
   pointer-events: none;
   content: "";
   background-image:
-    linear-gradient(rgba(28, 37, 31, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(28, 37, 31, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
   background-position: center;
   background-size: 32px 32px;
 }
@@ -98,7 +87,7 @@ body::before {
   height: 260px;
   pointer-events: none;
   content: "";
-  background: radial-gradient(circle, rgba(19, 111, 99, 0.18), transparent 72%);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.04), transparent 72%);
   border-radius: 999px;
 }
 
@@ -109,7 +98,7 @@ body::before {
   margin: 0 0 12px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--accent-strong);
+  color: var(--ink);
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
@@ -176,14 +165,14 @@ h3 {
 
 .button--primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--accent) 0%, #0f8576 100%);
+  background: #000;
   box-shadow: var(--shadow-strong);
 }
 
 .button--secondary {
   color: var(--ink);
   background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(28, 37, 31, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .button--full {
@@ -208,7 +197,7 @@ h3 {
 .pill--active,
 .pricing-card__badge {
   color: #fff;
-  background: linear-gradient(135deg, #1b7e71, var(--accent-strong));
+  background: #000;
 }
 
 .metric-grid {
@@ -222,7 +211,7 @@ h3 {
 .mini-board__card {
   padding: 18px;
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(28, 37, 31, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 22px;
 }
 
@@ -248,7 +237,7 @@ h3 {
 }
 
 .metric-card__delta--up {
-  color: var(--accent-strong);
+  color: var(--ink);
 }
 
 .layout {
@@ -276,7 +265,7 @@ h3 {
 
 .text-link {
   font-weight: 700;
-  color: var(--accent-strong);
+  color: var(--ink);
   text-decoration: none;
 }
 
@@ -313,7 +302,7 @@ h3 {
   line-height: 1;
   color: #fff;
   content: "•";
-  background: var(--accent);
+  background: #000;
   border-radius: 999px;
 }
 
@@ -324,9 +313,7 @@ h3 {
 
 .mini-board__card--accent {
   color: #fff;
-  background:
-    linear-gradient(145deg, rgba(19, 111, 99, 0.95), rgba(13, 77, 69, 0.95)),
-    rgba(19, 111, 99, 0.88);
+  background: #111;
   box-shadow: var(--shadow-strong);
 }
 
@@ -346,11 +333,7 @@ h3 {
 .bar-set span {
   flex: 1;
   min-width: 18px;
-  background: linear-gradient(
-    180deg,
-    rgba(19, 111, 99, 0.34),
-    rgba(19, 111, 99, 0.92)
-  );
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7));
   border-radius: 999px 999px 8px 8px;
 }
 
@@ -365,14 +348,14 @@ h3 {
 }
 
 .note-card--warm {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), var(--warm));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), #f4f4f4);
 }
 
 .note-card code {
   padding: 2px 6px;
   font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
   font-size: 0.9em;
-  background: rgba(28, 37, 31, 0.08);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 8px;
 }
 
@@ -419,7 +402,7 @@ h3 {
 
 .pricing-card__features li::before {
   font-weight: 700;
-  color: var(--accent-strong);
+  color: var(--ink);
   content: "→";
 }
 
@@ -448,8 +431,8 @@ h3 {
   width: 44px;
   height: 44px;
   font-weight: 700;
-  color: var(--accent-strong);
-  background: rgba(19, 111, 99, 0.12);
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 16px;
 }
 
