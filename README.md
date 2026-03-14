@@ -4,7 +4,7 @@
 
 <h1 align="center">Style Capture</h1>
 
-<p align="center">Chrome extension that captures CSS from any element and maps it to Tailwind — ready to paste into your AI coding agent.</p>
+<p align="center">Chrome extension that captures CSS from any element and maps it to Tailwind, ready to paste into your AI coding agent.</p>
 
 ## Install
 
