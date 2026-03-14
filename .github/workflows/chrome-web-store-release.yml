@@ -32,7 +32,8 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: rm -f package-lock.json && npm install
 
       - run: npx turbo run build --filter=@style-capture/extension
 

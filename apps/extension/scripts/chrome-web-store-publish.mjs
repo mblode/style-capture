@@ -292,7 +292,7 @@ async function runCommand(options) {
     return;
   }
 
-  const accessToken = await getAccessToken();
+  const accessToken = options.dryRun ? "<token>" : await getAccessToken();
   const headers = {
     Authorization: `Bearer ${accessToken}`,
   };
