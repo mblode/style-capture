@@ -43,7 +43,7 @@ After `npm run dev`, load `apps/extension/dist/` as an unpacked extension at `ch
 - **Lint pipeline:** `npm run check` (Ultracite) is the strictest gate — it runs Biome + TypeScript. Use `npm run fix` to auto-fix. Pre-commit hook runs `ultracite fix` via lint-staged.
 - **Format evals:** `apps/extension/evals/format-eval.ts` uses `OPENAI_API_KEY` for live runs and supports `--dry-run` for token/count previews when model calls are unavailable.
 - **Workspace dependencies:** App dependencies go in each app's `package.json`, not root. Root only has turbo, ultracite, husky, lint-staged.
-- **Vercel install:** `vercel.json` deletes `package-lock.json` before install because npm lockfiles are platform-specific for optional native deps (lightningcss, rolldown). Without this, Vercel (Linux) fails to find macOS-only binaries baked into the lockfile.
+- **Vercel native bindings:** `apps/web/package.json` lists Linux native bindings (`@tailwindcss/oxide-linux-x64-gnu`, `@rolldown/binding-linux-x64-gnu`, `lightningcss-linux-x64-gnu`) in `optionalDependencies` so Vercel (Linux) can resolve platform-specific packages from the macOS-generated lockfile.
 
 ## Conventions
 
