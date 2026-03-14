@@ -327,6 +327,33 @@ const FONT_WEIGHT_MAP = {
   "900": "black",
 } satisfies Record<string, string>;
 
+const POSITION_KEYWORD_MAP = {
+  "0% 0%": "top-left",
+  "0% 50%": "left",
+  "0% 100%": "bottom-left",
+  "50% 0%": "top",
+  "50% 100%": "bottom",
+  "100% 0%": "top-right",
+  "100% 50%": "right",
+  "100% 100%": "bottom-right",
+} satisfies Record<string, string>;
+
+const DIMENSION_KEYWORD_MAP = {
+  "100%": "full",
+  "100vh": "screen",
+  "100vw": "screen",
+  "fit-content": "fit",
+  "max-content": "max",
+  "min-content": "min",
+} satisfies Record<string, string>;
+
+const FONT_FAMILY_MAP = [
+  { keyword: "monospace", utility: "font-mono" },
+  { keyword: "sans-serif", utility: "font-sans" },
+  { keyword: "system-ui", utility: "font-sans" },
+  { keyword: "serif", utility: "font-serif" },
+] as const;
+
 const MAPPING_STEPS: MappingStep[] = [
   mapDisplay,
   mapPositioning,
@@ -894,7 +921,12 @@ function mapEffects(
     styles.transform,
     "Computed transforms are emitted as raw properties."
   );
-  addTransformOriginMatch(accumulator, styles["transform-origin"]);
+  addPositionMatch(
+    accumulator,
+    "origin",
+    "transform-origin",
+    styles["transform-origin"]
+  );
 
   if (styles.visibility === "hidden") {
     addMatch(accumulator, {
@@ -1467,33 +1499,29 @@ function addOpacityMatch(
   });
 }
 
-function addTransformOriginMatch(
+function addPositionMatch(
   accumulator: MappingAccumulator,
+  prefix: string,
+  property: string,
   value: string | undefined
 ): void {
   if (!value || value === "50% 50%") {
     return;
   }
 
-  const named =
-    {
-      "0% 0%": "origin-top-left",
-      "0% 50%": "origin-left",
-      "0% 100%": "origin-bottom-left",
-      "100% 0%": "origin-top-right",
-      "100% 50%": "origin-right",
-      "100% 100%": "origin-bottom-right",
-      "50% 0%": "origin-top",
-      "50% 100%": "origin-bottom",
-    }[normalizeWhitespace(value)] ?? null;
+  const keyword =
+    POSITION_KEYWORD_MAP[
+      normalizeWhitespace(value) as keyof typeof POSITION_KEYWORD_MAP
+    ];
+  const named = keyword ? `${prefix}-${keyword}` : null;
 
   addMatch(accumulator, {
     confidence: named ? HIGH_CONFIDENCE : MEDIUM_CONFIDENCE,
-    notes: named ? [] : ["Transform origin required an arbitrary value."],
-    sourceProperties: ["transform-origin"],
+    notes: named ? [] : [`${property} required an arbitrary value.`],
+    sourceProperties: [property],
     sourceValues: [value],
     strategy: named ? "semantic" : "arbitrary",
-    utility: named ?? createArbitraryUtility("origin", value),
+    utility: named ?? createArbitraryUtility(prefix, value),
   });
 }
 
@@ -1530,30 +1558,7 @@ function addObjectPositionMatch(
   accumulator: MappingAccumulator,
   value: string | undefined
 ): void {
-  if (!value || value === "50% 50%") {
-    return;
-  }
-
-  const named =
-    {
-      "0% 0%": "object-left-top",
-      "0% 50%": "object-left",
-      "0% 100%": "object-left-bottom",
-      "100% 0%": "object-right-top",
-      "100% 50%": "object-right",
-      "100% 100%": "object-right-bottom",
-      "50% 0%": "object-top",
-      "50% 100%": "object-bottom",
-    }[normalizeWhitespace(value)] ?? null;
-
-  addMatch(accumulator, {
-    confidence: named ? HIGH_CONFIDENCE : MEDIUM_CONFIDENCE,
-    notes: named ? [] : ["Object position required an arbitrary value."],
-    sourceProperties: ["object-position"],
-    sourceValues: [value],
-    strategy: named ? "semantic" : "arbitrary",
-    utility: named ?? createArbitraryUtility("object", value),
-  });
+  addPositionMatch(accumulator, "object", "object-position", value);
 }
 
 function addArbitraryPropertyMatch(
@@ -1905,20 +1910,13 @@ function buildDimensionCandidate(
     };
   }
 
-  const keywordUtility = {
-    "100%": `${prefix}-full`,
-    "100vh": `${prefix}-screen`,
-    "100vw": `${prefix}-screen`,
-    "fit-content": `${prefix}-fit`,
-    "max-content": `${prefix}-max`,
-    "min-content": `${prefix}-min`,
-  }[value];
-
-  if (keywordUtility) {
+  const keywordSuffix =
+    DIMENSION_KEYWORD_MAP[value as keyof typeof DIMENSION_KEYWORD_MAP];
+  if (keywordSuffix) {
     return {
       confidence: HIGH_CONFIDENCE,
       strategy: "semantic",
-      utility: keywordUtility,
+      utility: `${prefix}-${keywordSuffix}`,
     };
   }
 
@@ -2002,31 +2000,16 @@ function buildColorCandidate(
 
 function buildFontFamilyCandidate(value: string): MatchCandidate {
   const normalized = value.toLowerCase();
-  if (normalized.includes("monospace")) {
-    return {
-      confidence: MEDIUM_CONFIDENCE,
-      notes: ["Mapped to the nearest generic Tailwind family."],
-      strategy: "heuristic",
-      utility: "font-mono",
-    };
-  }
 
-  if (normalized.includes("sans-serif") || normalized.includes("system-ui")) {
-    return {
-      confidence: MEDIUM_CONFIDENCE,
-      notes: ["Mapped to the nearest generic Tailwind family."],
-      strategy: "heuristic",
-      utility: "font-sans",
-    };
-  }
-
-  if (normalized.includes("serif")) {
-    return {
-      confidence: MEDIUM_CONFIDENCE,
-      notes: ["Mapped to the nearest generic Tailwind family."],
-      strategy: "heuristic",
-      utility: "font-serif",
-    };
+  for (const { keyword, utility } of FONT_FAMILY_MAP) {
+    if (normalized.includes(keyword)) {
+      return {
+        confidence: MEDIUM_CONFIDENCE,
+        notes: ["Mapped to the nearest generic Tailwind family."],
+        strategy: "heuristic",
+        utility,
+      };
+    }
   }
 
   return {
