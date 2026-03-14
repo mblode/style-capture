@@ -18,7 +18,7 @@
 Add Style Capture as a skill for Claude Code, Cursor, or any compatible AI agent:
 
 ```bash
-npx skills add mblode/style-capture
+npx skills add mblode/style-capture -g --all -y
 ```
 
 Then use it with `/style-capture`:
