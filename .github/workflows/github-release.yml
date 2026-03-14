@@ -1,0 +1,61 @@
+name: GitHub Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: rm -f package-lock.json && npm install
+
+      - name: Create release PR or publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: npm run version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build extension
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: npx turbo run build --filter=@style-capture/extension
+
+      - name: Get extension version
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        id: version
+        run: echo "version=$(node -p "require('./apps/extension/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            apps/extension/release/style-capture.zip \
+            --title "v${{ steps.version.outputs.version }}" \
+            --notes "$(cat <<'EOF'
+          ## Install before Chrome Web Store approval
+
+          1. Download `style-capture.zip` from the assets below
+          2. Unzip the file
+          3. Open `chrome://extensions` in Chrome
+          4. Enable **Developer mode** (top right toggle)
+          5. Click **Load unpacked** and select the unzipped folder
+          EOF
+          )"
