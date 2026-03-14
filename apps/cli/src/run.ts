@@ -35,38 +35,71 @@ export async function run(options: RunOptions): Promise<string> {
       );
     }
 
+    if (count > 1) {
+      process.stderr.write(
+        `Warning: selector matched ${count} elements, capturing the first\n`
+      );
+    }
+
     const capture = await captureElement(page, options.selector, settings);
     const mapping = mapCaptureToTailwind(capture);
-    return formatCaptureForClaudeMarkdown(capture, mapping);
+    const output = formatCaptureForClaudeMarkdown(capture, mapping);
+
+    process.stderr.write(
+      `Captured ${capture.summary.elementCount} elements, ${mapping.summary.utilityCount} Tailwind utilities mapped\n`
+    );
+
+    return output;
   } finally {
     await browser.close();
   }
 }
 
-/**
- * CLI entry point for non-interactive mode:
- *   npx tsx src/run.ts <url> <selector> [--mode curated|full]
- */
-async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const url = args[0];
-  const selector = args[1];
-  const modeIndex = args.indexOf("--mode");
-  const mode =
-    modeIndex === -1 ? "curated" : (args[modeIndex + 1] as "curated" | "full");
+function parseArgs(argv: string[]): RunOptions {
+  const args = argv.slice(2);
+
+  // Support both positional and flag-based args
+  let url: string | undefined;
+  let selector: string | undefined;
+  let mode: "curated" | "full" = "curated";
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--mode" && args[i + 1]) {
+      mode = args[i + 1] as "curated" | "full";
+      i++;
+    } else if (arg === "--url" && args[i + 1]) {
+      url = args[i + 1];
+      i++;
+    } else if (arg === "--selector" && args[i + 1]) {
+      selector = args[i + 1];
+      i++;
+    } else if (!url) {
+      url = arg;
+    } else if (!selector) {
+      selector = arg;
+    }
+  }
 
   if (!(url && selector)) {
-    console.error(
-      "Usage: style-capture <url> <selector> [--mode curated|full]"
+    process.stderr.write(
+      "Usage: style-capture <url> <selector> [--mode curated|full]\n"
+    );
+    process.stderr.write(
+      "       style-capture --url <url> --selector <selector>\n"
     );
     process.exit(1);
   }
 
-  const result = await run({ url, selector, mode });
-  console.log(result);
+  return { url, selector, mode };
 }
 
-main().catch((error) => {
-  console.error(String(error));
-  process.exit(1);
-});
+const options = parseArgs(process.argv);
+run(options)
+  .then((result) => {
+    process.stdout.write(result);
+  })
+  .catch((error) => {
+    process.stderr.write(`Error: ${String(error)}\n`);
+    process.exit(1);
+  });
