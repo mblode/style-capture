@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import {
   MESSAGE_TYPE_CAPTURE_CANCELLED,
   MESSAGE_TYPE_CAPTURE_COMPLETED,
@@ -7,19 +5,19 @@ import {
 } from "@/lib/messages.ts";
 import type { CaptureResult, CaptureSettings } from "@/lib/types.ts";
 
-vi.mock("@/lib/storage.ts", () => ({
+vi.mock(import("@/lib/storage.ts"), () => ({
   getSettings: vi.fn(),
 }));
 
-vi.mock("@/runtime/run-picker.ts", () => ({
+vi.mock(import("@/runtime/run-picker.ts"), () => ({
   runPicker: vi.fn(),
 }));
 
-vi.mock("@/runtime/show-toast.ts", () => ({
+vi.mock(import("@/runtime/show-toast.ts"), () => ({
   showToast: vi.fn(),
 }));
 
-vi.mock("@/lib/tailwind-mapper.ts", () => ({
+vi.mock(import("@/lib/tailwind-mapper.ts"), () => ({
   mapCaptureToTailwind: vi.fn(() => ({
     elements: {},
     order: [],
@@ -38,7 +36,7 @@ vi.mock("@/lib/tailwind-mapper.ts", () => ({
   })),
 }));
 
-vi.mock("@/lib/claude-export.ts", () => ({
+vi.mock(import("@/lib/claude-export.ts"), () => ({
   formatCaptureForClaudeMarkdown: vi.fn(() => "# Markdown export"),
 }));
 
@@ -94,12 +92,32 @@ type MessageListener = (
 
 type ActionClickListener = (tab: chrome.tabs.Tab) => void;
 
-describe("background service worker", () => {
-  let getSettings: typeof import("@/lib/storage.ts").getSettings;
+const dispatchMessage = (
+  msgListener: MessageListener,
+  message: unknown,
+  sender?: Partial<chrome.runtime.MessageSender>
+): Promise<unknown> =>
+  // eslint-disable-next-line promise/avoid-new -- required to bridge chrome.runtime.onMessage callback API to async/await
+  new Promise((resolve) => {
+    const returned = msgListener(
+      message,
+      (sender ?? {}) as chrome.runtime.MessageSender,
+      (response: unknown) => resolve(response)
+    );
+
+    if (returned === false) {
+      resolve();
+    }
+  });
+
+describe("background service worker tests", () => {
+  // eslint-disable-next-line typescript-eslint/consistent-type-imports -- dynamic import type needed for vi.mock interop
+  let getSettings: Awaited<typeof import("@/lib/storage.ts")>["getSettings"];
   let messageListener: MessageListener;
   let actionClickListener: ActionClickListener;
   let executeScript: ReturnType<typeof vi.fn>;
 
+  // eslint-disable-next-line vitest/no-hooks -- shared chrome mock setup needed before each test
   beforeEach(async () => {
     vi.resetModules();
 
@@ -114,12 +132,16 @@ describe("background service worker", () => {
       configurable: true,
       value: {
         onClicked,
-        setIcon: vi.fn(async () => undefined),
-        setTitle: vi.fn(async () => undefined),
+        setIcon: vi.fn(() => {
+          // noop
+        }),
+        setTitle: vi.fn(() => {
+          // noop
+        }),
       },
     });
 
-    executeScript = vi.fn(async () => []);
+    executeScript = vi.fn(() => []);
 
     Object.defineProperty(chrome.scripting, "executeScript", {
       configurable: true,
@@ -127,7 +149,7 @@ describe("background service worker", () => {
     });
 
     const storage = await import("@/lib/storage.ts");
-    getSettings = storage.getSettings;
+    ({ getSettings } = storage);
 
     vi.mocked(getSettings).mockReset();
     vi.mocked(getSettings).mockResolvedValue(settings);
@@ -140,23 +162,6 @@ describe("background service worker", () => {
       .calls[0]?.[0] as ActionClickListener;
   });
 
-  async function dispatchMessage(
-    message: unknown,
-    sender?: Partial<chrome.runtime.MessageSender>
-  ): Promise<unknown> {
-    return await new Promise((resolve) => {
-      const returned = messageListener(
-        message,
-        (sender ?? {}) as chrome.runtime.MessageSender,
-        (response: unknown) => resolve(response)
-      );
-
-      if (returned === false) {
-        resolve(undefined);
-      }
-    });
-  }
-
   describe("chrome.action.onClicked", () => {
     it("injects the picker and sets the active icon", async () => {
       executeScript.mockResolvedValue([{ result: "activated" }]);
@@ -168,7 +173,7 @@ describe("background service worker", () => {
       );
       expect(chrome.action.setTitle).toHaveBeenCalledWith({
         tabId: 42,
-        title: "Style Capture — inspecting",
+        title: "Style Capture \u2014 inspecting",
       });
       expect(executeScript).toHaveBeenCalledWith({
         args: [settings],
@@ -189,11 +194,12 @@ describe("background service worker", () => {
       executeScript.mockResolvedValue([]);
 
       const response = await dispatchMessage(
+        messageListener,
         { capture, type: MESSAGE_TYPE_CAPTURE_COMPLETED },
         { tab: { id: 12 } as chrome.tabs.Tab }
       );
 
-      expect(response).toEqual({ ok: true });
+      expect(response).toStrictEqual({ ok: true });
       // First call: clipboard copy, second call: toast
       expect(executeScript).toHaveBeenCalledTimes(2);
       expect(executeScript).toHaveBeenNthCalledWith(1, {
@@ -214,11 +220,12 @@ describe("background service worker", () => {
         .mockResolvedValueOnce([]);
 
       const response = await dispatchMessage(
+        messageListener,
         { capture, type: MESSAGE_TYPE_CAPTURE_COMPLETED },
         { tab: { id: 12 } as chrome.tabs.Tab }
       );
 
-      expect(response).toEqual({ ok: true });
+      expect(response).toStrictEqual({ ok: true });
       expect(executeScript).toHaveBeenNthCalledWith(2, {
         args: ["Failed to copy prompt to clipboard", true],
         func: expect.any(Function),
@@ -229,21 +236,21 @@ describe("background service worker", () => {
 
   describe("capture/cancelled and capture/failed", () => {
     it("acknowledges cancellation without side effects", async () => {
-      const response = await dispatchMessage({
+      const response = await dispatchMessage(messageListener, {
         reason: "User pressed Escape",
         type: MESSAGE_TYPE_CAPTURE_CANCELLED,
       });
 
-      expect(response).toEqual({ ok: true });
+      expect(response).toStrictEqual({ ok: true });
     });
 
     it("acknowledges failure without side effects", async () => {
-      const response = await dispatchMessage({
+      const response = await dispatchMessage(messageListener, {
         error: "Something broke",
         type: MESSAGE_TYPE_CAPTURE_FAILED,
       });
 
-      expect(response).toEqual({ ok: true });
+      expect(response).toStrictEqual({ ok: true });
     });
   });
 });

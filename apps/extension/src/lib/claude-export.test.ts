@@ -1,5 +1,3 @@
-import { describe, expect, it } from "vitest";
-
 import type { TailwindMappingResult } from "@/lib/tailwind-mapper.ts";
 import type { CaptureResult } from "@/lib/types.ts";
 
@@ -8,180 +6,177 @@ import {
   formatCaptureForClaudeMarkdown,
 } from "./claude-export.ts";
 
-function createCapture(): CaptureResult {
-  return {
-    elements: {
-      "node-0": {
-        attributes: {
-          class: "card shell",
-        },
-        boundingBox: {
-          bottom: 100,
-          height: 80,
-          left: 0,
-          right: 200,
-          top: 20,
-          width: 200,
-          x: 0,
-          y: 20,
-        },
-        children: ["node-1"],
-        classList: ["card", "shell"],
-        id: "node-0",
-        parentId: null,
-        pseudo: {},
-        selector: "#app",
-        styles: {
-          "background-color": "rgb(255, 255, 255)",
-          display: "flex",
-          gap: "16px",
-        },
-        tagName: "div",
+const createCapture = (): CaptureResult => ({
+  elements: {
+    "node-0": {
+      attributes: {
+        class: "card shell",
       },
-      "node-1": {
-        attributes: {
-          class: "label",
-        },
-        boundingBox: {
-          bottom: 60,
-          height: 20,
-          left: 12,
-          right: 80,
-          top: 40,
-          width: 68,
-          x: 12,
-          y: 40,
-        },
-        children: [],
-        classList: ["label"],
-        id: "node-1",
-        parentId: "node-0",
-        pseudo: {
-          before: {
-            kind: "before",
-            styles: {
-              color: "rgb(17, 24, 39)",
-              content: '"*"',
-            },
+      boundingBox: {
+        bottom: 100,
+        height: 80,
+        left: 0,
+        right: 200,
+        top: 20,
+        width: 200,
+        x: 0,
+        y: 20,
+      },
+      children: ["node-1"],
+      classList: ["card", "shell"],
+      id: "node-0",
+      parentId: null,
+      pseudo: {},
+      selector: "#app",
+      styles: {
+        "background-color": "rgb(255, 255, 255)",
+        display: "flex",
+        gap: "16px",
+      },
+      tagName: "div",
+    },
+    "node-1": {
+      attributes: {
+        class: "label",
+      },
+      boundingBox: {
+        bottom: 60,
+        height: 20,
+        left: 12,
+        right: 80,
+        top: 40,
+        width: 68,
+        x: 12,
+        y: 40,
+      },
+      children: [],
+      classList: ["label"],
+      id: "node-1",
+      parentId: "node-0",
+      pseudo: {
+        before: {
+          kind: "before",
+          styles: {
+            color: "rgb(17, 24, 39)",
+            content: '"*"',
           },
         },
-        selector: ".label",
-        styles: {
-          color: "rgb(17, 24, 39)",
-          "font-size": "14px",
-        },
-        tagName: "span",
       },
+      selector: ".label",
+      styles: {
+        color: "rgb(17, 24, 39)",
+        "font-size": "14px",
+      },
+      tagName: "span",
     },
-    metadata: {
-      capturedAt: "2026-03-14T00:00:00.000Z",
-      title: "Fixture card",
-      url: "https://example.com/card",
-      userAgent: "Vitest",
-    },
-    order: ["node-0", "node-1"],
-    rootElementId: "node-0",
-    rootOuterHtml:
-      '<div class="card shell"><span class="label">Hello</span></div>',
-    settings: {
-      captureMode: "curated",
-      includeHiddenElements: false,
-      includePseudoElements: true,
-    },
-    summary: {
-      elementCount: 2,
-      pseudoElementCount: 1,
-    },
-    version: 1,
-  };
-}
+  },
+  metadata: {
+    capturedAt: "2026-03-14T00:00:00.000Z",
+    title: "Fixture card",
+    url: "https://example.com/card",
+    userAgent: "Vitest",
+  },
+  order: ["node-0", "node-1"],
+  rootElementId: "node-0",
+  rootOuterHtml:
+    '<div class="card shell"><span class="label">Hello</span></div>',
+  settings: {
+    captureMode: "curated",
+    includeHiddenElements: false,
+    includePseudoElements: true,
+  },
+  summary: {
+    elementCount: 2,
+    pseudoElementCount: 1,
+  },
+  version: 1,
+});
 
-function createMapping(): TailwindMappingResult {
-  return {
-    elements: {
-      "node-0": {
-        className: "flex gap-4 bg-white",
-        confidence: 0.93,
-        confidenceLabel: "high",
-        elementId: "node-0",
-        matchCount: 3,
-        matches: [
-          {
-            confidence: 0.95,
-            label: "high",
-            notes: [],
-            sourceProperties: ["display"],
-            sourceValues: ["flex"],
-            strategy: "semantic",
-            utility: "flex",
-          },
-        ],
-        reviewClassName: "",
-        reviewMatchCount: 0,
-        selector: "#app",
-        suggestedClassName: "flex gap-4 bg-white",
-        suggestedMatchCount: 3,
-        tagName: "div",
-        unsupported: [],
-      },
-      "node-1": {
-        className: "text-sm text-slate-900",
-        confidence: 0.68,
-        confidenceLabel: "low",
-        elementId: "node-1",
-        matchCount: 2,
-        matches: [
-          {
-            confidence: 0.68,
-            label: "low",
-            notes: ["Custom color token"],
-            sourceProperties: ["color"],
-            sourceValues: ["rgb(17, 24, 39)"],
-            strategy: "heuristic",
-            utility: "text-slate-900",
-          },
-        ],
-        reviewClassName: "",
-        reviewMatchCount: 0,
-        selector: ".label",
-        suggestedClassName: "text-sm text-slate-900",
-        suggestedMatchCount: 2,
-        tagName: "span",
-        unsupported: [
-          {
-            property: "content",
-            reason: "Pseudo-element content requires review",
-            value: '"*"',
-          },
-        ],
-      },
+const createMapping = (): TailwindMappingResult => ({
+  elements: {
+    "node-0": {
+      className: "flex gap-4 bg-white",
+      confidence: 0.93,
+      confidenceLabel: "high",
+      elementId: "node-0",
+      matchCount: 3,
+      matches: [
+        {
+          confidence: 0.95,
+          label: "high",
+          notes: [],
+          sourceProperties: ["display"],
+          sourceValues: ["flex"],
+          strategy: "semantic",
+          utility: "flex",
+        },
+      ],
+      reviewClassName: "",
+      reviewMatchCount: 0,
+      selector: "#app",
+      suggestedClassName: "flex gap-4 bg-white",
+      suggestedMatchCount: 3,
+      tagName: "div",
+      unsupported: [],
     },
-    order: ["node-0", "node-1"],
-    reviewQueue: [
-      {
-        confidence: 0.68,
-        confidenceLabel: "low",
-        elementId: "node-1",
-        reasons: ["Pseudo-element content requires review"],
-        selector: ".label",
-        unsupportedCount: 1,
-      },
-    ],
-    summary: {
-      averageConfidence: 0.805,
-      cleanUtilityCount: 5,
-      elementCount: 2,
-      lowConfidenceElementCount: 1,
-      mappedElementCount: 2,
-      reviewCount: 1,
-      reviewUtilityCount: 0,
-      unsupportedPropertyCount: 1,
-      utilityCount: 5,
+    "node-1": {
+      className: "text-sm text-slate-900",
+      confidence: 0.68,
+      confidenceLabel: "low",
+      elementId: "node-1",
+      matchCount: 2,
+      matches: [
+        {
+          confidence: 0.68,
+          label: "low",
+          notes: ["Custom color token"],
+          sourceProperties: ["color"],
+          sourceValues: ["rgb(17, 24, 39)"],
+          strategy: "heuristic",
+          utility: "text-slate-900",
+        },
+      ],
+      reviewClassName: "",
+      reviewMatchCount: 0,
+      selector: ".label",
+      suggestedClassName: "text-sm text-slate-900",
+      suggestedMatchCount: 2,
+      tagName: "span",
+      unsupported: [
+        {
+          property: "content",
+          reason: "Pseudo-element content requires review",
+          value: '"*"',
+        },
+      ],
     },
-  };
-}
+  },
+  order: ["node-0", "node-1"],
+  reviewQueue: [
+    {
+      confidence: 0.68,
+      confidenceLabel: "low",
+      elementId: "node-1",
+      reasons: ["Pseudo-element content requires review"],
+      selector: ".label",
+      unsupportedCount: 1,
+    },
+  ],
+  summary: {
+    averageConfidence: 0.805,
+    cleanUtilityCount: 5,
+    elementCount: 2,
+    lowConfidenceElementCount: 1,
+    mappedElementCount: 2,
+    reviewCount: 1,
+    reviewUtilityCount: 0,
+    unsupportedPropertyCount: 1,
+    utilityCount: 5,
+  },
+});
 
-describe("formatCaptureForClaudeMarkdown", () => {
+/* eslint-disable vitest/max-expects -- format tests verify many structural properties of the output */
+describe("formatCaptureForClaudeMarkdown()", () => {
   it("builds a reusable structured prompt payload for alternate serializers", () => {
     const prompt = buildClaudeCapturePrompt(createCapture(), createMapping());
 
@@ -198,7 +193,7 @@ describe("formatCaptureForClaudeMarkdown", () => {
     expect(prompt.htmlCapture).toContain('data-lc="1"');
     expect(prompt.cssCapture).toContain('[data-lc="0"]{');
     expect(prompt.cssCapture).toContain('[data-lc="1"]::before{');
-    expect(prompt.tailwindHints).toEqual([
+    expect(prompt.tailwindHints).toStrictEqual([
       {
         key: "root",
         value: "flex gap-4 bg-white",
@@ -208,7 +203,7 @@ describe("formatCaptureForClaudeMarkdown", () => {
         value: "text-sm text-slate-900",
       },
     ]);
-    expect(prompt.openQuestions).toEqual([
+    expect(prompt.openQuestions).toStrictEqual([
       {
         key: "1",
         value: "Pseudo-element content requires review",

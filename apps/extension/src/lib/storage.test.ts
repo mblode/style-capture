@@ -1,8 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { getSettings, saveSettings } from "./storage.ts";
 
-describe("getSettings", () => {
+describe("getSettings()", () => {
+  // eslint-disable-next-line vitest/no-hooks -- shared chrome mock reset needed before each test
   beforeEach(() => {
     vi.mocked(chrome.storage.local.get).mockReset();
     vi.mocked(chrome.storage.local.remove).mockReset();
@@ -10,13 +9,11 @@ describe("getSettings", () => {
   });
 
   it("returns default settings when storage is empty", async () => {
-    vi.mocked(chrome.storage.local.get).mockImplementation(
-      async () => ({}) as never
-    );
+    vi.mocked(chrome.storage.local.get).mockReturnValue({} as never);
 
     const settings = await getSettings();
 
-    expect(settings).toEqual({
+    expect(settings).toStrictEqual({
       captureMode: "curated",
       includeHiddenElements: false,
       includePseudoElements: true,
@@ -24,30 +21,24 @@ describe("getSettings", () => {
   });
 
   it("merges stored settings with defaults", async () => {
-    vi.mocked(chrome.storage.local.get).mockImplementation(
-      async () =>
-        ({
-          "style-capture.settings": { captureMode: "full" },
-        }) as never
-    );
+    vi.mocked(chrome.storage.local.get).mockReturnValue({
+      "style-capture.settings": { captureMode: "full" },
+    } as never);
 
     const settings = await getSettings();
 
     expect(settings.captureMode).toBe("full");
-    expect(settings.includePseudoElements).toBe(true);
+    expect(settings.includePseudoElements).toBeTruthy();
   });
 
   it("migrates legacy settings to the new storage key", async () => {
-    vi.mocked(chrome.storage.local.get).mockImplementation(
-      async () =>
-        ({
-          "live-css.settings": { includeHiddenElements: true },
-        }) as never
-    );
+    vi.mocked(chrome.storage.local.get).mockReturnValue({
+      "live-css.settings": { includeHiddenElements: true },
+    } as never);
 
     const settings = await getSettings();
 
-    expect(settings).toEqual({
+    expect(settings).toStrictEqual({
       captureMode: "curated",
       includeHiddenElements: true,
       includePseudoElements: true,
@@ -61,7 +52,8 @@ describe("getSettings", () => {
   });
 });
 
-describe("saveSettings", () => {
+describe("saveSettings()", () => {
+  // eslint-disable-next-line vitest/no-hooks -- shared chrome mock reset needed before each test
   beforeEach(() => {
     vi.mocked(chrome.storage.local.set).mockReset();
   });

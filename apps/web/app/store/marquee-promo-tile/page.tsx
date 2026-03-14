@@ -55,7 +55,7 @@ export default function MarqueePromoTile() {
                   </p>
                   <div
                     className="absolute border border-black/50 bg-black/[0.08]"
-                    style={{ top: 108, left: 16, right: 16, height: 152 }}
+                    style={{ height: 152, left: 16, right: 16, top: 108 }}
                   />
                 </Card>
                 <CodeBlock code={EXPORT_XML} label="Export" lang="xml" />

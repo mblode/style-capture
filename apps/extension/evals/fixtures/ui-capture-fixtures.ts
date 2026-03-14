@@ -1,4 +1,4 @@
-import type { CaptureResult } from "../../src/lib/types.ts";
+import type { CaptureResult } from "@/lib/types.ts";
 
 export interface FormatEvalFixture {
   capture: CaptureResult;
@@ -6,29 +6,24 @@ export interface FormatEvalFixture {
   slug: string;
 }
 
-function createBox(
+const createBox = (
   x: number,
   y: number,
   width: number,
   height: number
-): CaptureResult["elements"][string]["boundingBox"] {
-  return {
-    bottom: y + height,
-    height,
-    left: x,
-    right: x + width,
-    top: y,
-    width,
-    x,
-    y,
-  };
-}
+): CaptureResult["elements"][string]["boundingBox"] => ({
+  bottom: y + height,
+  height,
+  left: x,
+  right: x + width,
+  top: y,
+  width,
+  x,
+  y,
+});
 
 export const FORMAT_EVAL_FIXTURES: FormatEvalFixture[] = [
   {
-    slug: "docs-cli-paragraph",
-    description:
-      "Single-paragraph docs intro captured from a local Done Bear CLI documentation page.",
     capture: {
       elements: {
         "node-0": {
@@ -86,11 +81,11 @@ export const FORMAT_EVAL_FIXTURES: FormatEvalFixture[] = [
       },
       version: 1,
     },
+    description:
+      "Single-paragraph docs intro captured from a local Done Bear CLI documentation page.",
+    slug: "docs-cli-paragraph",
   },
   {
-    slug: "annotated-card",
-    description:
-      "Compact card shell with a nested label and pseudo-element content.",
     capture: {
       elements: {
         "node-0": {
@@ -163,11 +158,11 @@ export const FORMAT_EVAL_FIXTURES: FormatEvalFixture[] = [
       },
       version: 1,
     },
+    description:
+      "Compact card shell with a nested label and pseudo-element content.",
+    slug: "annotated-card",
   },
   {
-    slug: "hero-stack",
-    description:
-      "Small marketing hero stack with heading, supporting copy, and a CTA.",
     capture: {
       elements: {
         "node-0": {
@@ -284,5 +279,8 @@ export const FORMAT_EVAL_FIXTURES: FormatEvalFixture[] = [
       },
       version: 1,
     },
+    description:
+      "Small marketing hero stack with heading, supporting copy, and a CTA.",
+    slug: "hero-stack",
   },
 ];

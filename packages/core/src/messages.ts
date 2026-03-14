@@ -24,10 +24,8 @@ export type ExtensionMessage =
   | CaptureCompletedMessage
   | CaptureFailedMessage;
 
-export function createDefaultSettings(): CaptureSettings {
-  return {
-    captureMode: "curated",
-    includeHiddenElements: false,
-    includePseudoElements: true,
-  };
-}
+export const createDefaultSettings = (): CaptureSettings => ({
+  captureMode: "curated",
+  includeHiddenElements: false,
+  includePseudoElements: true,
+});

@@ -4,6 +4,7 @@ dist
 dist-zip
 release
 *.tgz
+.next
 
 coverage
 *.lcov
@@ -19,7 +20,11 @@ logs
 
 .cache
 *.tsbuildinfo
+*.config.d.ts
 
 .DS_Store
 .turbo
 .vercel
+apps/extension/evals/results
+apps/extension/store/generated
+apps/extension/store/screenshots

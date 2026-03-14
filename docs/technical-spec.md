@@ -1,68 +1,70 @@
-# Architecture Brief
+# Technical Reference
 
-## Context and Constraints
-
-`Style Capture` is a Chrome extension that captures the computed CSS of a selected DOM subtree, maps it to Tailwind utilities, and copies a Claude-ready `style_capture` prompt to the clipboard. The scaffold prioritizes:
-
-- Manifest V3
-- Least-privilege access with `activeTab`
-- Vite + React + TypeScript
-- shadcn-style extension pages
-- Tailwind v4 only inside extension-owned pages
-- Local-only processing with no remote upload path
-- Zero-click workflow: toolbar icon → pick element → clipboard
-
-## Repo Shape
+## Monorepo Shape
 
 ```text
-src/
-  background/   MV3 service worker — icon click handler, capture pipeline
-  components/   Shared React UI and shadcn-style primitives
-  lib/          Types, storage, message contracts, utility helpers
-  options/      Settings page
-  runtime/      Self-contained injected scripts (picker, toast)
-  styles/       Tailwind v4 theme and base styles
+apps/
+  extension/   MV3 Chrome extension and injected picker runtime
+  cli/         Playwright-based capture CLI
+  web/         Next.js marketing site
+packages/
+  core/        Shared capture/export/mapping logic
 ```
 
-## Runtime Architecture
+`Style Capture` has two capture entry points:
 
-### Extension Surfaces
+- the extension captures the currently active tab through `chrome.scripting.executeScript`
+- the CLI captures a URL and selector through Playwright
 
-- `options.html`
-  Stores default extraction behavior in `chrome.storage.local`.
-- `src/background/index.ts`
-  Listens for `chrome.action.onClicked`, injects the picker, processes capture results, copies the structured prompt to clipboard, and shows a toast notification.
+Both flows converge on the same shared export path in `packages/core`.
 
-### Injection Model
+## Workspace Responsibilities
 
-The picker is injected on demand with `chrome.scripting.executeScript({ func: runPicker })`.
+### `apps/extension`
+
+- Owns the MV3 service worker, injected picker, options page, and Chrome Web Store assets
+- Captures computed CSS from a selected DOM subtree
+- Stores settings in `chrome.storage.local`
+- Copies the final `style_capture` handoff through an injected clipboard writer
+
+### `apps/cli`
+
+- Launches Playwright against a target URL
+- Resolves a CSS selector to a single element subtree
+- Produces the same `style_capture` export shape as the extension
+
+### `apps/web`
+
+- Hosts the marketing site for `style-capture.blode.co`
+- Includes `/store/*` routes used to generate Chrome Web Store assets and screenshots
+
+### `packages/core`
+
+- Defines shared capture types
+- Maps computed CSS to Tailwind utilities
+- Formats the Claude-facing `style_capture` export
+
+## Extension Runtime Architecture
+
+The extension injects the picker on demand with `chrome.scripting.executeScript({ func: runPicker })`.
 
 Why this shape:
 
-- It keeps permissions tight: `activeTab`, `scripting`, `storage`
-- It avoids a permanent content script across arbitrary sites
-- It works with final rendered DOM and `getComputedStyle()`
-- It keeps Tailwind off host pages, preventing Preflight leaks
+- Keeps permissions tight: `activeTab`, `scripting`, `storage`
+- Avoids a permanent content script on arbitrary sites
+- Works against the final rendered DOM and `getComputedStyle()`
+- Keeps Tailwind out of host pages, which avoids Preflight leaks
 
-## Capture Flow
+Primary extension surfaces:
 
-1. User clicks the extension toolbar icon.
-2. `chrome.action.onClicked` fires in the background service worker, which loads settings and injects the picker into the active tab.
-3. The injected picker mounts a Shadow DOM overlay for highlighting and instructions.
-4. Hover updates the target. `Shift` climbs to a parent element. `Alt` descends to the first child. `Escape` cancels.
-5. Click captures:
-   - sanitized structural `outerHTML`
-   - computed longhand styles
-   - bounding boxes
-   - pseudo-elements when enabled
-   - compact capture metadata for downstream formatting and evals
-   - stable node ids plus parent/child relations
-6. Background receives the capture, runs Tailwind mapping, formats the Claude `style_capture` export, and injects a clipboard-write script into the active tab.
-7. A toast notification confirms the copy via an injected Shadow DOM overlay.
+- `src/background/index.ts` — icon click handling, capture orchestration, clipboard handoff
+- `src/runtime/run-picker.ts` — self-contained injected picker and DOM capture logic
+- `src/runtime/show-toast.ts` — self-contained injected success/error toast
+- `src/options/` — extension-owned settings UI
 
-## Data Contract
+## Shared Capture Contract
 
-`CaptureResult` is intentionally stable for downstream mapping.
+`CaptureResult` is the stable handoff between capture, mapping, and export.
 
 ```ts
 interface CaptureResult {
@@ -98,68 +100,68 @@ interface CaptureResult {
 - `styles`
 - `pseudo.before` / `pseudo.after`
 
-## Tailwind Mapping Layer
+## Tailwind Mapping and Export
 
-The Tailwind conversion pass is derived from `CaptureResult` and does not mutate the raw capture payload.
+The mapping pass derives `TailwindMappingResult` from `CaptureResult` without mutating the raw payload.
 
-`TailwindMappingResult` stores:
-
-- per-element suggested class strings
-- per-match confidence scores and mapping strategies
-- unsupported or review-required styles
-
-The mapping feeds the Claude export formatter, which packages:
+The Claude export formatter packages:
 
 - a top-level `style_capture` block
 - sanitized subtree HTML
 - computed CSS grouped by captured element
-- Tailwind suggestions plus open questions
-- a compact instruction-first handoff structure
+- Tailwind suggestions
+- open questions where the capture is ambiguous
 
 Mapping rules prefer:
 
 - semantic Tailwind utilities when the computed value maps cleanly
 - scale-based utilities when the value matches Tailwind defaults
 - arbitrary values when the property maps cleanly but the value is custom
-- arbitrary property utilities when the CSS concept exists but does not fit a stock utility well
-- explicit review notes for layout-derived values like computed width, height, insets, and grid tracks
+- explicit review notes for layout-derived values such as width, height, insets, and grid tracks
 
 ## Security and Data Minimization
 
-- Sensitive form state is stripped from serialized HTML.
-- Inline event handler attributes, URL-bearing attributes, and executable/embed-style tags are removed from the sanitized clone.
-- Claude export is derived locally from the sanitized payload and never becomes a transport for unsanitized page markup.
-- No host permissions are declared persistently.
-- No page data is sent off-device.
-- Tailwind CSS is not injected into web pages. The picker and toast use isolated inline CSS inside Shadow DOM roots.
+- Sensitive form state is stripped from serialized HTML
+- Inline event handlers, URL-bearing attributes, and executable/embed-style tags are removed from the sanitized clone
+- No host permissions are declared persistently
+- No page data is uploaded by the repo
+- Tailwind CSS is not injected into host pages
 
-## Build and Tooling Decisions
+## Tooling
 
-- `@crxjs/vite-plugin`
-  Vite-native MV3 bundling and manifest handling.
-- `@tailwindcss/vite`
-  Tailwind v4 integration for extension pages.
-- `Biome + Ultracite`
-  Formatting, import hygiene, and stricter consistency rules.
-- `vite-plugin-zip-pack`
-  Produces a release zip after a successful build.
+- Turbo orchestrates workspace scripts from the repo root
+- `oxlint` is the repo linter
+- `oxfmt` is the repo formatter
+- `npm run check` chains `lint`, `format:check`, `check-types`, and `test`
+- Generated outputs are ignored centrally through `.oxlintrc.json` and `.gitignore`
 
 ## Validation Commands
 
+Repo-wide:
+
 ```bash
-npm run check-types
 npm run lint
-npm run check
+npm run format:check
+npm run check-types
 npm run test
+npm run check
 npm run build
+```
+
+Workspace-targeted:
+
+```bash
+npm --workspace @style-capture/extension run check
+npm --workspace @style-capture/web run check
+npm --workspace apps/cli run check
 ```
 
 ## Known Gaps
 
-- Theme-token lookup against a project Tailwind config is not implemented yet.
-- Cross-frame capture is not implemented yet.
-- Closed shadow roots remain inaccessible.
-- DOMParser is unavailable in the MV3 service worker, so the Claude export falls back to original CSS selectors instead of `data-lc` annotations when run from the background.
+- Theme-token lookup against a project Tailwind config is not implemented yet
+- Cross-frame capture is not implemented yet
+- Closed shadow roots remain inaccessible
+- DOMParser is unavailable in the MV3 service worker, so the Claude export falls back to original CSS selectors instead of `data-lc` annotations when it runs from the background
 
 ## Sources
 
@@ -167,6 +169,5 @@ npm run build
 - Chrome `chrome.scripting`: https://developer.chrome.com/docs/extensions/reference/api/scripting
 - Chrome content scripts and isolated worlds: https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts
 - CRXJS introduction: https://crxjs.dev/guide/introduction/
-- shadcn Vite install: https://ui.shadcn.com/docs/installation/vite
 - Tailwind Vite install: https://tailwindcss.com/docs/installation/using-vite
 - MDN `getComputedStyle()`: https://developer.mozilla.org/en-US/docs/Web/API/Window/getComputedStyle

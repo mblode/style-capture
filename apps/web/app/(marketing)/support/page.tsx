@@ -4,10 +4,10 @@ import { JsonLd } from "@/components/shared/json-ld";
 import { buildBreadcrumbSchema, createPublicMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPublicMetadata({
-  title: "Support",
   description:
     "Get help with the Style Capture Chrome extension. Contact us for support, feedback, or general inquiries.",
   path: "/support",
+  title: "Support",
 });
 
 export default function SupportPage(): React.JSX.Element {

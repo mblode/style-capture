@@ -4,24 +4,24 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 const glide = localFont({
+  display: "swap",
   src: [{ path: "../public/glide-variable.woff2" }],
   variable: "--font-glide",
   weight: "400 900",
-  display: "swap",
 });
 
 export const metadata: Metadata = {
+  description: "Style Capture Chrome Extension",
   metadataBase: new URL("https://style-capture.blode.co"),
+  other: {
+    "apple-mobile-web-app-title": "Style Capture",
+  },
   title: {
     default: "Style Capture",
     template: "%s | Style Capture",
   },
-  description: "Style Capture Chrome Extension",
   verification: {
     google: "mFwyBIbXTaKK4uF_NA0MzVWFyY40hPgBjFObg3rje04",
-  },
-  other: {
-    "apple-mobile-web-app-title": "Style Capture",
   },
 };
 

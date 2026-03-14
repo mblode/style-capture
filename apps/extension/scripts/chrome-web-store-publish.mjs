@@ -52,7 +52,7 @@ Examples:
 const TOKEN_SCOPE = "https://www.googleapis.com/auth/chromewebstore";
 const DEFAULT_PACKAGE_PATH = join(ROOT, "release", "style-capture.zip");
 
-function parseArgs(argv) {
+const parseArgs = (argv) => {
   const args = argv.slice(2);
   const options = {
     command: undefined,
@@ -95,9 +95,9 @@ function parseArgs(argv) {
   }
 
   return options;
-}
+};
 
-function getEnv(name) {
+const getEnv = (name) => {
   const value = process.env[name];
 
   if (!value) {
@@ -105,21 +105,16 @@ function getEnv(name) {
   }
 
   return value;
-}
+};
 
-async function getAccessToken() {
-  if (
-    process.env.CWS_SERVICE_ACCOUNT_KEY_PATH ||
-    (process.env.CWS_SERVICE_ACCOUNT_EMAIL &&
-      process.env.CWS_SERVICE_ACCOUNT_PRIVATE_KEY)
-  ) {
-    return await getServiceAccountAccessToken();
-  }
+const base64UrlEncode = (value) =>
+  Buffer.from(value)
+    .toString("base64")
+    .replaceAll("=", "")
+    .replaceAll("+", "-")
+    .replaceAll("/", "_");
 
-  return await getRefreshTokenAccessToken();
-}
-
-async function getRefreshTokenAccessToken() {
+const getRefreshTokenAccessToken = async () => {
   const clientId = getEnv("CWS_CLIENT_ID");
   const clientSecret = getEnv("CWS_CLIENT_SECRET");
   const refreshToken = getEnv("CWS_REFRESH_TOKEN");
@@ -148,17 +143,9 @@ async function getRefreshTokenAccessToken() {
   }
 
   return payload.access_token;
-}
+};
 
-function base64UrlEncode(value) {
-  return Buffer.from(value)
-    .toString("base64")
-    .replaceAll("=", "")
-    .replaceAll("+", "-")
-    .replaceAll("/", "_");
-}
-
-async function getServiceAccountAccessToken() {
+const getServiceAccountAccessToken = async () => {
   const keyPath = process.env.CWS_SERVICE_ACCOUNT_KEY_PATH;
   const fileCredentials = keyPath
     ? JSON.parse(readFileSync(resolve(process.cwd(), keyPath), "utf8"))
@@ -214,9 +201,21 @@ async function getServiceAccountAccessToken() {
   }
 
   return payload.access_token;
-}
+};
 
-async function requestJson(url, init, dryRun) {
+const getAccessToken = async () => {
+  if (
+    process.env.CWS_SERVICE_ACCOUNT_KEY_PATH ||
+    (process.env.CWS_SERVICE_ACCOUNT_EMAIL &&
+      process.env.CWS_SERVICE_ACCOUNT_PRIVATE_KEY)
+  ) {
+    return await getServiceAccountAccessToken();
+  }
+
+  return await getRefreshTokenAccessToken();
+};
+
+const requestJson = async (url, init, dryRun) => {
   if (dryRun) {
     return {
       dryRun: true,
@@ -246,9 +245,9 @@ async function requestJson(url, init, dryRun) {
   }
 
   return payload;
-}
+};
 
-async function requestUpload(url, accessToken, filePath, dryRun, method) {
+const requestUpload = async (url, accessToken, filePath, dryRun, method) => {
   if (dryRun) {
     return {
       dryRun: true,
@@ -266,7 +265,7 @@ async function requestUpload(url, accessToken, filePath, dryRun, method) {
 
   const packageBuffer = readFileSync(filePath);
   const response = await fetch(url, {
-    body: packageBuffer,
+    ...(method !== "GET" && { body: packageBuffer }),
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/zip",
@@ -282,10 +281,10 @@ async function requestUpload(url, accessToken, filePath, dryRun, method) {
   }
 
   return payload;
-}
+};
 
-async function runCommand(options) {
-  const command = options.command;
+const runCommand = async (options) => {
+  const { command } = options;
 
   if (!command || options.help) {
     process.stdout.write(HELP_TEXT);
@@ -300,7 +299,7 @@ async function runCommand(options) {
   };
 
   switch (command) {
-    case "create-v1":
+    case "create-v1": {
       return requestUpload(
         "https://www.googleapis.com/upload/chromewebstore/v1.1/items?uploadType=media",
         accessToken,
@@ -308,6 +307,7 @@ async function runCommand(options) {
         options.dryRun,
         "POST"
       );
+    }
 
     case "update-v1": {
       const itemId = getEnv("CWS_EXTENSION_ID");
@@ -366,34 +366,34 @@ async function runCommand(options) {
         ) {
           const upload = await runCommand({
             ...options,
-            command: "upload-v2",
             _accessToken: accessToken,
+            command: "upload-v2",
           });
           const publish = await runCommand({
             ...options,
-            command: "publish-v2",
             _accessToken: accessToken,
+            command: "publish-v2",
           });
           return { publish, upload };
         }
 
         const upload = await runCommand({
           ...options,
-          command: "update-v1",
           _accessToken: accessToken,
+          command: "update-v1",
         });
         const publish = await runCommand({
           ...options,
-          command: "publish-v1",
           _accessToken: accessToken,
+          command: "publish-v1",
         });
         return { publish, upload };
       }
 
       const create = await runCommand({
         ...options,
-        command: "create-v1",
         _accessToken: accessToken,
+        command: "create-v1",
       });
 
       return {
@@ -402,20 +402,20 @@ async function runCommand(options) {
       };
     }
 
-    default:
+    default: {
       throw new Error(`Unknown command: ${command}`);
-  }
-}
-
-runCommand(parseArgs(process.argv))
-  .then((result) => {
-    if (typeof result !== "undefined") {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     }
-  })
-  .catch((error) => {
-    process.stderr.write(
-      `${error instanceof Error ? error.message : String(error)}\n`
-    );
-    process.exit(1);
-  });
+  }
+};
+
+try {
+  const result = await runCommand(parseArgs(process.argv));
+  if (result !== undefined) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  }
+} catch (error) {
+  process.stderr.write(
+    `${error instanceof Error ? error.message : String(error)}\n`
+  );
+  process.exit(1);
+}

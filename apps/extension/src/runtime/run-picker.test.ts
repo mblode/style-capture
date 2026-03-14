@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import {
-  type CaptureCancelledMessage,
-  type CaptureCompletedMessage,
   MESSAGE_TYPE_CAPTURE_CANCELLED,
   MESSAGE_TYPE_CAPTURE_COMPLETED,
+} from "@/lib/messages.ts";
+import type {
+  CaptureCancelledMessage,
+  CaptureCompletedMessage,
 } from "@/lib/messages.ts";
 import type { CaptureSettings } from "@/lib/types.ts";
 
@@ -16,13 +16,13 @@ const settings: CaptureSettings = {
   includePseudoElements: true,
 };
 
-function createRect(
+const createRect = (
   left: number,
   top: number,
   width: number,
   height: number
-): DOMRect {
-  return {
+): DOMRect =>
+  ({
     bottom: top + height,
     height,
     left,
@@ -32,29 +32,28 @@ function createRect(
     width,
     x: left,
     y: top,
-  } as DOMRect;
-}
+  }) as DOMRect;
 
-function mockRect(
+const mockRect = (
   element: Element,
   left: number,
   top: number,
   width: number,
   height: number
-): void {
+): void => {
   vi.spyOn(element, "getBoundingClientRect").mockReturnValue(
     createRect(left, top, width, height)
   );
-}
+};
 
-function createPointerEvent(
+const createPointerEvent = (
   type: "pointerdown" | "pointermove",
   target: EventTarget,
   options: {
     clientX?: number;
     clientY?: number;
   } = {}
-): Event {
+): Event => {
   const event = new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
@@ -68,9 +67,9 @@ function createPointerEvent(
   });
 
   return event;
-}
+};
 
-function getPickerHost(): HTMLDivElement {
+const getPickerHost = (): HTMLDivElement => {
   const host = document.querySelector<HTMLDivElement>(
     "#style-capture-picker-host"
   );
@@ -79,18 +78,31 @@ function getPickerHost(): HTMLDivElement {
   }
 
   return host;
-}
+};
 
-function getTooltip(host: HTMLDivElement): HTMLDivElement {
+const getTooltip = (host: HTMLDivElement): HTMLDivElement => {
   const tooltip = host.shadowRoot?.querySelector<HTMLDivElement>(".tooltip");
   if (!tooltip) {
     throw new Error("Picker tooltip was not mounted.");
   }
 
   return tooltip;
-}
+};
 
-describe("runPicker", () => {
+const getSendMessageCall = (index: number): [unknown] => {
+  const { calls } = vi.mocked(chrome.runtime.sendMessage).mock;
+  const call = calls[index];
+  if (!call) {
+    throw new Error(
+      `Expected sendMessage call at index ${index} but found none.`
+    );
+  }
+  return call as [unknown];
+};
+
+/* eslint-disable vitest/max-expects -- picker tests verify many DOM properties per interaction */
+describe("runPicker()", () => {
+  // eslint-disable-next-line vitest/no-hooks -- shared picker cleanup and chrome mock reset needed before each test
   beforeEach(() => {
     const view = window as Window & {
       __STYLE_CAPTURE_PICKER__?: {
@@ -109,13 +121,13 @@ describe("runPicker", () => {
     Object.defineProperty(globalThis, "CSS", {
       configurable: true,
       value: {
-        ...(globalThis.CSS ?? {}),
+        ...globalThis.CSS,
         escape: (value: string) => value,
       },
     });
     document.title = "Vitest Page";
     vi.mocked(chrome.runtime.sendMessage).mockReset();
-    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue(undefined);
+    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue();
   });
 
   it("mounts one overlay, injects the inspect cursor, and cleans up on escape", async () => {
@@ -142,7 +154,7 @@ describe("runPicker", () => {
     );
     await Promise.resolve();
 
-    const [message] = vi.mocked(chrome.runtime.sendMessage).mock.calls[0] ?? [];
+    const [message] = getSendMessageCall(0);
     const payload = message as CaptureCancelledMessage | undefined;
 
     expect(payload?.type).toBe(MESSAGE_TYPE_CAPTURE_CANCELLED);
@@ -173,16 +185,16 @@ describe("runPicker", () => {
     );
 
     const host = getPickerHost();
-    const frame = host.shadowRoot?.querySelector<HTMLDivElement>(".frame");
+    const frameEl = host.shadowRoot?.querySelector<HTMLDivElement>(".frame");
     const tooltip = getTooltip(host);
     const tooltipLabel =
       tooltip.querySelector<HTMLSpanElement>(".tooltip__label");
 
-    expect(frame?.hidden).toBe(false);
-    expect(frame?.style.transform).toBe("translate(40px, 20px)");
-    expect(frame?.style.width).toBe("80px");
-    expect(frame?.style.height).toBe("30px");
-    expect(tooltip.hidden).toBe(false);
+    expect(frameEl?.hidden).toBeFalsy();
+    expect(frameEl?.style.transform).toBe("translate(40px, 20px)");
+    expect(frameEl?.style.width).toBe("80px");
+    expect(frameEl?.style.height).toBe("30px");
+    expect(tooltip.hidden).toBeFalsy();
     expect(tooltip.style.left).toBe("120px");
     expect(tooltip.style.top).toBe("62px");
     expect(tooltip.style.getPropertyValue("--tooltip-edge-offset")).toBe("0px");
@@ -247,7 +259,7 @@ describe("runPicker", () => {
 
     expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(1);
 
-    const [message] = vi.mocked(chrome.runtime.sendMessage).mock.calls[0] ?? [];
+    const [message] = getSendMessageCall(0);
     const payload = message as CaptureCompletedMessage | undefined;
 
     expect(payload?.type).toBe(MESSAGE_TYPE_CAPTURE_COMPLETED);
@@ -263,6 +275,73 @@ describe("runPicker", () => {
     expect(
       document.querySelector("#style-capture-picker-cursor-style")
     ).toBeNull();
+  });
+
+  it("omits hidden descendants from exported html when hidden elements are disabled", async () => {
+    const root = document.createElement("div");
+    root.id = "capture-root";
+
+    const visible = document.createElement("span");
+    visible.textContent = "Visible";
+
+    const hidden = document.createElement("span");
+    hidden.textContent = "Hidden";
+    hidden.style.display = "none";
+
+    root.append(visible, hidden);
+    document.body.append(root);
+    mockRect(root, 8, 12, 64, 48);
+
+    expect(runPicker({ ...settings, includePseudoElements: false })).toBe(
+      "activated"
+    );
+
+    document.dispatchEvent(
+      createPointerEvent("pointermove", root, {
+        clientX: 48,
+        clientY: 40,
+      })
+    );
+    document.dispatchEvent(createPointerEvent("pointerdown", root));
+    await Promise.resolve();
+
+    const [message] = getSendMessageCall(0);
+    const payload = message as CaptureCompletedMessage | undefined;
+
+    expect(payload?.capture.order).toStrictEqual(["node-0", "node-1"]);
+    expect(payload?.capture.rootOuterHtml).toContain("Visible");
+    expect(payload?.capture.rootOuterHtml).not.toContain("Hidden");
+  });
+
+  it("omits hidden descendants with inline style display:none from exported html", async () => {
+    const root = document.createElement("div");
+    root.id = "capture-root";
+    root.innerHTML = [
+      '<span class="visible-copy">Visible copy</span>',
+      '<span class="hidden-copy" style="display:none">Hidden copy</span>',
+    ].join("");
+    document.body.append(root);
+    mockRect(root, 8, 12, 64, 48);
+
+    expect(runPicker({ ...settings, includePseudoElements: false })).toBe(
+      "activated"
+    );
+
+    document.dispatchEvent(
+      createPointerEvent("pointermove", root, {
+        clientX: 48,
+        clientY: 40,
+      })
+    );
+    document.dispatchEvent(createPointerEvent("pointerdown", root));
+    await Promise.resolve();
+
+    const [message] = getSendMessageCall(0);
+    const payload = message as CaptureCompletedMessage | undefined;
+
+    expect(payload?.capture.rootOuterHtml).toContain("Visible copy");
+    expect(payload?.capture.rootOuterHtml).not.toContain("Hidden copy");
+    expect(payload?.capture.order).toHaveLength(2);
   });
 
   it("strips browser defaults and repeated inherited values in curated captures", async () => {
@@ -294,18 +373,24 @@ describe("runPicker", () => {
     document.dispatchEvent(createPointerEvent("pointerdown", root));
     await Promise.resolve();
 
-    const [message] = vi.mocked(chrome.runtime.sendMessage).mock.calls[0] ?? [];
+    const [message] = getSendMessageCall(0);
     const payload = message as CaptureCompletedMessage | undefined;
-    const capture = payload?.capture;
+    const captureResult = payload?.capture;
 
-    expect(capture?.elements["node-0"]?.styles).toEqual(
+    expect(captureResult?.elements["node-0"]?.styles).toStrictEqual(
       expect.objectContaining({
         color: "rgb(255, 0, 0)",
         display: "flex",
       })
     );
-    expect(capture?.elements["node-1"]?.styles).not.toHaveProperty("color");
-    expect(capture?.elements["node-1"]?.styles).not.toHaveProperty("display");
-    expect(capture?.elements["node-2"]?.styles).not.toHaveProperty("display");
+    expect(captureResult?.elements["node-1"]?.styles).not.toHaveProperty(
+      "color"
+    );
+    expect(captureResult?.elements["node-1"]?.styles).not.toHaveProperty(
+      "display"
+    );
+    expect(captureResult?.elements["node-2"]?.styles).not.toHaveProperty(
+      "display"
+    );
   });
 });

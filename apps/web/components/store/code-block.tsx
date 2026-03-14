@@ -1,9 +1,10 @@
+/* eslint-disable react/no-danger -- shiki-generated HTML from server-side code highlighting */
 import { codeToHtml } from "shiki";
 
 import { Card } from "@/components/store/card";
 import { cn } from "@/lib/utils";
 
-export async function CodeBlock({
+export const CodeBlock = async ({
   code,
   lang = "xml",
   label,
@@ -15,7 +16,7 @@ export async function CodeBlock({
   label?: string;
   className?: string;
   style?: React.CSSProperties;
-}) {
+}) => {
   const html = await codeToHtml(code.trim(), {
     lang,
     theme: "github-light",
@@ -35,4 +36,4 @@ export async function CodeBlock({
       />
     </Card>
   );
-}
+};

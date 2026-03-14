@@ -18,7 +18,7 @@ export interface RunOptions {
  * Non-interactive capture — designed for agent/skill usage.
  * Returns the formatted style_capture prompt as a string.
  */
-export async function run(options: RunOptions): Promise<string> {
+export const run = async (options: RunOptions): Promise<string> => {
   const settings: CaptureSettings = {
     ...createDefaultSettings(),
     captureMode: options.mode ?? "curated",
@@ -54,53 +54,4 @@ export async function run(options: RunOptions): Promise<string> {
   } finally {
     await browser.close();
   }
-}
-
-function parseArgs(argv: string[]): RunOptions {
-  const args = argv.slice(2);
-
-  // Support both positional and flag-based args
-  let url: string | undefined;
-  let selector: string | undefined;
-  let mode: "curated" | "full" = "curated";
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === "--mode" && args[i + 1]) {
-      mode = args[i + 1] as "curated" | "full";
-      i++;
-    } else if (arg === "--url" && args[i + 1]) {
-      url = args[i + 1];
-      i++;
-    } else if (arg === "--selector" && args[i + 1]) {
-      selector = args[i + 1];
-      i++;
-    } else if (!url) {
-      url = arg;
-    } else if (!selector) {
-      selector = arg;
-    }
-  }
-
-  if (!(url && selector)) {
-    process.stderr.write(
-      "Usage: style-capture <url> <selector> [--mode curated|full]\n"
-    );
-    process.stderr.write(
-      "       style-capture --url <url> --selector <selector>\n"
-    );
-    process.exit(1);
-  }
-
-  return { url, selector, mode };
-}
-
-const options = parseArgs(process.argv);
-run(options)
-  .then((result) => {
-    process.stdout.write(result);
-  })
-  .catch((error) => {
-    process.stderr.write(`Error: ${String(error)}\n`);
-    process.exit(1);
-  });
+};
