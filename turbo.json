@@ -17,7 +17,9 @@
       "cache": false
     },
     "format:check": {},
-    "check-types": {},
+    "check-types": {
+      "dependsOn": ["^build"]
+    },
     "test": {
       "cache": false
     }
