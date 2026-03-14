@@ -2,7 +2,24 @@
   "name": "style-capture",
   "version": "0.0.2",
   "description": "Capture computed CSS and HTML from web pages, map to Tailwind utilities",
+  "keywords": [
+    "ai",
+    "claude",
+    "css",
+    "html",
+    "style-capture",
+    "tailwind"
+  ],
+  "homepage": "https://github.com/mblode/style-capture/tree/main/apps/cli",
+  "bugs": {
+    "url": "https://github.com/mblode/style-capture/issues"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mblode/style-capture.git",
+    "directory": "apps/cli"
+  },
   "bin": {
     "style-capture": "./dist/cli.js"
   },
