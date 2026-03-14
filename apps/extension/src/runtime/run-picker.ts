@@ -6,26 +6,21 @@ import type {
   PseudoElementSnapshot,
 } from "@/lib/types.ts";
 
-export type PickerRunResult = "activated" | "already-active";
+export type PickerRunResult = "activated" | "deactivated";
 
 // eslint-disable-next-line unicorn/consistent-function-scoping -- all inner functions must remain inside runPicker because this is a self-contained script injected via chrome.scripting.executeScript
 export const runPicker = (settings: CaptureSettings): PickerRunResult => {
   const PICKER_KEY = "__STYLE_CAPTURE_PICKER__";
   const CURSOR_STYLE_ID = "style-capture-picker-cursor-style";
-  const INSPECT_CURSOR =
-    'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27%23000000%27 d=%27M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z%27/%3E%3C/svg%3E") 12 12, crosshair';
-  const GRAB_PURPLE_RGB = "0, 0, 0";
-  const FRAME_BORDER_COLOR = `rgba(${GRAB_PURPLE_RGB}, 0.5)`;
-  const FRAME_FILL_COLOR = `rgba(${GRAB_PURPLE_RGB}, 0.08)`;
+  const INSPECT_CURSOR = "crosshair";
+  const GRAB_RGB = "67, 137, 245";
+  const FRAME_BORDER_COLOR = `rgba(${GRAB_RGB}, 1)`;
+  const FRAME_FILL_COLOR = `rgba(${GRAB_RGB}, 0.08)`;
   const LABEL_VIEWPORT_MARGIN = 8;
-  const LABEL_GAP = 4;
   const LABEL_MAX_WIDTH = 280;
-  const LABEL_ARROW_MAX_SIZE = 8;
-  const LABEL_ARROW_MIN_SIZE = 4;
-  const LABEL_ARROW_WIDTH_RATIO = 0.2;
-  const LABEL_ARROW_EDGE_MARGIN = 16;
-  const TOOLTIP_MAX_SEGMENTS = 3;
-  const TOOLTIP_TOKEN_MAX_LENGTH = 24;
+  const TOOLTIP_CURSOR_OFFSET_X = 4;
+  const TOOLTIP_CURSOR_OFFSET_Y = 4;
+  const TOOLTIP_TEXT_MAX_LENGTH = 30;
   const OMITTED_ELEMENT_NAMES = new Set([
     "base",
     "iframe",
@@ -167,7 +162,8 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
   };
 
   if (view[PICKER_KEY]) {
-    return "already-active";
+    view[PICKER_KEY].cleanup();
+    return "deactivated";
   }
 
   // --- Pure helper functions (no closure dependencies) ---
@@ -242,24 +238,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     );
   };
 
-  const truncateToken = (value: string): string => {
-    if (value.length <= TOOLTIP_TOKEN_MAX_LENGTH) {
-      return value;
-    }
-
-    return `${value.slice(0, TOOLTIP_TOKEN_MAX_LENGTH - 3)}...`;
-  };
-
   // --- Functions that use closure variables ---
-
-  const getTooltipArrowSize = (labelWidth: number): number => {
-    if (labelWidth <= 0) {
-      return LABEL_ARROW_MAX_SIZE;
-    }
-
-    const scaledSize = labelWidth * LABEL_ARROW_WIDTH_RATIO;
-    return clamp(scaledSize, LABEL_ARROW_MIN_SIZE, LABEL_ARROW_MAX_SIZE);
-  };
 
   const getSafeAttributes = (element: Element): Record<string, string> => {
     const safeAttributes: Record<string, string> = {};
@@ -704,10 +683,8 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
       pointer-events: none;
       width: max-content;
       max-width: min(${LABEL_MAX_WIDTH}px, calc(100vw - 16px));
-      color: #000;
-      filter: drop-shadow(0px 1px 2px rgba(81, 81, 81, 0.25));
+      filter: drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3));
       font-family:
-        "Geist",
         "Glide",
         ui-sans-serif,
         system-ui,
@@ -717,82 +694,21 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
         sans-serif;
       font-size: 13px;
       line-height: 16px;
-      transform: translateX(calc(-50% + var(--tooltip-edge-offset, 0px)));
       transition: opacity 100ms ease-out;
       user-select: none;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-    .tooltip__arrow {
-      position: absolute;
-      width: 0;
-      height: 0;
-      left: 50%;
-      border-left: var(--tooltip-arrow-size, 8px) solid transparent;
-      border-right: var(--tooltip-arrow-size, 8px) solid transparent;
-      transform: translateX(-50%);
-    }
-    .tooltip[data-arrow-position="bottom"] .tooltip__arrow {
-      top: 0;
-      border-bottom: var(--tooltip-arrow-size, 8px) solid #fff;
-      transform: translate(-50%, -100%);
-    }
-    .tooltip[data-arrow-position="top"] .tooltip__arrow {
-      bottom: 0;
-      border-top: var(--tooltip-arrow-size, 8px) solid #fff;
-      transform: translate(-50%, 100%);
-    }
     .tooltip__panel {
-      contain: layout;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 5px;
-      width: fit-content;
-      height: fit-content;
-      max-width: 100%;
-      padding: 0;
-      border-radius: 10px;
-      background: #fff;
-      font-synthesis: none;
-      corner-shape: superellipse(1.25);
-    }
-    .tooltip__content {
-      contain: layout;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      width: fit-content;
-      height: fit-content;
-    }
-    .tooltip__label-row {
-      contain: layout;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 8px;
-      width: fit-content;
-      height: fit-content;
-    }
-    .tooltip__label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      max-width: 280px;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #232425;
+      color: #fff;
       white-space: nowrap;
       font-weight: 500;
-      height: fit-content;
-      flex-shrink: 0;
-    }
-    .tooltip__label-prefix {
-      color: rgba(0, 0, 0, 0.5);
-    }
-    .tooltip__label-target {
-      color: #000;
+      font-synthesis: none;
     }
   `;
 
@@ -803,34 +719,10 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
   const tooltip = document.createElement("div");
   tooltip.className = "tooltip";
   tooltip.hidden = true;
-  tooltip.dataset.arrowPosition = "bottom";
-
-  const tooltipArrow = document.createElement("div");
-  tooltipArrow.className = "tooltip__arrow";
-
   const tooltipPanel = document.createElement("div");
   tooltipPanel.className = "tooltip__panel";
 
-  const tooltipContent = document.createElement("div");
-  tooltipContent.className = "tooltip__content";
-
-  const tooltipLabelRow = document.createElement("div");
-  tooltipLabelRow.className = "tooltip__label-row";
-
-  const tooltipLabel = document.createElement("span");
-  tooltipLabel.className = "tooltip__label";
-
-  const tooltipLabelPrefix = document.createElement("span");
-  tooltipLabelPrefix.className = "tooltip__label-prefix";
-
-  const tooltipLabelTarget = document.createElement("span");
-  tooltipLabelTarget.className = "tooltip__label-target";
-
-  tooltipLabel.append(tooltipLabelPrefix, tooltipLabelTarget);
-  tooltipLabelRow.append(tooltipLabel);
-  tooltipContent.append(tooltipLabelRow);
-  tooltipPanel.append(tooltipContent);
-  tooltip.append(tooltipArrow, tooltipPanel);
+  tooltip.append(tooltipPanel);
 
   shadowRoot.append(styleEl, highlightFrame, tooltip);
   mountRoot.append(host);
@@ -854,66 +746,28 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
 
   // --- Overlay + tooltip update functions ---
 
-  const buildHoverSegment = (element: Element): string => {
+  const buildHoverLabel = (element: Element): string => {
     const tagName = element.tagName.toLowerCase();
 
-    if (element.id) {
-      return `${tagName}#${truncateToken(element.id)}`;
+    let textContent = "";
+    for (const node of element.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent?.trim();
+        if (text) {
+          textContent = text;
+          break;
+        }
+      }
     }
 
-    const firstClassName = [...element.classList].find(Boolean);
-    if (firstClassName) {
-      return `${tagName}.${truncateToken(firstClassName)}`;
+    if (textContent) {
+      if (textContent.length > TOOLTIP_TEXT_MAX_LENGTH) {
+        textContent = `${textContent.slice(0, TOOLTIP_TEXT_MAX_LENGTH)}...`;
+      }
+      return `${tagName} \u201C${textContent}\u201D`;
     }
 
     return tagName;
-  };
-
-  const buildHoverLabelParts = (
-    element: Element
-  ): {
-    prefix: string;
-    target: string;
-  } => {
-    const segments: string[] = [];
-    let current: Element | null = element;
-
-    while (
-      current &&
-      current.nodeType === Node.ELEMENT_NODE &&
-      segments.length < TOOLTIP_MAX_SEGMENTS
-    ) {
-      segments.unshift(buildHoverSegment(current));
-      current = current.parentElement;
-    }
-
-    const targetSegment = segments.at(-1) ?? "";
-    const prefixSegments = segments.slice(0, -1);
-
-    return {
-      prefix:
-        prefixSegments.length > 0 ? `${prefixSegments.join(" > ")} > ` : "",
-      target: targetSegment,
-    };
-  };
-
-  const updateTooltipArrowPosition = (
-    labelWidth: number,
-    edgeOffsetX: number
-  ): void => {
-    if (labelWidth <= 0) {
-      tooltipArrow.style.left = "50%";
-      return;
-    }
-
-    const labelHalfWidth = labelWidth / 2;
-    const arrowCenter = clamp(
-      labelHalfWidth - edgeOffsetX,
-      Math.min(LABEL_ARROW_EDGE_MARGIN, labelHalfWidth),
-      Math.max(labelWidth - LABEL_ARROW_EDGE_MARGIN, labelHalfWidth)
-    );
-
-    tooltipArrow.style.left = `${arrowCenter}px`;
   };
 
   const updateFrame = (target: Element): void => {
@@ -927,12 +781,16 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     highlightFrame.style.borderRadius = computedStyle.borderRadius || "0px";
   };
 
-  const updateTooltip = (target: Element, pointerX: number | null): void => {
-    const label = buildHoverLabelParts(target);
-    tooltipLabelPrefix.textContent = label.prefix;
-    tooltipLabelPrefix.hidden = label.prefix.length === 0;
-    tooltipLabelTarget.textContent = label.target;
+  const updateTooltip = (
+    target: Element,
+    pointerX: number | null,
+    pointerY: number | null
+  ): void => {
+    tooltipPanel.textContent = buildHoverLabel(target);
     tooltip.hidden = false;
+    // Force layout so getBoundingClientRect returns real dimensions
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    tooltip.offsetHeight;
 
     const box = target.getBoundingClientRect();
     const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
@@ -940,50 +798,44 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     const panelRect = tooltipPanel.getBoundingClientRect();
     const labelWidth =
       panelRect.width || tooltipPanel.scrollWidth || tooltipPanel.offsetWidth;
-    const arrowSize = getTooltipArrowSize(labelWidth);
     const tooltipRect = tooltip.getBoundingClientRect();
     const labelHeight =
       tooltipRect.height ||
       tooltip.scrollHeight ||
       tooltip.offsetHeight ||
-      panelRect.height + arrowSize;
+      panelRect.height;
+
     const anchorX = pointerX ?? box.left + box.width / 2;
-    const labelHalfWidth = labelWidth / 2;
+    const anchorY = pointerY ?? box.top;
 
-    let edgeOffsetX = 0;
-    if (labelWidth > 0) {
-      const labelLeft = anchorX - labelHalfWidth;
-      const labelRight = anchorX + labelHalfWidth;
+    let left = anchorX + TOOLTIP_CURSOR_OFFSET_X;
+    let top = anchorY - labelHeight - TOOLTIP_CURSOR_OFFSET_Y;
 
-      if (labelRight > viewportWidth - LABEL_VIEWPORT_MARGIN) {
-        edgeOffsetX = viewportWidth - LABEL_VIEWPORT_MARGIN - labelRight;
-      }
-
-      if (labelLeft + edgeOffsetX < LABEL_VIEWPORT_MARGIN) {
-        edgeOffsetX = LABEL_VIEWPORT_MARGIN - labelLeft;
-      }
+    if (left + labelWidth > viewportWidth - LABEL_VIEWPORT_MARGIN) {
+      left = anchorX - labelWidth - TOOLTIP_CURSOR_OFFSET_X;
     }
+    left = Math.max(left, LABEL_VIEWPORT_MARGIN);
 
-    let top = box.bottom + arrowSize + LABEL_GAP;
-    let arrowPosition: "bottom" | "top" = "bottom";
-    if (top + labelHeight > viewportHeight - LABEL_VIEWPORT_MARGIN) {
-      top = box.top - labelHeight - arrowSize - LABEL_GAP;
-      arrowPosition = "top";
+    if (top < LABEL_VIEWPORT_MARGIN) {
+      top = anchorY + TOOLTIP_CURSOR_OFFSET_Y + 20;
     }
+    top = clamp(
+      top,
+      LABEL_VIEWPORT_MARGIN,
+      viewportHeight - labelHeight - LABEL_VIEWPORT_MARGIN
+    );
 
-    top = Math.max(top, LABEL_VIEWPORT_MARGIN);
-
-    tooltip.dataset.arrowPosition = arrowPosition;
-    tooltip.style.setProperty("--tooltip-arrow-size", `${arrowSize}px`);
-    tooltip.style.setProperty("--tooltip-edge-offset", `${edgeOffsetX}px`);
-    tooltip.style.left = `${anchorX}px`;
+    tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;
-    updateTooltipArrowPosition(labelWidth, edgeOffsetX);
   };
 
-  const updateOverlay = (target: Element, pointerX: number | null): void => {
+  const updateOverlay = (
+    target: Element,
+    pointerX: number | null,
+    pointerY: number | null
+  ): void => {
     updateFrame(target);
-    updateTooltip(target, pointerX);
+    updateTooltip(target, pointerX, pointerY);
   };
 
   // --- State (must be defined before event handlers that reference it) ---
@@ -1032,7 +884,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     state.pointerX = event.clientX;
     state.pointerY = event.clientY;
     state.currentTarget = nextTarget;
-    updateOverlay(nextTarget, event.clientX);
+    updateOverlay(nextTarget, event.clientX, event.clientY);
   };
 
   const handlePointerMove = (event: PointerEvent): void => {
@@ -1050,6 +902,8 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     document.removeEventListener("mouseover", handleMouseMove, true);
     // eslint-disable-next-line no-use-before-define -- circular: cleanup removes handlers that reference cleanup; all invoked at event time
     document.removeEventListener("pointerdown", handlePointerDown, true);
+    // eslint-disable-next-line no-use-before-define -- circular: cleanup removes handlers that reference cleanup; all invoked at event time
+    document.removeEventListener("click", handleClick, true);
     // eslint-disable-next-line no-use-before-define -- circular: cleanup removes handlers that reference cleanup; all invoked at event time
     document.removeEventListener("keydown", handleKeyDown, true);
     defaultStyleCache.cleanup();
@@ -1077,7 +931,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
 
     try {
       const capture = buildCapture(target, settings);
-      cleanup();
+      tooltipPanel.textContent = "Copied to clipboard";
       (async () => {
         try {
           await chrome.runtime.sendMessage({
@@ -1089,7 +943,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
         }
       })();
     } catch (error) {
-      cleanup();
+      tooltipPanel.textContent = "Capture failed";
       (async () => {
         try {
           await chrome.runtime.sendMessage({
@@ -1101,6 +955,13 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
         }
       })();
     }
+  };
+
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside runPicker: self-contained injected script
+  const handleClick = (event: MouseEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
@@ -1127,7 +988,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
       const parent = state.currentTarget.parentElement;
       if (parent) {
         state.currentTarget = parent;
-        updateOverlay(parent, state.pointerX);
+        updateOverlay(parent, state.pointerX, state.pointerY);
       }
       return;
     }
@@ -1136,7 +997,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
       const child = state.currentTarget.firstElementChild;
       if (child) {
         state.currentTarget = child;
-        updateOverlay(child, state.pointerX);
+        updateOverlay(child, state.pointerX, state.pointerY);
       }
     }
   };
@@ -1149,6 +1010,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
   document.addEventListener("mousemove", handleMouseMove, true);
   document.addEventListener("mouseover", handleMouseMove, true);
   document.addEventListener("pointerdown", handlePointerDown, true);
+  document.addEventListener("click", handleClick, true);
   document.addEventListener("keydown", handleKeyDown, true);
   return "activated";
 };

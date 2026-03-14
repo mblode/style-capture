@@ -89,7 +89,7 @@ const getTooltip = (host: HTMLDivElement): HTMLDivElement => {
   return tooltip;
 };
 
-const getSendMessageCall = (index: number): [unknown] => {
+const getSendMessageCall = (index: number) => {
   const { calls } = vi.mocked(chrome.runtime.sendMessage).mock;
   const call = calls[index];
   if (!call) {
@@ -97,7 +97,7 @@ const getSendMessageCall = (index: number): [unknown] => {
       `Expected sendMessage call at index ${index} but found none.`
     );
   }
-  return call as [unknown];
+  return call;
 };
 
 /* eslint-disable vitest/max-expects -- picker tests verify many DOM properties per interaction */
@@ -257,7 +257,7 @@ describe("runPicker()", () => {
     document.dispatchEvent(createPointerEvent("pointerdown", root));
     await Promise.resolve();
 
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(1);
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledOnce();
 
     const [message] = getSendMessageCall(0);
     const payload = message as CaptureCompletedMessage | undefined;
