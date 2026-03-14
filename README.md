@@ -4,68 +4,64 @@
 
 <h1 align="center">Style Capture</h1>
 
-<p align="center">Capture computed CSS and sanitized HTML from live pages, map the result to Tailwind, and hand it off to an AI agent or CLI workflow.</p>
+<p align="center">Capture CSS from any element and map it to Tailwind — as a Chrome extension, CLI, or AI agent skill.</p>
 
-## Workspace Layout
+## Install
 
-- `apps/extension` — Chrome extension that injects the picker, captures a DOM subtree, and copies a `style_capture` handoff.
-- `apps/cli` — Playwright-based CLI for capturing the same handoff from a URL and CSS selector.
-- `apps/web` — Next.js marketing site for `style-capture.blode.co`.
-- `packages/core` — Shared Tailwind mapping and Claude export logic.
+### Chrome Extension
 
-## Requirements
+1. Download `style-capture.zip` from the [latest release](https://github.com/mblode/style-capture/releases/latest)
+2. Unzip, open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**
 
-- Node.js `22+`
-- npm `10+`
+### Agent Skill
 
-## Setup
+Add Style Capture as a skill for Claude Code, Cursor, or any compatible AI agent:
 
 ```bash
-npm install
+npx skills add mblode/style-capture -g --all -y
 ```
 
-## Repo Commands
+Then use it with `/style-capture`:
 
-- `npm run dev` — run workspace dev servers through Turbo
-- `npm run build` — build all workspaces that define `build`
-- `npm run lint` — run workspace `oxlint` scripts
-- `npm run lint:fix` — apply safe Oxlint fixes in each workspace
-- `npm run format` — format tracked files with workspace `oxfmt` scripts
-- `npm run format:check` — verify Oxfmt formatting
-- `npm run check-types` — run workspace type-check scripts
-- `npm run test` — run workspace tests
-- `npm run check` — run `lint`, `format:check`, `check-types`, and `test`
-- `npm run fix` — run `format` and `lint:fix`
+```
+/style-capture https://example.com .hero
+```
 
-Target one workspace:
+### CLI
 
 ```bash
-npm --workspace @style-capture/extension run lint
-npm --workspace @style-capture/web run dev
-npm --workspace apps/cli run start -- https://example.com ".hero"
+# Run directly via npx
+npx style-capture https://example.com "main" --mode curated
+
+# Or install globally
+npm i -g style-capture
+style-capture https://example.com ".hero"
 ```
 
-## Extension Workflow
+## Usage
 
-1. Run `npm --workspace @style-capture/extension run dev`
-2. Open `chrome://extensions`
-3. Enable **Developer mode**
-4. Load `apps/extension/dist` as an unpacked extension
+### Chrome Extension
 
-CRXJS handles the local rebuild flow from there.
+1. Click the Style Capture icon on any website
+2. Hover and click the element you want to capture
+3. Paste into Claude Code, Cursor, or any AI agent
 
-## CLI Workflow
+Use **Shift** to select a parent, **Alt** for a child, **Escape** to cancel.
 
-```bash
-npm --workspace apps/cli run build
-npm --workspace apps/cli run start -- https://example.com ".hero"
+### CLI / Agent Skill
+
+Provide a URL and a CSS selector. The tool launches a headless browser, captures computed CSS from the element subtree, maps it to Tailwind utilities, and outputs a structured `<style_capture>` prompt.
+
+```
+style-capture <url> <selector> [--mode curated|full]
 ```
 
-The CLI launches Playwright, captures the matching element subtree, maps the computed styles to Tailwind utilities, and prints a structured `style_capture` export.
+- `curated` (default) — common visual properties only
+- `full` — all computed styles
 
 ## Privacy
 
-All capture, mapping, and export steps happen locally. The repo does not send captured page data to a remote service.
+All processing happens locally. Nothing leaves your device.
 
 ## License
 
