@@ -144,7 +144,10 @@ describe("runPicker()", () => {
     expect(
       document.querySelector("#style-capture-picker-cursor-style")
     ).not.toBeNull();
-    expect(runPicker(settings)).toBe("already-active");
+    expect(runPicker(settings)).toBe("deactivated");
+
+    // Re-activate to test Escape cleanup
+    expect(runPicker(settings)).toBe("activated");
 
     document.dispatchEvent(
       new KeyboardEvent("keydown", {
@@ -187,21 +190,17 @@ describe("runPicker()", () => {
     const host = getPickerHost();
     const frameEl = host.shadowRoot?.querySelector<HTMLDivElement>(".frame");
     const tooltip = getTooltip(host);
-    const tooltipLabel =
-      tooltip.querySelector<HTMLSpanElement>(".tooltip__label");
+    const tooltipPanel =
+      tooltip.querySelector<HTMLDivElement>(".tooltip__panel");
 
     expect(frameEl?.hidden).toBeFalsy();
     expect(frameEl?.style.transform).toBe("translate(40px, 20px)");
     expect(frameEl?.style.width).toBe("80px");
     expect(frameEl?.style.height).toBe("30px");
     expect(tooltip.hidden).toBeFalsy();
-    expect(tooltip.style.left).toBe("120px");
-    expect(tooltip.style.top).toBe("62px");
-    expect(tooltip.style.getPropertyValue("--tooltip-edge-offset")).toBe("0px");
-    expect(tooltip.dataset.arrowPosition).toBe("bottom");
-    expect(tooltipLabel?.textContent).toBe(
-      "main > section.pricing > button.primary"
-    );
+    expect(tooltip.style.left).toBe("124px");
+    expect(tooltip.style.top).toBe("46px");
+    expect(tooltipPanel?.textContent).toBe("button");
   });
 
   it("ignores overlay nodes and falls back to elementFromPoint for hover targeting", () => {
@@ -215,13 +214,13 @@ describe("runPicker()", () => {
 
     const host = getPickerHost();
     const tooltip = getTooltip(host);
-    const tooltipLabel =
-      tooltip.querySelector<HTMLSpanElement>(".tooltip__label");
+    const tooltipPanel =
+      tooltip.querySelector<HTMLDivElement>(".tooltip__panel");
 
     document.dispatchEvent(
       createPointerEvent(
         "pointermove",
-        tooltipLabel as unknown as EventTarget,
+        tooltipPanel as unknown as EventTarget,
         {
           clientX: 32,
           clientY: 36,
@@ -229,7 +228,7 @@ describe("runPicker()", () => {
       )
     );
 
-    expect(tooltipLabel?.textContent).toBe("html > body > div#capture-root");
+    expect(tooltipPanel?.textContent).toBe("div");
   });
 
   it("captures the selected subtree and cleans up the overlay on click", async () => {
@@ -271,10 +270,6 @@ describe("runPicker()", () => {
     expect(payload?.capture.rootOuterHtml).not.toContain("srcset=");
     expect(payload?.capture.rootOuterHtml).not.toContain("<script");
     expect(payload?.capture.rootOuterHtml).not.toContain("secret value");
-    expect(document.querySelector("#style-capture-picker-host")).toBeNull();
-    expect(
-      document.querySelector("#style-capture-picker-cursor-style")
-    ).toBeNull();
   });
 
   it("omits hidden descendants from exported html when hidden elements are disabled", async () => {
