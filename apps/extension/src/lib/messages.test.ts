@@ -1,10 +1,8 @@
-import { describe, expect, it } from "vitest";
-
 import { createDefaultSettings } from "./messages.ts";
 
-describe("createDefaultSettings", () => {
+describe("createDefaultSettings()", () => {
   it("returns the extension's default capture profile", () => {
-    expect(createDefaultSettings()).toEqual({
+    expect(createDefaultSettings()).toStrictEqual({
       captureMode: "curated",
       includeHiddenElements: false,
       includePseudoElements: true,

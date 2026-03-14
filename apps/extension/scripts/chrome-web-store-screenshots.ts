@@ -1,13 +1,13 @@
 import { createReadStream } from "node:fs";
 import { mkdir, readFile, stat } from "node:fs/promises";
 import http from "node:http";
-import { extname, join, resolve } from "node:path";
+import { extname, join, resolve as resolvePath } from "node:path";
 
 import { chromium } from "playwright-core";
 import ts from "typescript";
 
-const DEMO_ROOT = resolve(process.cwd(), "store/demo");
-const OUTPUT_ROOT = resolve(process.cwd(), "store/screenshots");
+const DEMO_ROOT = resolvePath(process.cwd(), "store/demo");
+const OUTPUT_ROOT = resolvePath(process.cwd(), "store/screenshots");
 const CHROME_EXECUTABLE =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const VIEWPORT = { height: 800, width: 1280 };
@@ -27,24 +27,90 @@ const CONTENT_TYPES = new Map<string, string>([
   [".woff2", "font/woff2"],
 ]);
 
-async function main() {
+const createStaticServer = (root: string) =>
+  http.createServer(async (request, response) => {
+    const requestPath =
+      request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
+    const filePath = resolvePath(root, `.${requestPath}`);
+
+    if (!filePath.startsWith(root)) {
+      response.writeHead(403);
+      response.end("Forbidden");
+      return;
+    }
+
+    try {
+      const fileStats = await stat(filePath);
+      if (!fileStats.isFile()) {
+        response.writeHead(404);
+        response.end("Not found");
+        return;
+      }
+
+      const contentType =
+        CONTENT_TYPES.get(extname(filePath).toLowerCase()) ??
+        "application/octet-stream";
+      response.writeHead(200, { "Content-Type": contentType });
+      createReadStream(filePath).pipe(response);
+    } catch {
+      response.writeHead(404);
+      response.end("Not found");
+    }
+  });
+
+const loadBrowserScript = async (
+  filePath: string,
+  exportName: string,
+  globalName: string
+) => {
+  const source = await readFile(filePath, "utf8");
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: filePath,
+  });
+
+  return `${outputText.replaceAll(`export function ${exportName}`, `function ${exportName}`)}
+window.${globalName} = ${exportName};`;
+};
+
+const listenOnRandomPort = (server: http.Server): Promise<void> =>
+  // eslint-disable-next-line promise/avoid-new -- server.listen is callback-based with no promise API
+  new Promise<void>((resolve) => {
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+
+const closeServer = (server: http.Server): Promise<void> =>
+  // eslint-disable-next-line promise/avoid-new -- server.close is callback-based with no promise API
+  new Promise<void>((resolve, reject) => {
+    // eslint-disable-next-line promise/prefer-await-to-callbacks -- server.close only accepts a callback
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+const main = async () => {
   await mkdir(OUTPUT_ROOT, { recursive: true });
 
   const runPickerScript = await loadBrowserScript(
-    resolve(process.cwd(), "src/runtime/run-picker.ts"),
+    resolvePath(process.cwd(), "src/runtime/run-picker.ts"),
     "runPicker",
     "__styleCaptureRunPicker"
   );
   const showToastScript = await loadBrowserScript(
-    resolve(process.cwd(), "src/runtime/show-toast.ts"),
+    resolvePath(process.cwd(), "src/runtime/show-toast.ts"),
     "showToast",
     "__styleCaptureShowToast"
   );
 
   const server = createStaticServer(DEMO_ROOT);
-  await new Promise<void>((resolveServer) => {
-    server.listen(0, "127.0.0.1", () => resolveServer());
-  });
+  await listenOnRandomPort(server);
 
   const address = server.address();
   if (!(address && typeof address === "object")) {
@@ -99,68 +165,9 @@ async function main() {
     });
   } finally {
     await browser.close();
-    await new Promise<void>((resolveServer, rejectServer) => {
-      server.close((error) => {
-        if (error) {
-          rejectServer(error);
-          return;
-        }
-
-        resolveServer();
-      });
-    });
+    await closeServer(server);
   }
-}
-
-function createStaticServer(root: string) {
-  return http.createServer(async (request, response) => {
-    const requestPath =
-      request.url === "/" ? "/index.html" : (request.url ?? "/index.html");
-    const filePath = resolve(root, `.${requestPath}`);
-
-    if (!filePath.startsWith(root)) {
-      response.writeHead(403);
-      response.end("Forbidden");
-      return;
-    }
-
-    try {
-      const fileStats = await stat(filePath);
-      if (!fileStats.isFile()) {
-        response.writeHead(404);
-        response.end("Not found");
-        return;
-      }
-
-      const contentType =
-        CONTENT_TYPES.get(extname(filePath).toLowerCase()) ??
-        "application/octet-stream";
-      response.writeHead(200, { "Content-Type": contentType });
-      createReadStream(filePath).pipe(response);
-    } catch {
-      response.writeHead(404);
-      response.end("Not found");
-    }
-  });
-}
-
-async function loadBrowserScript(
-  filePath: string,
-  exportName: string,
-  globalName: string
-) {
-  const source = await readFile(filePath, "utf8");
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-    fileName: filePath,
-  });
-
-  return `${outputText.replaceAll(`export function ${exportName}`, `function ${exportName}`)}
-window.${globalName} = ${exportName};`;
-}
+};
 
 declare global {
   interface Window {
@@ -169,8 +176,10 @@ declare global {
   }
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);
   process.exitCode = 1;
-});
+}

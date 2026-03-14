@@ -15,73 +15,67 @@ interface BreadcrumbItem {
   path: string;
 }
 
-export function createPublicMetadata({
+export const createPublicMetadata = ({
   description,
   path,
   title,
-}: PublicMetadataOptions): Metadata {
+}: PublicMetadataOptions): Metadata => {
   const url = new URL(path, siteUrl).toString();
 
   return {
-    title,
-    description,
     alternates: {
       canonical: path,
     },
+    description,
     openGraph: {
-      type: "website",
-      url,
-      title,
       description,
-      siteName,
       images: [
         {
+          alt: `${siteName} preview`,
+          height: 630,
           url: defaultOgImage,
           width: 1200,
-          height: 630,
-          alt: `${siteName} preview`,
         },
       ],
+      siteName,
+      title,
+      type: "website",
+      url,
     },
+    title,
     twitter: {
       card: "summary_large_image",
-      title,
       description,
       images: [defaultOgImage],
+      title,
     },
   };
-}
+};
 
-export function buildBreadcrumbSchema(
+export const buildBreadcrumbSchema = (
   items: BreadcrumbItem[]
-): Record<string, unknown> {
-  return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: items.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.name,
-      item: new URL(item.path, siteUrl).toString(),
-    })),
-  };
-}
+): Record<string, unknown> => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map((item, index) => ({
+    "@type": "ListItem",
+    item: new URL(item.path, siteUrl).toString(),
+    name: item.name,
+    position: index + 1,
+  })),
+});
 
-export function buildOrganizationSchema(): Record<string, unknown> {
-  return {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: siteName,
-    url: siteUrl,
-    logo: `${siteUrl}/apple-icon.png`,
-  };
-}
+export const buildOrganizationSchema = (): Record<string, unknown> => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  logo: `${siteUrl}/apple-icon.png`,
+  name: siteName,
+  url: siteUrl,
+});
 
-export function buildWebSiteSchema(): Record<string, unknown> {
-  return {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: siteName,
-    url: siteUrl,
-  };
-}
+export const buildWebSiteSchema = (): Record<string, unknown> => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteName,
+  url: siteUrl,
+});

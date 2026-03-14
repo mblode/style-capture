@@ -329,13 +329,13 @@ const FONT_WEIGHT_MAP = {
 
 const POSITION_KEYWORD_MAP = {
   "0% 0%": "top-left",
-  "0% 50%": "left",
   "0% 100%": "bottom-left",
+  "0% 50%": "left",
+  "100% 0%": "top-right",
+  "100% 100%": "bottom-right",
+  "100% 50%": "right",
   "50% 0%": "top",
   "50% 100%": "bottom",
-  "100% 0%": "top-right",
-  "100% 50%": "right",
-  "100% 100%": "bottom-right",
 } satisfies Record<string, string>;
 
 const DIMENSION_KEYWORD_MAP = {
@@ -354,667 +354,192 @@ const FONT_FAMILY_MAP = [
   { keyword: "serif", utility: "font-serif" },
 ] as const;
 
-const MAPPING_STEPS: MappingStep[] = [
-  mapDisplay,
-  mapPositioning,
-  mapFlexLayout,
-  mapGridLayout,
-  mapSpacing,
-  mapSizing,
-  mapTypographyBasics,
-  mapTypographyPresentation,
-  mapBackground,
-  mapBorder,
-  mapEffects,
-  mapOverflow,
-  mapObjectLayout,
-  mapPseudoElements,
+// --- Primitive utility helpers ---
+
+const roundToTwo = (value: number): number => Math.round(value * 100) / 100;
+
+const dedupe = (values?: string[]): string[] => [
+  ...new Set((values ?? []).filter(Boolean)),
 ];
 
-export function mapCaptureToTailwind(
-  capture: CaptureResult
-): TailwindMappingResult {
-  const elements: Record<string, TailwindElementMapping> = {};
-  const reviewQueue: TailwindReviewItem[] = [];
-  let cleanUtilityCount = 0;
-  let confidenceSum = 0;
-  let lowConfidenceElementCount = 0;
-  let mappedElementCount = 0;
-  let reviewUtilityCount = 0;
-  let unsupportedPropertyCount = 0;
-  let utilityCount = 0;
+const allEqual = (values: string[]): boolean =>
+  values.every((value) => value === values[0]);
 
-  for (const elementId of capture.order) {
-    const element = capture.elements[elementId];
-    if (!element) {
-      continue;
-    }
+const normalizeWhitespace = (value: string): string =>
+  value.replaceAll(/\s+/g, " ").trim();
 
-    const parent =
-      element.parentId === null
-        ? null
-        : (capture.elements[element.parentId] ?? null);
-    const mapping = mapElementSnapshot({
-      element,
-      parent,
-    });
-    elements[elementId] = mapping;
-
-    confidenceSum += mapping.confidence;
-    if (mapping.confidenceLabel === "low") {
-      lowConfidenceElementCount += 1;
-    }
-    if (mapping.matchCount > 0) {
-      mappedElementCount += 1;
-    }
-
-    unsupportedPropertyCount += mapping.unsupported.length;
-    cleanUtilityCount += mapping.suggestedMatchCount;
-    reviewUtilityCount += mapping.reviewMatchCount;
-    utilityCount += mapping.matches.length;
-
-    const reviewItem = buildReviewItem(mapping);
-    if (reviewItem) {
-      reviewQueue.push(reviewItem);
-    }
+const parseLength = (value: string): { unit: string; value: number } | null => {
+  const match = value.trim().match(LENGTH_PATTERN);
+  if (!match) {
+    return null;
   }
 
-  reviewQueue.sort((left, right) => {
-    if (left.confidence !== right.confidence) {
-      return left.confidence - right.confidence;
-    }
+  return {
+    unit: match[2] ?? "px",
+    value: Number(match[1]),
+  };
+};
 
-    return right.unsupportedCount - left.unsupportedCount;
+const isZeroLength = (value: string): boolean => {
+  const length = parseLength(value);
+  return Boolean(length && Math.abs(length.value) <= 0.01);
+};
+
+const isTransparentColor = (value: string): boolean => {
+  const normalized = value.trim().replaceAll(/\s+/g, "").toLowerCase();
+  return normalized === "rgba(0,0,0,0)" || normalized === "transparent";
+};
+
+const normalizeColor = (value: string): string => {
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === "transparent" || isTransparentColor(trimmed)) {
+    return "transparent";
+  }
+
+  const rgbMatch = trimmed.match(RGB_PATTERN);
+  if (!rgbMatch) {
+    return trimmed;
+  }
+
+  const { 1: redRaw, 2: greenRaw, 3: blueRaw, 4: alpha } = rgbMatch;
+  const red = Number(redRaw).toString(16).padStart(2, "0");
+  const green = Number(greenRaw).toString(16).padStart(2, "0");
+  const blue = Number(blueRaw).toString(16).padStart(2, "0");
+
+  if (!alpha || alpha === "1") {
+    return `#${red}${green}${blue}`;
+  }
+
+  return trimmed.replaceAll(/\s+/g, "");
+};
+
+const sanitizeArbitraryValue = (value: string): string =>
+  value
+    .trim()
+    .replaceAll(/\s*,\s*/g, ",")
+    .replaceAll(/\s*\/\s*/g, "/")
+    .replaceAll(/\s+/g, "_");
+
+const createArbitraryUtility = (prefix: string, value: string): string =>
+  `${prefix}-[${sanitizeArbitraryValue(value)}]`;
+
+const createArbitraryPropertyClass = (
+  property: string,
+  value: string
+): string => `[${property}:${sanitizeArbitraryValue(value)}]`;
+
+const lookupMappedUtility = (
+  map: Record<string, string>,
+  value: string
+): string | null => map[value] ?? null;
+
+const labelFromConfidence = (confidence: number): TailwindConfidenceLabel => {
+  if (confidence >= 0.85) {
+    return "high";
+  }
+
+  if (confidence >= 0.62) {
+    return "medium";
+  }
+
+  return "low";
+};
+
+// --- Accumulator mutation helpers ---
+
+const addMatch = (
+  accumulator: MappingAccumulator,
+  match: TailwindMatchInput
+): void => {
+  const utility = match.utility.trim();
+  if (!utility) {
+    return;
+  }
+
+  const nextMatch: TailwindMatch = {
+    ...match,
+    label: labelFromConfidence(match.confidence),
+    notes: dedupe(match.notes),
+    sourceProperties: dedupe(match.sourceProperties),
+    sourceValues: dedupe(match.sourceValues),
+    utility,
+  };
+
+  const existing = accumulator.matches.find(
+    (entry) => entry.utility === utility
+  );
+  if (existing) {
+    existing.confidence = Math.max(existing.confidence, nextMatch.confidence);
+    existing.label = labelFromConfidence(existing.confidence);
+    existing.notes = dedupe([...existing.notes, ...nextMatch.notes]);
+    existing.sourceProperties = dedupe([
+      ...existing.sourceProperties,
+      ...nextMatch.sourceProperties,
+    ]);
+    existing.sourceValues = dedupe([
+      ...existing.sourceValues,
+      ...nextMatch.sourceValues,
+    ]);
+  } else {
+    accumulator.matches.push(nextMatch);
+  }
+
+  if (accumulator.classSet.has(utility)) {
+    return;
+  }
+
+  accumulator.classSet.add(utility);
+  accumulator.classes.push(utility);
+};
+
+const addUnsupported = (
+  accumulator: MappingAccumulator,
+  property: string,
+  value: string,
+  reason: string
+): void => {
+  const key = `${property}:${value}:${reason}`;
+  const exists = accumulator.unsupported.some(
+    (entry) => `${entry.property}:${entry.value}:${entry.reason}` === key
+  );
+  if (exists) {
+    return;
+  }
+
+  accumulator.unsupported.push({
+    property,
+    reason,
+    value,
   });
+};
 
-  const elementCount = capture.order.length;
-
-  return {
-    elements,
-    order: capture.order,
-    reviewQueue,
-    summary: {
-      averageConfidence: elementCount
-        ? roundToTwo(confidenceSum / elementCount)
-        : 0,
-      cleanUtilityCount,
-      elementCount,
-      lowConfidenceElementCount,
-      mappedElementCount,
-      reviewCount: reviewQueue.length,
-      reviewUtilityCount,
-      unsupportedPropertyCount,
-      utilityCount,
-    },
-  };
-}
-
-function mapElementSnapshot(context: MappingContext): TailwindElementMapping {
-  const accumulator = createAccumulator();
-
-  for (const step of MAPPING_STEPS) {
-    step(context, accumulator);
-  }
-
-  const confidence = calculateElementConfidence(accumulator);
-  const { reviewMatches, suggestedMatches } = splitMatchesForSuggestion(
-    accumulator.matches
-  );
-
-  return {
-    className: accumulator.classes.join(" "),
-    confidence,
-    confidenceLabel: labelFromConfidence(confidence),
-    elementId: context.element.id,
-    matchCount: accumulator.matches.length,
-    matches: accumulator.matches,
-    reviewClassName: reviewMatches.map((match) => match.utility).join(" "),
-    reviewMatchCount: reviewMatches.length,
-    selector: context.element.selector,
-    suggestedClassName: suggestedMatches
-      .map((match) => match.utility)
-      .join(" "),
-    suggestedMatchCount: suggestedMatches.length,
-    tagName: context.element.tagName,
-    unsupported: accumulator.unsupported,
-  };
-}
-
-function createAccumulator(): MappingAccumulator {
-  return {
-    classes: [],
-    classSet: new Set<string>(),
-    matches: [],
-    unsupported: [],
-  };
-}
-
-function mapDisplay(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const display = context.element.styles.display;
-  if (!display || display === "block") {
+const addCandidateMatch = (
+  accumulator: MappingAccumulator,
+  property: string,
+  value: string | undefined,
+  candidate: MatchCandidate | null
+): void => {
+  if (!(value && candidate)) {
     return;
   }
 
-  const utility = lookupMappedUtility(DISPLAY_MAP, display);
-  if (utility) {
-    addMatch(accumulator, {
-      confidence: HIGH_CONFIDENCE,
-      sourceProperties: ["display"],
-      sourceValues: [display],
-      strategy: "semantic",
-      utility,
-    });
-    return;
-  }
+  addMatch(accumulator, {
+    confidence: candidate.confidence,
+    notes: candidate.notes ?? [],
+    sourceProperties: property.includes("|") ? property.split("|") : [property],
+    sourceValues: [value],
+    strategy: candidate.strategy,
+    utility: candidate.utility,
+  });
+};
 
-  addUnsupported(
-    accumulator,
-    "display",
-    display,
-    "Display needs manual review."
-  );
-}
-
-function mapPositioning(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const { styles } = context.element;
-  const position = styles.position;
-  if (position && position !== "static") {
-    const utility = lookupMappedUtility(POSITION_MAP, position);
-    if (utility) {
-      addMatch(accumulator, {
-        confidence: HIGH_CONFIDENCE,
-        sourceProperties: ["position"],
-        sourceValues: [position],
-        strategy: "semantic",
-        utility,
-      });
-    }
-  }
-
-  if (!position || position === "static") {
-    return;
-  }
-
-  for (const property of ["top", "right", "bottom", "left"] as const) {
-    const value = styles[property];
-    if (!value || value === "auto") {
-      continue;
-    }
-
-    const candidate = buildDimensionCandidate(property, value, {
-      confidence: LOW_CONFIDENCE,
-      note: "Computed insets are layout-derived and need review.",
-    });
-    addCandidateMatch(accumulator, property, value, candidate);
-  }
-
-  const zIndex = styles["z-index"];
-  if (!zIndex || zIndex === "auto") {
-    return;
-  }
-
-  addCandidateMatch(
-    accumulator,
-    "z-index",
-    zIndex,
-    buildZIndexCandidate(zIndex)
-  );
-}
-
-function mapFlexLayout(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const { styles } = context.element;
-  const display = styles.display;
-  if (display !== "flex" && display !== "inline-flex") {
-    return;
-  }
-
-  addMappedUtility(
-    accumulator,
-    "flex-direction",
-    styles["flex-direction"],
-    FLEX_DIRECTION_MAP
-  );
-  addMappedUtility(
-    accumulator,
-    "flex-wrap",
-    styles["flex-wrap"],
-    FLEX_WRAP_MAP
-  );
-  addMappedUtility(
-    accumulator,
-    "justify-content",
-    styles["justify-content"],
-    JUSTIFY_CONTENT_MAP
-  );
-  addMappedUtility(
-    accumulator,
-    "align-items",
-    styles["align-items"],
-    ALIGN_ITEMS_MAP
-  );
-  addGapMatches(
-    accumulator,
-    styles.gap,
-    styles["row-gap"],
-    styles["column-gap"]
-  );
-  addFlexNumberMatch(accumulator, "flex-grow", styles["flex-grow"], "grow");
-  addFlexNumberMatch(
-    accumulator,
-    "flex-shrink",
-    styles["flex-shrink"],
-    "shrink"
-  );
-
-  const basis = styles["flex-basis"];
-  if (!basis || basis === "auto") {
-    return;
-  }
-
-  addCandidateMatch(
-    accumulator,
-    "flex-basis",
-    basis,
-    buildDimensionCandidate("basis", basis, {
-      confidence: MEDIUM_CONFIDENCE,
-    })
-  );
-}
-
-function mapGridLayout(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const { styles } = context.element;
-  const display = styles.display;
-  if (display !== "grid" && display !== "inline-grid") {
-    return;
-  }
-
-  addGapMatches(
-    accumulator,
-    styles.gap,
-    styles["row-gap"],
-    styles["column-gap"]
-  );
-  addMappedUtility(
-    accumulator,
-    "grid-auto-flow",
-    styles["grid-auto-flow"],
-    GRID_AUTO_FLOW_MAP
-  );
-
-  for (const [property, prefix] of [
-    ["grid-column-start", "col-start"],
-    ["grid-column-end", "col-end"],
-    ["grid-row-start", "row-start"],
-    ["grid-row-end", "row-end"],
-  ] as const) {
-    const value = styles[property];
-    if (!value || value === "auto") {
-      continue;
-    }
-
-    addMatch(accumulator, {
-      confidence: MEDIUM_CONFIDENCE,
-      sourceProperties: [property],
-      sourceValues: [value],
-      strategy: "arbitrary",
-      utility: createArbitraryUtility(prefix, value),
-    });
-  }
-
-  addArbitraryPropertyMatch(
-    accumulator,
-    "grid-template-columns",
-    styles["grid-template-columns"],
-    "Computed grid tracks lose authored repeat syntax."
-  );
-  addArbitraryPropertyMatch(
-    accumulator,
-    "grid-template-rows",
-    styles["grid-template-rows"],
-    "Computed grid tracks lose authored repeat syntax."
-  );
-}
-
-function mapSpacing(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  addBoxSpacingMatches(accumulator, "p", [
-    ["padding-top", context.element.styles["padding-top"]],
-    ["padding-right", context.element.styles["padding-right"]],
-    ["padding-bottom", context.element.styles["padding-bottom"]],
-    ["padding-left", context.element.styles["padding-left"]],
-  ]);
-  addBoxSpacingMatches(accumulator, "m", [
-    ["margin-top", context.element.styles["margin-top"]],
-    ["margin-right", context.element.styles["margin-right"]],
-    ["margin-bottom", context.element.styles["margin-bottom"]],
-    ["margin-left", context.element.styles["margin-left"]],
-  ]);
-}
-
-function mapSizing(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const { styles } = context.element;
-
-  for (const [property, prefix, confidence] of [
-    ["min-width", "min-w", MEDIUM_CONFIDENCE],
-    ["min-height", "min-h", MEDIUM_CONFIDENCE],
-    ["max-width", "max-w", MEDIUM_CONFIDENCE],
-    ["max-height", "max-h", MEDIUM_CONFIDENCE],
-    ["width", "w", LOW_CONFIDENCE],
-    ["height", "h", LOW_CONFIDENCE],
-  ] as const) {
-    const value = styles[property];
-    if (!shouldMapDimension(property, value)) {
-      continue;
-    }
-
-    addCandidateMatch(
-      accumulator,
-      property,
-      value,
-      buildDimensionCandidate(prefix, value, {
-        confidence,
-        note:
-          property === "width" || property === "height"
-            ? "Computed size values are often layout-dependent."
-            : undefined,
-      })
-    );
-  }
-}
-
-function mapTypographyBasics(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const { element, parent } = context;
-
-  addColorMatch(
-    accumulator,
-    "text",
-    "color",
-    element.styles.color,
-    shouldEmitInheritedValue(
-      "color",
-      element.styles.color,
-      parent?.styles.color
-    )
-  );
-  addFontFamilyMatch(
-    accumulator,
-    element.styles["font-family"],
-    shouldEmitInheritedValue(
-      "font-family",
-      element.styles["font-family"],
-      parent?.styles["font-family"]
-    )
-  );
-  addScaleMatch(
-    accumulator,
-    "font-size",
-    element.styles["font-size"],
-    shouldEmitInheritedValue(
-      "font-size",
-      element.styles["font-size"],
-      parent?.styles["font-size"]
-    ),
-    FONT_SIZE_SCALE,
-    "text",
-    "Font size required an arbitrary value."
-  );
-  addFontWeightMatch(
-    accumulator,
-    element.styles["font-weight"],
-    shouldEmitInheritedValue(
-      "font-weight",
-      element.styles["font-weight"],
-      parent?.styles["font-weight"]
-    )
-  );
-  addFontStyleMatch(
-    accumulator,
-    element.styles["font-style"],
-    shouldEmitInheritedValue(
-      "font-style",
-      element.styles["font-style"],
-      parent?.styles["font-style"]
-    )
-  );
-  addScaleMatch(
-    accumulator,
-    "line-height",
-    element.styles["line-height"],
-    shouldEmitInheritedValue(
-      "line-height",
-      element.styles["line-height"],
-      parent?.styles["line-height"]
-    ) && element.styles["line-height"] !== "normal",
-    LINE_HEIGHT_SCALE,
-    "leading",
-    "Line height required an arbitrary value."
-  );
-  addTrackingMatch(
-    accumulator,
-    element.styles["letter-spacing"],
-    shouldEmitInheritedValue(
-      "letter-spacing",
-      element.styles["letter-spacing"],
-      parent?.styles["letter-spacing"]
-    )
-  );
-}
-
-function mapTypographyPresentation(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const { element, parent } = context;
-
-  addMappedUtility(
-    accumulator,
-    "text-align",
-    element.styles["text-align"],
-    TEXT_ALIGN_MAP,
-    shouldEmitInheritedValue(
-      "text-align",
-      element.styles["text-align"],
-      parent?.styles["text-align"]
-    ) && !["left", "start"].includes(element.styles["text-align"] ?? "")
-  );
-  addMappedUtility(
-    accumulator,
-    "text-transform",
-    element.styles["text-transform"],
-    TEXT_TRANSFORM_MAP,
-    shouldEmitInheritedValue(
-      "text-transform",
-      element.styles["text-transform"],
-      parent?.styles["text-transform"]
-    ) && element.styles["text-transform"] !== "none"
-  );
-  addMappedUtility(
-    accumulator,
-    "white-space",
-    element.styles["white-space"],
-    WHITE_SPACE_MAP,
-    shouldEmitInheritedValue(
-      "white-space",
-      element.styles["white-space"],
-      parent?.styles["white-space"]
-    ) && element.styles["white-space"] !== "normal"
-  );
-  addMappedUtility(
-    accumulator,
-    "list-style-type",
-    element.styles["list-style-type"],
-    LIST_STYLE_MAP,
-    shouldEmitInheritedValue(
-      "list-style-type",
-      element.styles["list-style-type"],
-      parent?.styles["list-style-type"]
-    ) && element.styles["list-style-type"] !== "disc"
-  );
-  addDecorationLineMatches(accumulator, element.styles["text-decoration-line"]);
-  addColorMatch(
-    accumulator,
-    "decoration",
-    "text-decoration-color",
-    element.styles["text-decoration-color"],
-    element.styles["text-decoration-line"] !== "none" &&
-      Boolean(element.styles["text-decoration-color"])
-  );
-}
-
-function mapBackground(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  addColorMatch(
-    accumulator,
-    "bg",
-    "background-color",
-    context.element.styles["background-color"],
-    !isTransparentColor(context.element.styles["background-color"] ?? "")
-  );
-  addArbitraryPropertyMatch(
-    accumulator,
-    "background-image",
-    context.element.styles["background-image"],
-    "Background images are emitted as arbitrary properties."
-  );
-}
-
-function mapBorder(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  addUniformBorderMatch(context.element, accumulator);
-  addRadiusMatches(context.element, accumulator);
-}
-
-function mapEffects(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const { styles } = context.element;
-  addShadowMatch(accumulator, styles["box-shadow"]);
-  addOpacityMatch(accumulator, styles.opacity);
-  addArbitraryPropertyMatch(
-    accumulator,
-    "transform",
-    styles.transform,
-    "Computed transforms are emitted as raw properties."
-  );
-  addPositionMatch(
-    accumulator,
-    "origin",
-    "transform-origin",
-    styles["transform-origin"]
-  );
-
-  if (styles.visibility === "hidden") {
-    addMatch(accumulator, {
-      confidence: HIGH_CONFIDENCE,
-      sourceProperties: ["visibility"],
-      sourceValues: ["hidden"],
-      strategy: "semantic",
-      utility: "invisible",
-    });
-  }
-}
-
-function mapOverflow(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const overflowX = context.element.styles["overflow-x"];
-  const overflowY = context.element.styles["overflow-y"];
-  if (!(overflowX && overflowY)) {
-    return;
-  }
-
-  if (overflowX === overflowY && overflowX !== "visible") {
-    const suffix = lookupMappedUtility(OVERFLOW_MAP, overflowX);
-    if (suffix) {
-      addMatch(accumulator, {
-        confidence: HIGH_CONFIDENCE,
-        sourceProperties: ["overflow-x", "overflow-y"],
-        sourceValues: [overflowX, overflowY],
-        strategy: "semantic",
-        utility: `overflow-${suffix}`,
-      });
-    }
-    return;
-  }
-
-  addOverflowAxisMatch(accumulator, "overflow-x", overflowX);
-  addOverflowAxisMatch(accumulator, "overflow-y", overflowY);
-}
-
-function mapObjectLayout(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const objectFit = context.element.styles["object-fit"];
-  if (objectFit && objectFit !== "fill") {
-    const utility = lookupMappedUtility(OBJECT_FIT_MAP, objectFit);
-    if (utility) {
-      addMatch(accumulator, {
-        confidence: HIGH_CONFIDENCE,
-        sourceProperties: ["object-fit"],
-        sourceValues: [objectFit],
-        strategy: "semantic",
-        utility,
-      });
-    }
-  }
-
-  addObjectPositionMatch(
-    accumulator,
-    context.element.styles["object-position"]
-  );
-}
-
-function mapPseudoElements(
-  context: MappingContext,
-  accumulator: MappingAccumulator
-): void {
-  const pseudoKinds = Object.keys(context.element.pseudo);
-  if (pseudoKinds.length === 0) {
-    return;
-  }
-
-  addUnsupported(
-    accumulator,
-    "pseudo-elements",
-    pseudoKinds.join(", "),
-    "Pseudo-elements were captured, but Tailwind output still needs manual content utilities."
-  );
-}
-
-function addMappedUtility(
+const addMappedUtility = (
   accumulator: MappingAccumulator,
   property: string,
   value: string | undefined,
   map: Record<string, string>,
   shouldAdd = true
-): void {
+): void => {
   if (!(shouldAdd && value)) {
     return;
   }
@@ -1037,14 +562,330 @@ function addMappedUtility(
     strategy: "semantic",
     utility,
   });
-}
+};
 
-function addGapMatches(
+const addArbitraryPropertyMatch = (
+  accumulator: MappingAccumulator,
+  property: string,
+  value: string | undefined,
+  note: string
+): void => {
+  if (!value || value === "none") {
+    return;
+  }
+
+  addMatch(accumulator, {
+    confidence: LOW_CONFIDENCE,
+    notes: [note],
+    sourceProperties: [property],
+    sourceValues: [value],
+    strategy: "arbitrary",
+    utility: createArbitraryPropertyClass(property, value),
+  });
+};
+
+// --- Inherited value / dimension helpers ---
+
+const shouldEmitInheritedValue = (
+  property: string,
+  value: string | undefined,
+  parentValue: string | undefined
+): boolean => {
+  if (!value) {
+    return false;
+  }
+
+  if (!parentValue) {
+    return true;
+  }
+
+  if (property === "color") {
+    return normalizeColor(value) !== normalizeColor(parentValue);
+  }
+
+  return value !== parentValue;
+};
+
+const shouldMapDimension = (
+  property: string,
+  value: string | undefined
+): value is string => {
+  if (!value) {
+    return false;
+  }
+
+  if (property.startsWith("min-")) {
+    return value !== "0px" && value !== "auto";
+  }
+
+  if (property.startsWith("max-")) {
+    return value !== "none";
+  }
+
+  return value !== "auto";
+};
+
+// --- Candidate builders ---
+
+const buildSpacingCandidate = (
+  prefix: string,
+  value: string,
+  allowNegative: boolean
+): MatchCandidate | null => {
+  if (isZeroLength(value)) {
+    return null;
+  }
+
+  if (value === "auto" && prefix.startsWith("m")) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "semantic",
+      utility: `${prefix}-auto`,
+    };
+  }
+
+  const length = parseLength(value);
+  if (!length) {
+    return {
+      confidence: MEDIUM_CONFIDENCE,
+      notes: ["Spacing required an arbitrary value."],
+      strategy: "arbitrary",
+      utility: createArbitraryUtility(prefix, value),
+    };
+  }
+
+  if (length.value < 0 && !allowNegative) {
+    return null;
+  }
+
+  const token =
+    length.unit === "px" ? SPACING_SCALE.get(Math.abs(length.value)) : null;
+  if (!token) {
+    return {
+      confidence: MEDIUM_CONFIDENCE,
+      notes: ["Spacing required an arbitrary value."],
+      strategy: "arbitrary",
+      utility: createArbitraryUtility(prefix, value),
+    };
+  }
+
+  const baseUtility = token === "px" ? `${prefix}-px` : `${prefix}-${token}`;
+  return {
+    confidence: HIGH_CONFIDENCE,
+    strategy: "scale",
+    utility: length.value < 0 ? `-${baseUtility}` : baseUtility,
+  };
+};
+
+const buildDimensionCandidate = (
+  prefix: string,
+  value: string,
+  options: { confidence: number; note?: string }
+): MatchCandidate => {
+  if (value === "auto") {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "semantic",
+      utility: `${prefix}-auto`,
+    };
+  }
+
+  const keywordSuffix =
+    DIMENSION_KEYWORD_MAP[value as keyof typeof DIMENSION_KEYWORD_MAP];
+  if (keywordSuffix) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "semantic",
+      utility: `${prefix}-${keywordSuffix}`,
+    };
+  }
+
+  const length = parseLength(value);
+  const token =
+    length && length.unit === "px"
+      ? SPACING_SCALE.get(Math.abs(length.value))
+      : null;
+  if (token) {
+    return {
+      confidence: options.confidence,
+      notes: options.note ? [options.note] : [],
+      strategy: "scale",
+      utility: token === "px" ? `${prefix}-px` : `${prefix}-${token}`,
+    };
+  }
+
+  return {
+    confidence: options.confidence,
+    notes: options.note
+      ? [options.note]
+      : ["Length required an arbitrary value."],
+    strategy: "arbitrary",
+    utility: createArbitraryUtility(prefix, value),
+  };
+};
+
+const buildScaleCandidate = (
+  prefix: string,
+  value: string,
+  scale: Map<number, string>,
+  note: string
+): MatchCandidate => {
+  const length = parseLength(value);
+  const token = length && length.unit === "px" ? scale.get(length.value) : null;
+
+  if (token) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "scale",
+      utility: `${prefix}-${token}`,
+    };
+  }
+
+  return {
+    confidence: MEDIUM_CONFIDENCE,
+    notes: [note],
+    strategy: "arbitrary",
+    utility: createArbitraryUtility(prefix, value),
+  };
+};
+
+const buildColorCandidate = (
+  prefix: "bg" | "border" | "decoration" | "text",
+  value: string
+): MatchCandidate => {
+  const normalized = normalizeColor(value);
+  let semanticUtility: string | null = null;
+  if (normalized === "transparent") {
+    semanticUtility = `${prefix}-transparent`;
+  } else if (normalized === "#000000") {
+    semanticUtility = `${prefix}-black`;
+  } else if (normalized === "#ffffff") {
+    semanticUtility = `${prefix}-white`;
+  }
+
+  if (semanticUtility) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "semantic",
+      utility: semanticUtility,
+    };
+  }
+
+  return {
+    confidence: MEDIUM_CONFIDENCE,
+    strategy: "arbitrary",
+    utility: createArbitraryUtility(prefix, normalized),
+  };
+};
+
+const buildFontFamilyCandidate = (value: string): MatchCandidate => {
+  const normalized = value.toLowerCase();
+
+  for (const { keyword, utility } of FONT_FAMILY_MAP) {
+    if (normalized.includes(keyword)) {
+      return {
+        confidence: MEDIUM_CONFIDENCE,
+        notes: ["Mapped to the nearest generic Tailwind family."],
+        strategy: "heuristic",
+        utility,
+      };
+    }
+  }
+
+  return {
+    confidence: LOW_CONFIDENCE,
+    notes: ["Font family required an arbitrary property utility."],
+    strategy: "arbitrary",
+    utility: createArbitraryPropertyClass("font-family", value),
+  };
+};
+
+const buildBorderWidthCandidate = (
+  prefix: string,
+  value: string
+): MatchCandidate => {
+  const length = parseLength(value);
+  const token =
+    length && length.unit === "px"
+      ? BORDER_WIDTH_SCALE.get(length.value)
+      : null;
+
+  if (token !== undefined) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "scale",
+      utility: token ? `${prefix}-${token}` : prefix,
+    };
+  }
+
+  return {
+    confidence: MEDIUM_CONFIDENCE,
+    notes: ["Border width required an arbitrary value."],
+    strategy: "arbitrary",
+    utility: createArbitraryUtility(prefix, value),
+  };
+};
+
+const buildBorderColorCandidate = (value: string): MatchCandidate =>
+  buildColorCandidate("border", value);
+
+const buildRadiusCandidate = (
+  prefix: string,
+  value: string
+): MatchCandidate => {
+  const length = parseLength(value);
+  if (length && length.value >= 9999) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "semantic",
+      utility: `${prefix}-full`,
+    };
+  }
+
+  const token =
+    length && length.unit === "px" ? RADIUS_SCALE.get(length.value) : null;
+  if (token !== undefined) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "scale",
+      utility: token ? `${prefix}-${token}` : prefix,
+    };
+  }
+
+  return {
+    confidence: MEDIUM_CONFIDENCE,
+    notes: ["Border radius required an arbitrary value."],
+    strategy: "arbitrary",
+    utility: createArbitraryUtility(prefix, value),
+  };
+};
+
+const buildZIndexCandidate = (value: string): MatchCandidate => {
+  const numericValue = Number(value);
+  if (Number.isFinite(numericValue) && Z_INDEX_SCALE.has(numericValue)) {
+    return {
+      confidence: HIGH_CONFIDENCE,
+      strategy: "scale",
+      utility: `z-${numericValue}`,
+    };
+  }
+
+  return {
+    confidence: MEDIUM_CONFIDENCE,
+    notes: ["Resolved z-index required an arbitrary value."],
+    strategy: "arbitrary",
+    utility: `z-[${sanitizeArbitraryValue(value)}]`,
+  };
+};
+
+// --- Specific add*Match helpers ---
+
+const addGapMatches = (
   accumulator: MappingAccumulator,
   gap: string | undefined,
   rowGap: string | undefined,
   columnGap: string | undefined
-): void {
+): void => {
   if (gap && gap !== "normal" && !isZeroLength(gap)) {
     addCandidateMatch(
       accumulator,
@@ -1067,14 +908,14 @@ function addGapMatches(
     columnGap,
     columnGap ? buildSpacingCandidate("gap-x", columnGap, false) : null
   );
-}
+};
 
-function addFlexNumberMatch(
+const addFlexNumberMatch = (
   accumulator: MappingAccumulator,
   property: "flex-grow" | "flex-shrink",
   value: string | undefined,
   prefix: "grow" | "shrink"
-): void {
+): void => {
   if (!value) {
     return;
   }
@@ -1101,13 +942,50 @@ function addFlexNumberMatch(
     strategy,
     utility,
   });
-}
+};
 
-function addBoxSpacingMatches(
+const addAxisSpacingMatch = (
+  accumulator: MappingAccumulator,
+  prefix: string,
+  first: [string, string | undefined],
+  second: [string, string | undefined],
+  allowNegative: boolean
+): void => {
+  if (!(first[1] && second[1]) || first[1] !== second[1]) {
+    return;
+  }
+
+  addCandidateMatch(
+    accumulator,
+    `${first[0]}|${second[0]}`,
+    first[1],
+    buildSpacingCandidate(prefix, first[1], allowNegative)
+  );
+};
+
+const addEdgeSpacingMatch = (
+  accumulator: MappingAccumulator,
+  prefix: string,
+  entry: [string, string | undefined],
+  allowNegative: boolean
+): void => {
+  if (!entry[1] || isZeroLength(entry[1])) {
+    return;
+  }
+
+  addCandidateMatch(
+    accumulator,
+    entry[0],
+    entry[1],
+    buildSpacingCandidate(prefix, entry[1], allowNegative)
+  );
+};
+
+const addBoxSpacingMatches = (
   accumulator: MappingAccumulator,
   prefix: "m" | "p",
   entries: [string, string | undefined][]
-): void {
+): void => {
   const values = entries.map((entry) => entry[1]);
   if (values.some((value) => !value)) {
     return;
@@ -1147,52 +1025,15 @@ function addBoxSpacingMatches(
   addEdgeSpacingMatch(accumulator, `${prefix}r`, entries[1], prefix === "m");
   addEdgeSpacingMatch(accumulator, `${prefix}b`, entries[2], prefix === "m");
   addEdgeSpacingMatch(accumulator, `${prefix}l`, entries[3], prefix === "m");
-}
+};
 
-function addAxisSpacingMatch(
-  accumulator: MappingAccumulator,
-  prefix: string,
-  first: [string, string | undefined],
-  second: [string, string | undefined],
-  allowNegative: boolean
-): void {
-  if (!(first[1] && second[1]) || first[1] !== second[1]) {
-    return;
-  }
-
-  addCandidateMatch(
-    accumulator,
-    `${first[0]}|${second[0]}`,
-    first[1],
-    buildSpacingCandidate(prefix, first[1], allowNegative)
-  );
-}
-
-function addEdgeSpacingMatch(
-  accumulator: MappingAccumulator,
-  prefix: string,
-  entry: [string, string | undefined],
-  allowNegative: boolean
-): void {
-  if (!entry[1] || isZeroLength(entry[1])) {
-    return;
-  }
-
-  addCandidateMatch(
-    accumulator,
-    entry[0],
-    entry[1],
-    buildSpacingCandidate(prefix, entry[1], allowNegative)
-  );
-}
-
-function addColorMatch(
+const addColorMatch = (
   accumulator: MappingAccumulator,
   prefix: "bg" | "decoration" | "text",
   property: string,
   value: string | undefined,
   shouldAdd: boolean
-): void {
+): void => {
   if (!(shouldAdd && value)) {
     return;
   }
@@ -1203,13 +1044,13 @@ function addColorMatch(
     value,
     buildColorCandidate(prefix, value)
   );
-}
+};
 
-function addFontFamilyMatch(
+const addFontFamilyMatch = (
   accumulator: MappingAccumulator,
   value: string | undefined,
   shouldAdd: boolean
-): void {
+): void => {
   if (!(shouldAdd && value)) {
     return;
   }
@@ -1220,9 +1061,9 @@ function addFontFamilyMatch(
     value,
     buildFontFamilyCandidate(value)
   );
-}
+};
 
-function addScaleMatch(
+const addScaleMatch = (
   accumulator: MappingAccumulator,
   property: string,
   value: string | undefined,
@@ -1230,7 +1071,7 @@ function addScaleMatch(
   scale: Map<number, string>,
   prefix: string,
   note: string
-): void {
+): void => {
   if (!(shouldAdd && value)) {
     return;
   }
@@ -1241,13 +1082,13 @@ function addScaleMatch(
     value,
     buildScaleCandidate(prefix, value, scale, note)
   );
-}
+};
 
-function addFontWeightMatch(
+const addFontWeightMatch = (
   accumulator: MappingAccumulator,
   value: string | undefined,
   shouldAdd: boolean
-): void {
+): void => {
   if (!(shouldAdd && value) || value === "400") {
     return;
   }
@@ -1263,13 +1104,13 @@ function addFontWeightMatch(
       ? `font-${utility}`
       : createArbitraryUtility("font", value),
   });
-}
+};
 
-function addFontStyleMatch(
+const addFontStyleMatch = (
   accumulator: MappingAccumulator,
   value: string | undefined,
   shouldAdd: boolean
-): void {
+): void => {
   if (!(shouldAdd && value) || value === "normal") {
     return;
   }
@@ -1282,13 +1123,13 @@ function addFontStyleMatch(
     strategy: "semantic",
     utility,
   });
-}
+};
 
-function addTrackingMatch(
+const addTrackingMatch = (
   accumulator: MappingAccumulator,
   value: string | undefined,
   shouldAdd: boolean
-): void {
+): void => {
   if (!(shouldAdd && value) || value === "normal" || isZeroLength(value)) {
     return;
   }
@@ -1301,12 +1142,12 @@ function addTrackingMatch(
     strategy: "arbitrary",
     utility: createArbitraryUtility("tracking", value),
   });
-}
+};
 
-function addDecorationLineMatches(
+const addDecorationLineMatches = (
   accumulator: MappingAccumulator,
   value: string | undefined
-): void {
+): void => {
   if (!value || value === "none") {
     return;
   }
@@ -1331,12 +1172,12 @@ function addDecorationLineMatches(
       utility,
     });
   }
-}
+};
 
-function addUniformBorderMatch(
+const addUniformBorderMatch = (
   element: ElementSnapshot,
   accumulator: MappingAccumulator
-): void {
+): void => {
   const widths = [
     element.styles["border-top-width"],
     element.styles["border-right-width"],
@@ -1416,12 +1257,12 @@ function addUniformBorderMatch(
     color,
     buildBorderColorCandidate(color)
   );
-}
+};
 
-function addRadiusMatches(
+const addRadiusMatches = (
   element: ElementSnapshot,
   accumulator: MappingAccumulator
-): void {
+): void => {
   const values = [
     element.styles["border-top-left-radius"],
     element.styles["border-top-right-radius"],
@@ -1453,12 +1294,12 @@ function addRadiusMatches(
     radiusValues.join(", "),
     "Mixed corner radii need manual review."
   );
-}
+};
 
-function addShadowMatch(
+const addShadowMatch = (
   accumulator: MappingAccumulator,
   value: string | undefined
-): void {
+): void => {
   if (!value || value === "none") {
     return;
   }
@@ -1470,12 +1311,12 @@ function addShadowMatch(
     strategy: "arbitrary",
     utility: createArbitraryUtility("shadow", value),
   });
-}
+};
 
-function addOpacityMatch(
+const addOpacityMatch = (
   accumulator: MappingAccumulator,
   value: string | undefined
-): void {
+): void => {
   if (!value || value === "1") {
     return;
   }
@@ -1497,14 +1338,14 @@ function addOpacityMatch(
       ? `opacity-${percent}`
       : createArbitraryUtility("opacity", value),
   });
-}
+};
 
-function addPositionMatch(
+const addPositionMatch = (
   accumulator: MappingAccumulator,
   prefix: string,
   property: string,
   value: string | undefined
-): void {
+): void => {
   if (!value || value === "50% 50%") {
     return;
   }
@@ -1523,13 +1364,13 @@ function addPositionMatch(
     strategy: named ? "semantic" : "arbitrary",
     utility: named ?? createArbitraryUtility(prefix, value),
   });
-}
+};
 
-function addOverflowAxisMatch(
+const addOverflowAxisMatch = (
   accumulator: MappingAccumulator,
   property: "overflow-x" | "overflow-y",
   value: string
-): void {
+): void => {
   if (value === "visible") {
     return;
   }
@@ -1552,124 +1393,645 @@ function addOverflowAxisMatch(
     strategy: "semantic",
     utility: `${property}-${suffix}`,
   });
-}
+};
 
-function addObjectPositionMatch(
+const addObjectPositionMatch = (
   accumulator: MappingAccumulator,
   value: string | undefined
-): void {
+): void => {
   addPositionMatch(accumulator, "object", "object-position", value);
-}
+};
 
-function addArbitraryPropertyMatch(
-  accumulator: MappingAccumulator,
-  property: string,
-  value: string | undefined,
-  note: string
-): void {
-  if (!value || value === "none") {
+// --- Mapping step functions ---
+
+const mapDisplay = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { display } = context.element.styles;
+  if (!display || display === "block") {
     return;
   }
 
-  addMatch(accumulator, {
-    confidence: LOW_CONFIDENCE,
-    notes: [note],
-    sourceProperties: [property],
-    sourceValues: [value],
-    strategy: "arbitrary",
-    utility: createArbitraryPropertyClass(property, value),
-  });
-}
-
-function addCandidateMatch(
-  accumulator: MappingAccumulator,
-  property: string,
-  value: string | undefined,
-  candidate: MatchCandidate | null
-): void {
-  if (!(value && candidate)) {
+  const utility = lookupMappedUtility(DISPLAY_MAP, display);
+  if (utility) {
+    addMatch(accumulator, {
+      confidence: HIGH_CONFIDENCE,
+      sourceProperties: ["display"],
+      sourceValues: [display],
+      strategy: "semantic",
+      utility,
+    });
     return;
   }
 
-  addMatch(accumulator, {
-    confidence: candidate.confidence,
-    notes: candidate.notes ?? [],
-    sourceProperties: property.includes("|") ? property.split("|") : [property],
-    sourceValues: [value],
-    strategy: candidate.strategy,
-    utility: candidate.utility,
-  });
-}
+  addUnsupported(
+    accumulator,
+    "display",
+    display,
+    "Display needs manual review."
+  );
+};
 
-function addMatch(
-  accumulator: MappingAccumulator,
-  match: TailwindMatchInput
-): void {
-  const utility = match.utility.trim();
-  if (!utility) {
+const mapPositioning = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { styles } = context.element;
+  const { position } = styles;
+  if (position && position !== "static") {
+    const utility = lookupMappedUtility(POSITION_MAP, position);
+    if (utility) {
+      addMatch(accumulator, {
+        confidence: HIGH_CONFIDENCE,
+        sourceProperties: ["position"],
+        sourceValues: [position],
+        strategy: "semantic",
+        utility,
+      });
+    }
+  }
+
+  if (!position || position === "static") {
     return;
   }
 
-  const nextMatch: TailwindMatch = {
-    ...match,
-    label: labelFromConfidence(match.confidence),
-    notes: dedupe(match.notes),
-    sourceProperties: dedupe(match.sourceProperties),
-    sourceValues: dedupe(match.sourceValues),
-    utility,
+  for (const property of ["top", "right", "bottom", "left"] as const) {
+    const value = styles[property];
+    if (!value || value === "auto") {
+      continue;
+    }
+
+    const candidate = buildDimensionCandidate(property, value, {
+      confidence: LOW_CONFIDENCE,
+      note: "Computed insets are layout-derived and need review.",
+    });
+    addCandidateMatch(accumulator, property, value, candidate);
+  }
+
+  const zIndex = styles["z-index"];
+  if (!zIndex || zIndex === "auto") {
+    return;
+  }
+
+  addCandidateMatch(
+    accumulator,
+    "z-index",
+    zIndex,
+    buildZIndexCandidate(zIndex)
+  );
+};
+
+const mapFlexLayout = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { styles } = context.element;
+  const { display } = styles;
+  if (display !== "flex" && display !== "inline-flex") {
+    return;
+  }
+
+  addMappedUtility(
+    accumulator,
+    "flex-direction",
+    styles["flex-direction"],
+    FLEX_DIRECTION_MAP
+  );
+  addMappedUtility(
+    accumulator,
+    "flex-wrap",
+    styles["flex-wrap"],
+    FLEX_WRAP_MAP
+  );
+  addMappedUtility(
+    accumulator,
+    "justify-content",
+    styles["justify-content"],
+    JUSTIFY_CONTENT_MAP
+  );
+  addMappedUtility(
+    accumulator,
+    "align-items",
+    styles["align-items"],
+    ALIGN_ITEMS_MAP
+  );
+  addGapMatches(
+    accumulator,
+    styles.gap,
+    styles["row-gap"],
+    styles["column-gap"]
+  );
+  addFlexNumberMatch(accumulator, "flex-grow", styles["flex-grow"], "grow");
+  addFlexNumberMatch(
+    accumulator,
+    "flex-shrink",
+    styles["flex-shrink"],
+    "shrink"
+  );
+
+  const basis = styles["flex-basis"];
+  if (!basis || basis === "auto") {
+    return;
+  }
+
+  addCandidateMatch(
+    accumulator,
+    "flex-basis",
+    basis,
+    buildDimensionCandidate("basis", basis, {
+      confidence: MEDIUM_CONFIDENCE,
+    })
+  );
+};
+
+const mapGridLayout = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { styles } = context.element;
+  const { display } = styles;
+  if (display !== "grid" && display !== "inline-grid") {
+    return;
+  }
+
+  addGapMatches(
+    accumulator,
+    styles.gap,
+    styles["row-gap"],
+    styles["column-gap"]
+  );
+  addMappedUtility(
+    accumulator,
+    "grid-auto-flow",
+    styles["grid-auto-flow"],
+    GRID_AUTO_FLOW_MAP
+  );
+
+  for (const [property, prefix] of [
+    ["grid-column-start", "col-start"],
+    ["grid-column-end", "col-end"],
+    ["grid-row-start", "row-start"],
+    ["grid-row-end", "row-end"],
+  ] as const) {
+    const value = styles[property];
+    if (!value || value === "auto") {
+      continue;
+    }
+
+    addMatch(accumulator, {
+      confidence: MEDIUM_CONFIDENCE,
+      sourceProperties: [property],
+      sourceValues: [value],
+      strategy: "arbitrary",
+      utility: createArbitraryUtility(prefix, value),
+    });
+  }
+
+  addArbitraryPropertyMatch(
+    accumulator,
+    "grid-template-columns",
+    styles["grid-template-columns"],
+    "Computed grid tracks lose authored repeat syntax."
+  );
+  addArbitraryPropertyMatch(
+    accumulator,
+    "grid-template-rows",
+    styles["grid-template-rows"],
+    "Computed grid tracks lose authored repeat syntax."
+  );
+};
+
+const mapSpacing = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  addBoxSpacingMatches(accumulator, "p", [
+    ["padding-top", context.element.styles["padding-top"]],
+    ["padding-right", context.element.styles["padding-right"]],
+    ["padding-bottom", context.element.styles["padding-bottom"]],
+    ["padding-left", context.element.styles["padding-left"]],
+  ]);
+  addBoxSpacingMatches(accumulator, "m", [
+    ["margin-top", context.element.styles["margin-top"]],
+    ["margin-right", context.element.styles["margin-right"]],
+    ["margin-bottom", context.element.styles["margin-bottom"]],
+    ["margin-left", context.element.styles["margin-left"]],
+  ]);
+};
+
+const mapSizing = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { styles } = context.element;
+
+  for (const [property, prefix, confidence] of [
+    ["min-width", "min-w", MEDIUM_CONFIDENCE],
+    ["min-height", "min-h", MEDIUM_CONFIDENCE],
+    ["max-width", "max-w", MEDIUM_CONFIDENCE],
+    ["max-height", "max-h", MEDIUM_CONFIDENCE],
+    ["width", "w", LOW_CONFIDENCE],
+    ["height", "h", LOW_CONFIDENCE],
+  ] as const) {
+    const value = styles[property];
+    if (!shouldMapDimension(property, value)) {
+      continue;
+    }
+
+    addCandidateMatch(
+      accumulator,
+      property,
+      value,
+      buildDimensionCandidate(prefix, value, {
+        confidence,
+        note:
+          property === "width" || property === "height"
+            ? "Computed size values are often layout-dependent."
+            : undefined,
+      })
+    );
+  }
+};
+
+const mapTypographyBasics = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { element, parent } = context;
+
+  addColorMatch(
+    accumulator,
+    "text",
+    "color",
+    element.styles.color,
+    shouldEmitInheritedValue(
+      "color",
+      element.styles.color,
+      parent?.styles.color
+    )
+  );
+  addFontFamilyMatch(
+    accumulator,
+    element.styles["font-family"],
+    shouldEmitInheritedValue(
+      "font-family",
+      element.styles["font-family"],
+      parent?.styles["font-family"]
+    )
+  );
+  addScaleMatch(
+    accumulator,
+    "font-size",
+    element.styles["font-size"],
+    shouldEmitInheritedValue(
+      "font-size",
+      element.styles["font-size"],
+      parent?.styles["font-size"]
+    ),
+    FONT_SIZE_SCALE,
+    "text",
+    "Font size required an arbitrary value."
+  );
+  addFontWeightMatch(
+    accumulator,
+    element.styles["font-weight"],
+    shouldEmitInheritedValue(
+      "font-weight",
+      element.styles["font-weight"],
+      parent?.styles["font-weight"]
+    )
+  );
+  addFontStyleMatch(
+    accumulator,
+    element.styles["font-style"],
+    shouldEmitInheritedValue(
+      "font-style",
+      element.styles["font-style"],
+      parent?.styles["font-style"]
+    )
+  );
+  addScaleMatch(
+    accumulator,
+    "line-height",
+    element.styles["line-height"],
+    shouldEmitInheritedValue(
+      "line-height",
+      element.styles["line-height"],
+      parent?.styles["line-height"]
+    ) && element.styles["line-height"] !== "normal",
+    LINE_HEIGHT_SCALE,
+    "leading",
+    "Line height required an arbitrary value."
+  );
+  addTrackingMatch(
+    accumulator,
+    element.styles["letter-spacing"],
+    shouldEmitInheritedValue(
+      "letter-spacing",
+      element.styles["letter-spacing"],
+      parent?.styles["letter-spacing"]
+    )
+  );
+};
+
+const mapTypographyPresentation = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { element, parent } = context;
+
+  addMappedUtility(
+    accumulator,
+    "text-align",
+    element.styles["text-align"],
+    TEXT_ALIGN_MAP,
+    shouldEmitInheritedValue(
+      "text-align",
+      element.styles["text-align"],
+      parent?.styles["text-align"]
+    ) && !["left", "start"].includes(element.styles["text-align"] ?? "")
+  );
+  addMappedUtility(
+    accumulator,
+    "text-transform",
+    element.styles["text-transform"],
+    TEXT_TRANSFORM_MAP,
+    shouldEmitInheritedValue(
+      "text-transform",
+      element.styles["text-transform"],
+      parent?.styles["text-transform"]
+    ) && element.styles["text-transform"] !== "none"
+  );
+  addMappedUtility(
+    accumulator,
+    "white-space",
+    element.styles["white-space"],
+    WHITE_SPACE_MAP,
+    shouldEmitInheritedValue(
+      "white-space",
+      element.styles["white-space"],
+      parent?.styles["white-space"]
+    ) && element.styles["white-space"] !== "normal"
+  );
+  addMappedUtility(
+    accumulator,
+    "list-style-type",
+    element.styles["list-style-type"],
+    LIST_STYLE_MAP,
+    shouldEmitInheritedValue(
+      "list-style-type",
+      element.styles["list-style-type"],
+      parent?.styles["list-style-type"]
+    ) && element.styles["list-style-type"] !== "disc"
+  );
+  addDecorationLineMatches(accumulator, element.styles["text-decoration-line"]);
+  addColorMatch(
+    accumulator,
+    "decoration",
+    "text-decoration-color",
+    element.styles["text-decoration-color"],
+    element.styles["text-decoration-line"] !== "none" &&
+      Boolean(element.styles["text-decoration-color"])
+  );
+};
+
+const mapBackground = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  addColorMatch(
+    accumulator,
+    "bg",
+    "background-color",
+    context.element.styles["background-color"],
+    !isTransparentColor(context.element.styles["background-color"] ?? "")
+  );
+  addArbitraryPropertyMatch(
+    accumulator,
+    "background-image",
+    context.element.styles["background-image"],
+    "Background images are emitted as arbitrary properties."
+  );
+};
+
+const mapBorder = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  addUniformBorderMatch(context.element, accumulator);
+  addRadiusMatches(context.element, accumulator);
+};
+
+const mapEffects = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const { styles } = context.element;
+  addShadowMatch(accumulator, styles["box-shadow"]);
+  addOpacityMatch(accumulator, styles.opacity);
+  addArbitraryPropertyMatch(
+    accumulator,
+    "transform",
+    styles.transform,
+    "Computed transforms are emitted as raw properties."
+  );
+  addPositionMatch(
+    accumulator,
+    "origin",
+    "transform-origin",
+    styles["transform-origin"]
+  );
+
+  if (styles.visibility === "hidden") {
+    addMatch(accumulator, {
+      confidence: HIGH_CONFIDENCE,
+      sourceProperties: ["visibility"],
+      sourceValues: ["hidden"],
+      strategy: "semantic",
+      utility: "invisible",
+    });
+  }
+};
+
+const mapOverflow = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const overflowX = context.element.styles["overflow-x"];
+  const overflowY = context.element.styles["overflow-y"];
+  if (!(overflowX && overflowY)) {
+    return;
+  }
+
+  if (overflowX === overflowY && overflowX !== "visible") {
+    const suffix = lookupMappedUtility(OVERFLOW_MAP, overflowX);
+    if (suffix) {
+      addMatch(accumulator, {
+        confidence: HIGH_CONFIDENCE,
+        sourceProperties: ["overflow-x", "overflow-y"],
+        sourceValues: [overflowX, overflowY],
+        strategy: "semantic",
+        utility: `overflow-${suffix}`,
+      });
+    }
+    return;
+  }
+
+  addOverflowAxisMatch(accumulator, "overflow-x", overflowX);
+  addOverflowAxisMatch(accumulator, "overflow-y", overflowY);
+};
+
+const mapObjectLayout = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const objectFit = context.element.styles["object-fit"];
+  if (objectFit && objectFit !== "fill") {
+    const utility = lookupMappedUtility(OBJECT_FIT_MAP, objectFit);
+    if (utility) {
+      addMatch(accumulator, {
+        confidence: HIGH_CONFIDENCE,
+        sourceProperties: ["object-fit"],
+        sourceValues: [objectFit],
+        strategy: "semantic",
+        utility,
+      });
+    }
+  }
+
+  addObjectPositionMatch(
+    accumulator,
+    context.element.styles["object-position"]
+  );
+};
+
+const mapPseudoElements = (
+  context: MappingContext,
+  accumulator: MappingAccumulator
+): void => {
+  const pseudoKinds = Object.keys(context.element.pseudo);
+  if (pseudoKinds.length === 0) {
+    return;
+  }
+
+  addUnsupported(
+    accumulator,
+    "pseudo-elements",
+    pseudoKinds.join(", "),
+    "Pseudo-elements were captured, but Tailwind output still needs manual content utilities."
+  );
+};
+
+// --- Review and confidence helpers ---
+
+const isReviewOnlyNote = (note: string): boolean => {
+  const normalizedNote = note.toLowerCase();
+
+  return (
+    normalizedNote.includes("manual review") ||
+    normalizedNote.includes("layout-dependent") ||
+    normalizedNote.includes("layout-derived") ||
+    normalizedNote.includes("arbitrary property utility") ||
+    normalizedNote.includes("required an arbitrary value") ||
+    normalizedNote.includes("computed transforms") ||
+    normalizedNote.includes("lose authored repeat syntax")
+  );
+};
+
+const shouldMoveMatchToReview = (match: TailwindMatch): boolean => {
+  if (match.label === "low" || match.utility.startsWith("[")) {
+    return true;
+  }
+
+  if (
+    match.sourceProperties.some((property) =>
+      REVIEW_ONLY_SOURCE_PROPERTIES.has(property)
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    match.strategy === "arbitrary" &&
+    !match.sourceProperties.every((property) =>
+      CLEAN_ARBITRARY_SOURCE_PROPERTIES.has(property)
+    )
+  ) {
+    return true;
+  }
+
+  return match.notes.some((note) => isReviewOnlyNote(note));
+};
+
+const splitMatchesForSuggestion = (
+  matches: TailwindMatch[]
+): {
+  reviewMatches: TailwindMatch[];
+  suggestedMatches: TailwindMatch[];
+} => {
+  const reviewMatches: TailwindMatch[] = [];
+  const suggestedMatches: TailwindMatch[] = [];
+
+  for (const match of matches) {
+    if (shouldMoveMatchToReview(match)) {
+      reviewMatches.push(match);
+    } else {
+      suggestedMatches.push(match);
+    }
+  }
+
+  return {
+    reviewMatches,
+    suggestedMatches,
   };
+};
 
-  const existing = accumulator.matches.find(
-    (entry) => entry.utility === utility
+const calculateElementConfidence = (
+  accumulator: MappingAccumulator
+): number => {
+  if (accumulator.matches.length === 0) {
+    return accumulator.unsupported.length > 0
+      ? LOW_CONFIDENCE
+      : PASSIVE_CONFIDENCE;
+  }
+
+  const total = accumulator.matches.reduce(
+    (sum, match) => sum + match.confidence,
+    0
   );
-  if (existing) {
-    existing.confidence = Math.max(existing.confidence, nextMatch.confidence);
-    existing.label = labelFromConfidence(existing.confidence);
-    existing.notes = dedupe([...existing.notes, ...nextMatch.notes]);
-    existing.sourceProperties = dedupe([
-      ...existing.sourceProperties,
-      ...nextMatch.sourceProperties,
-    ]);
-    existing.sourceValues = dedupe([
-      ...existing.sourceValues,
-      ...nextMatch.sourceValues,
-    ]);
-  } else {
-    accumulator.matches.push(nextMatch);
+  const average = total / accumulator.matches.length;
+
+  if (accumulator.unsupported.length === 0) {
+    return roundToTwo(average);
   }
 
-  if (accumulator.classSet.has(utility)) {
-    return;
+  return roundToTwo(Math.max(LOW_CONFIDENCE, average - 0.12));
+};
+
+const buildReviewFallbackNote = (match: TailwindMatch): string => {
+  if (match.label === "low") {
+    return "Low-confidence utility needs manual review.";
   }
 
-  accumulator.classSet.add(utility);
-  accumulator.classes.push(utility);
-}
-
-function addUnsupported(
-  accumulator: MappingAccumulator,
-  property: string,
-  value: string,
-  reason: string
-): void {
-  const key = `${property}:${value}:${reason}`;
-  const exists = accumulator.unsupported.some(
-    (entry) => `${entry.property}:${entry.value}:${entry.reason}` === key
-  );
-  if (exists) {
-    return;
+  if (
+    match.sourceProperties.some((property) =>
+      REVIEW_ONLY_SOURCE_PROPERTIES.has(property)
+    )
+  ) {
+    return "Computed layout or custom CSS was kept out of the clean suggestion.";
   }
 
-  accumulator.unsupported.push({
-    property,
-    reason,
-    value,
-  });
-}
+  if (match.strategy === "arbitrary") {
+    return "Arbitrary utility was kept out of the clean suggestion.";
+  }
 
-function buildReviewItem(
+  return "Utility was kept out of the clean suggestion for review.";
+};
+
+const buildReviewItem = (
   mapping: TailwindElementMapping
-): TailwindReviewItem | null {
+): TailwindReviewItem | null => {
   const reasons = [
     ...mapping.unsupported.map((entry) => `${entry.property}: ${entry.reason}`),
     ...mapping.matches
@@ -1694,488 +2056,141 @@ function buildReviewItem(
     selector: mapping.selector,
     unsupportedCount: mapping.unsupported.length,
   };
-}
+};
 
-function buildReviewFallbackNote(match: TailwindMatch): string {
-  if (match.label === "low") {
-    return "Low-confidence utility needs manual review.";
+// --- Core mapping orchestration ---
+
+const createAccumulator = (): MappingAccumulator => ({
+  classSet: new Set<string>(),
+  classes: [],
+  matches: [],
+  unsupported: [],
+});
+
+const MAPPING_STEPS: MappingStep[] = [
+  mapDisplay,
+  mapPositioning,
+  mapFlexLayout,
+  mapGridLayout,
+  mapSpacing,
+  mapSizing,
+  mapTypographyBasics,
+  mapTypographyPresentation,
+  mapBackground,
+  mapBorder,
+  mapEffects,
+  mapOverflow,
+  mapObjectLayout,
+  mapPseudoElements,
+];
+
+const mapElementSnapshot = (
+  context: MappingContext
+): TailwindElementMapping => {
+  const accumulator = createAccumulator();
+
+  for (const step of MAPPING_STEPS) {
+    step(context, accumulator);
   }
 
-  if (
-    match.sourceProperties.some((property) =>
-      REVIEW_ONLY_SOURCE_PROPERTIES.has(property)
-    )
-  ) {
-    return "Computed layout or custom CSS was kept out of the clean suggestion.";
-  }
-
-  if (match.strategy === "arbitrary") {
-    return "Arbitrary utility was kept out of the clean suggestion.";
-  }
-
-  return "Utility was kept out of the clean suggestion for review.";
-}
-
-function calculateElementConfidence(accumulator: MappingAccumulator): number {
-  if (accumulator.matches.length === 0) {
-    return accumulator.unsupported.length > 0
-      ? LOW_CONFIDENCE
-      : PASSIVE_CONFIDENCE;
-  }
-
-  const total = accumulator.matches.reduce(
-    (sum, match) => sum + match.confidence,
-    0
+  const confidence = calculateElementConfidence(accumulator);
+  const { reviewMatches, suggestedMatches } = splitMatchesForSuggestion(
+    accumulator.matches
   );
-  const average = total / accumulator.matches.length;
 
-  if (accumulator.unsupported.length === 0) {
-    return roundToTwo(average);
-  }
+  return {
+    className: accumulator.classes.join(" "),
+    confidence,
+    confidenceLabel: labelFromConfidence(confidence),
+    elementId: context.element.id,
+    matchCount: accumulator.matches.length,
+    matches: accumulator.matches,
+    reviewClassName: reviewMatches.map((match) => match.utility).join(" "),
+    reviewMatchCount: reviewMatches.length,
+    selector: context.element.selector,
+    suggestedClassName: suggestedMatches
+      .map((match) => match.utility)
+      .join(" "),
+    suggestedMatchCount: suggestedMatches.length,
+    tagName: context.element.tagName,
+    unsupported: accumulator.unsupported,
+  };
+};
 
-  return roundToTwo(Math.max(LOW_CONFIDENCE, average - 0.12));
-}
+export const mapCaptureToTailwind = (
+  capture: CaptureResult
+): TailwindMappingResult => {
+  const elements: Record<string, TailwindElementMapping> = {};
+  const reviewQueue: TailwindReviewItem[] = [];
+  let cleanUtilityCount = 0;
+  let confidenceSum = 0;
+  let lowConfidenceElementCount = 0;
+  let mappedElementCount = 0;
+  let reviewUtilityCount = 0;
+  let unsupportedPropertyCount = 0;
+  let utilityCount = 0;
 
-function splitMatchesForSuggestion(matches: TailwindMatch[]): {
-  reviewMatches: TailwindMatch[];
-  suggestedMatches: TailwindMatch[];
-} {
-  const reviewMatches: TailwindMatch[] = [];
-  const suggestedMatches: TailwindMatch[] = [];
+  for (const elementId of capture.order) {
+    const element = capture.elements[elementId];
+    if (!element) {
+      continue;
+    }
 
-  for (const match of matches) {
-    if (shouldMoveMatchToReview(match)) {
-      reviewMatches.push(match);
-    } else {
-      suggestedMatches.push(match);
+    const parent =
+      element.parentId === null
+        ? null
+        : (capture.elements[element.parentId] ?? null);
+    const mapping = mapElementSnapshot({
+      element,
+      parent,
+    });
+    elements[elementId] = mapping;
+
+    confidenceSum += mapping.confidence;
+    if (mapping.confidenceLabel === "low") {
+      lowConfidenceElementCount += 1;
+    }
+    if (mapping.matchCount > 0) {
+      mappedElementCount += 1;
+    }
+
+    unsupportedPropertyCount += mapping.unsupported.length;
+    cleanUtilityCount += mapping.suggestedMatchCount;
+    reviewUtilityCount += mapping.reviewMatchCount;
+    utilityCount += mapping.matches.length;
+
+    const reviewItem = buildReviewItem(mapping);
+    if (reviewItem) {
+      reviewQueue.push(reviewItem);
     }
   }
 
-  return {
-    reviewMatches,
-    suggestedMatches,
-  };
-}
-
-function shouldMoveMatchToReview(match: TailwindMatch): boolean {
-  if (match.label === "low" || match.utility.startsWith("[")) {
-    return true;
-  }
-
-  if (
-    match.sourceProperties.some((property) =>
-      REVIEW_ONLY_SOURCE_PROPERTIES.has(property)
-    )
-  ) {
-    return true;
-  }
-
-  if (
-    match.strategy === "arbitrary" &&
-    !match.sourceProperties.every((property) =>
-      CLEAN_ARBITRARY_SOURCE_PROPERTIES.has(property)
-    )
-  ) {
-    return true;
-  }
-
-  return match.notes.some((note) => isReviewOnlyNote(note));
-}
-
-function isReviewOnlyNote(note: string): boolean {
-  const normalizedNote = note.toLowerCase();
-
-  return (
-    normalizedNote.includes("manual review") ||
-    normalizedNote.includes("layout-dependent") ||
-    normalizedNote.includes("layout-derived") ||
-    normalizedNote.includes("arbitrary property utility") ||
-    normalizedNote.includes("required an arbitrary value") ||
-    normalizedNote.includes("computed transforms") ||
-    normalizedNote.includes("lose authored repeat syntax")
-  );
-}
-
-function labelFromConfidence(confidence: number): TailwindConfidenceLabel {
-  if (confidence >= 0.85) {
-    return "high";
-  }
-
-  if (confidence >= 0.62) {
-    return "medium";
-  }
-
-  return "low";
-}
-
-function shouldMapDimension(
-  property: string,
-  value: string | undefined
-): value is string {
-  if (!value) {
-    return false;
-  }
-
-  if (property.startsWith("min-")) {
-    return value !== "0px" && value !== "auto";
-  }
-
-  if (property.startsWith("max-")) {
-    return value !== "none";
-  }
-
-  return value !== "auto";
-}
-
-function shouldEmitInheritedValue(
-  property: string,
-  value: string | undefined,
-  parentValue: string | undefined
-): boolean {
-  if (!value) {
-    return false;
-  }
-
-  if (!parentValue) {
-    return true;
-  }
-
-  if (property === "color") {
-    return normalizeColor(value) !== normalizeColor(parentValue);
-  }
-
-  return value !== parentValue;
-}
-
-function buildSpacingCandidate(
-  prefix: string,
-  value: string,
-  allowNegative: boolean
-): MatchCandidate | null {
-  if (isZeroLength(value)) {
-    return null;
-  }
-
-  if (value === "auto" && prefix.startsWith("m")) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "semantic",
-      utility: `${prefix}-auto`,
-    };
-  }
-
-  const length = parseLength(value);
-  if (!length) {
-    return {
-      confidence: MEDIUM_CONFIDENCE,
-      notes: ["Spacing required an arbitrary value."],
-      strategy: "arbitrary",
-      utility: createArbitraryUtility(prefix, value),
-    };
-  }
-
-  if (length.value < 0 && !allowNegative) {
-    return null;
-  }
-
-  const token =
-    length.unit === "px" ? SPACING_SCALE.get(Math.abs(length.value)) : null;
-  if (!token) {
-    return {
-      confidence: MEDIUM_CONFIDENCE,
-      notes: ["Spacing required an arbitrary value."],
-      strategy: "arbitrary",
-      utility: createArbitraryUtility(prefix, value),
-    };
-  }
-
-  const baseUtility = token === "px" ? `${prefix}-px` : `${prefix}-${token}`;
-  return {
-    confidence: HIGH_CONFIDENCE,
-    strategy: "scale",
-    utility: length.value < 0 ? `-${baseUtility}` : baseUtility,
-  };
-}
-
-function buildDimensionCandidate(
-  prefix: string,
-  value: string,
-  options: { confidence: number; note?: string }
-): MatchCandidate {
-  if (value === "auto") {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "semantic",
-      utility: `${prefix}-auto`,
-    };
-  }
-
-  const keywordSuffix =
-    DIMENSION_KEYWORD_MAP[value as keyof typeof DIMENSION_KEYWORD_MAP];
-  if (keywordSuffix) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "semantic",
-      utility: `${prefix}-${keywordSuffix}`,
-    };
-  }
-
-  const length = parseLength(value);
-  const token =
-    length && length.unit === "px"
-      ? SPACING_SCALE.get(Math.abs(length.value))
-      : null;
-  if (token) {
-    return {
-      confidence: options.confidence,
-      notes: options.note ? [options.note] : [],
-      strategy: "scale",
-      utility: token === "px" ? `${prefix}-px` : `${prefix}-${token}`,
-    };
-  }
-
-  return {
-    confidence: options.confidence,
-    notes: options.note
-      ? [options.note]
-      : ["Length required an arbitrary value."],
-    strategy: "arbitrary",
-    utility: createArbitraryUtility(prefix, value),
-  };
-}
-
-function buildScaleCandidate(
-  prefix: string,
-  value: string,
-  scale: Map<number, string>,
-  note: string
-): MatchCandidate {
-  const length = parseLength(value);
-  const token = length && length.unit === "px" ? scale.get(length.value) : null;
-
-  if (token) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "scale",
-      utility: `${prefix}-${token}`,
-    };
-  }
-
-  return {
-    confidence: MEDIUM_CONFIDENCE,
-    notes: [note],
-    strategy: "arbitrary",
-    utility: createArbitraryUtility(prefix, value),
-  };
-}
-
-function buildColorCandidate(
-  prefix: "bg" | "border" | "decoration" | "text",
-  value: string
-): MatchCandidate {
-  const normalized = normalizeColor(value);
-  let semanticUtility: string | null = null;
-  if (normalized === "transparent") {
-    semanticUtility = `${prefix}-transparent`;
-  } else if (normalized === "#000000") {
-    semanticUtility = `${prefix}-black`;
-  } else if (normalized === "#ffffff") {
-    semanticUtility = `${prefix}-white`;
-  }
-
-  if (semanticUtility) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "semantic",
-      utility: semanticUtility,
-    };
-  }
-
-  return {
-    confidence: MEDIUM_CONFIDENCE,
-    strategy: "arbitrary",
-    utility: createArbitraryUtility(prefix, normalized),
-  };
-}
-
-function buildFontFamilyCandidate(value: string): MatchCandidate {
-  const normalized = value.toLowerCase();
-
-  for (const { keyword, utility } of FONT_FAMILY_MAP) {
-    if (normalized.includes(keyword)) {
-      return {
-        confidence: MEDIUM_CONFIDENCE,
-        notes: ["Mapped to the nearest generic Tailwind family."],
-        strategy: "heuristic",
-        utility,
-      };
+  reviewQueue.sort((left, right) => {
+    if (left.confidence !== right.confidence) {
+      return left.confidence - right.confidence;
     }
-  }
+
+    return right.unsupportedCount - left.unsupportedCount;
+  });
+
+  const elementCount = capture.order.length;
 
   return {
-    confidence: LOW_CONFIDENCE,
-    notes: ["Font family required an arbitrary property utility."],
-    strategy: "arbitrary",
-    utility: createArbitraryPropertyClass("font-family", value),
+    elements,
+    order: capture.order,
+    reviewQueue,
+    summary: {
+      averageConfidence: elementCount
+        ? roundToTwo(confidenceSum / elementCount)
+        : 0,
+      cleanUtilityCount,
+      elementCount,
+      lowConfidenceElementCount,
+      mappedElementCount,
+      reviewCount: reviewQueue.length,
+      reviewUtilityCount,
+      unsupportedPropertyCount,
+      utilityCount,
+    },
   };
-}
-
-function buildBorderWidthCandidate(
-  prefix: string,
-  value: string
-): MatchCandidate {
-  const length = parseLength(value);
-  const token =
-    length && length.unit === "px"
-      ? BORDER_WIDTH_SCALE.get(length.value)
-      : null;
-
-  if (token !== undefined) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "scale",
-      utility: token ? `${prefix}-${token}` : prefix,
-    };
-  }
-
-  return {
-    confidence: MEDIUM_CONFIDENCE,
-    notes: ["Border width required an arbitrary value."],
-    strategy: "arbitrary",
-    utility: createArbitraryUtility(prefix, value),
-  };
-}
-
-function buildBorderColorCandidate(value: string): MatchCandidate {
-  return buildColorCandidate("border", value);
-}
-
-function buildRadiusCandidate(prefix: string, value: string): MatchCandidate {
-  const length = parseLength(value);
-  if (length && length.value >= 9999) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "semantic",
-      utility: `${prefix}-full`,
-    };
-  }
-
-  const token =
-    length && length.unit === "px" ? RADIUS_SCALE.get(length.value) : null;
-  if (token !== undefined) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "scale",
-      utility: token ? `${prefix}-${token}` : prefix,
-    };
-  }
-
-  return {
-    confidence: MEDIUM_CONFIDENCE,
-    notes: ["Border radius required an arbitrary value."],
-    strategy: "arbitrary",
-    utility: createArbitraryUtility(prefix, value),
-  };
-}
-
-function buildZIndexCandidate(value: string): MatchCandidate {
-  const numericValue = Number(value);
-  if (Number.isFinite(numericValue) && Z_INDEX_SCALE.has(numericValue)) {
-    return {
-      confidence: HIGH_CONFIDENCE,
-      strategy: "scale",
-      utility: `z-${numericValue}`,
-    };
-  }
-
-  return {
-    confidence: MEDIUM_CONFIDENCE,
-    notes: ["Resolved z-index required an arbitrary value."],
-    strategy: "arbitrary",
-    utility: `z-[${sanitizeArbitraryValue(value)}]`,
-  };
-}
-
-function createArbitraryUtility(prefix: string, value: string): string {
-  return `${prefix}-[${sanitizeArbitraryValue(value)}]`;
-}
-
-function createArbitraryPropertyClass(property: string, value: string): string {
-  return `[${property}:${sanitizeArbitraryValue(value)}]`;
-}
-
-function sanitizeArbitraryValue(value: string): string {
-  return value
-    .trim()
-    .replace(/\s*,\s*/g, ",")
-    .replace(/\s*\/\s*/g, "/")
-    .replace(/\s+/g, "_");
-}
-
-function normalizeColor(value: string): string {
-  const trimmed = value.trim().toLowerCase();
-  if (trimmed === "transparent" || isTransparentColor(trimmed)) {
-    return "transparent";
-  }
-
-  const rgbMatch = trimmed.match(RGB_PATTERN);
-  if (!rgbMatch) {
-    return trimmed;
-  }
-
-  const red = Number(rgbMatch[1]).toString(16).padStart(2, "0");
-  const green = Number(rgbMatch[2]).toString(16).padStart(2, "0");
-  const blue = Number(rgbMatch[3]).toString(16).padStart(2, "0");
-  const alpha = rgbMatch[4];
-
-  if (!alpha || alpha === "1") {
-    return `#${red}${green}${blue}`;
-  }
-
-  return trimmed.replace(/\s+/g, "");
-}
-
-function isTransparentColor(value: string): boolean {
-  const normalized = value.trim().replace(/\s+/g, "").toLowerCase();
-  return normalized === "rgba(0,0,0,0)" || normalized === "transparent";
-}
-
-function parseLength(value: string): { unit: string; value: number } | null {
-  const match = value.trim().match(LENGTH_PATTERN);
-  if (!match) {
-    return null;
-  }
-
-  return {
-    unit: match[2] ?? "px",
-    value: Number(match[1]),
-  };
-}
-
-function isZeroLength(value: string): boolean {
-  const length = parseLength(value);
-  return Boolean(length && Math.abs(length.value) <= 0.01);
-}
-
-function normalizeWhitespace(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
-}
-
-function allEqual(values: string[]): boolean {
-  return values.every((value) => value === values[0]);
-}
-
-function dedupe(values?: string[]): string[] {
-  return Array.from(new Set((values ?? []).filter(Boolean)));
-}
-
-function lookupMappedUtility(
-  map: Record<string, string>,
-  value: string
-): string | null {
-  return map[value] ?? null;
-}
-
-function roundToTwo(value: number): number {
-  return Math.round(value * 100) / 100;
-}
+};

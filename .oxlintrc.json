@@ -1,5 +1,16 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    "**/.next/**",
+    "**/.turbo/**",
+    "**/coverage/**",
+    "**/dist/**",
+    "**/dist-zip/**",
+    "**/evals/results/**",
+    "**/release/**",
+    "**/store/generated/**",
+    "**/store/screenshots/**"
+  ],
   "extends": [
     "./node_modules/ultracite/config/oxlint/core/.oxlintrc.json",
     "./node_modules/ultracite/config/oxlint/react/.oxlintrc.json",

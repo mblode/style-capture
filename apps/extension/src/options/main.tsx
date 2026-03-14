@@ -10,7 +10,7 @@ mq.addEventListener("change", (e) => {
   document.documentElement.classList.toggle("dark", e.matches);
 });
 
-const root = document.getElementById("root");
+const root = document.querySelector("#root");
 
 if (!root) {
   throw new Error("Options root element not found.");

@@ -55,14 +55,14 @@ export default function Screenshot1Capture() {
               </div>
               <div
                 className="absolute border border-black/50 bg-black/[0.08]"
-                style={{ top: 82, left: 18, width: 364, height: 194 }}
+                style={{ height: 194, left: 18, top: 82, width: 364 }}
               />
               <div
                 className="absolute flex items-center gap-1 rounded-[10px] bg-white px-2 py-1.5 font-medium text-[13px] leading-4"
                 style={{
-                  top: 42,
-                  left: 100,
                   filter: "drop-shadow(0px 1px 2px rgba(81, 81, 81, 0.25))",
+                  left: 100,
+                  top: 42,
                 }}
               >
                 <span className="text-black/50">

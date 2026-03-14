@@ -40,68 +40,120 @@ const MAX_OPEN_QUESTION_ITEMS = 8;
 const CLAUDE_CAPTURE_INSTRUCTION =
   "Recreate or refactor this UI faithfully. html_capture + css_capture are ground truth. Preserve structure unless simplifying is clearly better. Tailwind hints are hints. Use the smallest codebase-ready change and state ambiguities instead of inventing details.";
 
-export function buildClaudeCapturePrompt(
-  capture: CaptureResult,
-  mapping: TailwindMappingResult | null
-): ClaudeCapturePrompt {
-  const annotation = annotateCaptureHtml(capture);
-  const rootElement = capture.elements[capture.rootElementId];
+const compactInlineText = (value: string): string =>
+  value.replaceAll(/\s+/g, " ").trim();
 
-  return {
-    cssCapture: formatCaptureCss(capture, annotation.selectors),
-    htmlCapture: annotation.html,
-    instruction: CLAUDE_CAPTURE_INSTRUCTION,
-    metadata: {
-      elementCount: capture.summary.elementCount,
-      mode: capture.settings.captureMode,
-      pseudoCount: capture.summary.pseudoElementCount,
-      rootRef: annotation.refs[capture.rootElementId] ?? capture.rootElementId,
-      rootSelector: rootElement?.selector ?? "Unavailable",
-      url: capture.metadata.url,
-    },
-    openQuestions: buildOpenQuestionEntries(mapping, annotation.refs),
-    tailwindHints: buildTailwindHintEntries(capture, mapping, annotation.refs),
-  };
-}
+const escapeXmlAttribute = (value: string): string =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 
-export function formatCaptureForClaudeMarkdown(
-  capture: CaptureResult,
-  mapping: TailwindMappingResult | null
-): string {
-  const prompt = buildClaudeCapturePrompt(capture, mapping);
+const compactSelector = (selector: string): string =>
+  selector
+    .replaceAll(/\s*([>+~])\s*/g, "$1")
+    .replaceAll(/,\s+/g, ",")
+    .replaceAll(/\s+/g, " ")
+    .trim();
 
-  const sections = [
-    `<style_capture url="${escapeXmlAttribute(prompt.metadata.url)}" mode="${prompt.metadata.mode}" root_ref="${prompt.metadata.rootRef}" root_selector="${escapeXmlAttribute(prompt.metadata.rootSelector)}" elements="${prompt.metadata.elementCount}" pseudos="${prompt.metadata.pseudoCount}">`,
-    prompt.instruction,
-    `<html_capture>${prompt.htmlCapture}</html_capture>`,
-    `<css_capture>${prompt.cssCapture}</css_capture>`,
-  ];
+const buildCompactRefs = (order: string[]): Record<string, string> => {
+  const refs: Record<string, string> = {};
 
-  if (prompt.tailwindHints.length > 0) {
-    sections.push(
-      "<tailwind_hints>",
-      ...prompt.tailwindHints.map(
-        (entry) => `${entry.key}=${compactInlineText(entry.value)}`
-      ),
-      "</tailwind_hints>"
-    );
+  for (const [index, elementId] of order.entries()) {
+    refs[elementId] = index.toString(36);
   }
 
-  if (prompt.openQuestions.length > 0) {
-    sections.push(
-      "<open_questions>",
-      ...prompt.openQuestions.map(
-        (entry) => `${entry.key}:${compactInlineText(entry.value)}`
-      ),
-      "</open_questions>"
-    );
+  return refs;
+};
+
+const buildCompactSelector = (ref: string): string =>
+  `[${CAPTURE_NODE_ATTRIBUTE}="${ref}"]`;
+
+const buildFallbackSelectors = (
+  capture: CaptureResult
+): Record<string, string> => {
+  const selectors: Record<string, string> = {};
+
+  for (const elementId of capture.order) {
+    const snapshot = capture.elements[elementId];
+
+    if (!snapshot) {
+      continue;
+    }
+
+    selectors[elementId] = compactSelector(snapshot.selector);
   }
 
-  sections.push("</style_capture>");
-  return sections.join("\n").trim();
-}
+  return selectors;
+};
 
-function annotateCaptureHtml(capture: CaptureResult): HtmlAnnotationResult {
+const stripCommentNodes = (root: Element): void => {
+  const walker = root.ownerDocument.createTreeWalker(
+    root,
+    NodeFilter.SHOW_COMMENT
+  );
+  const comments: Comment[] = [];
+
+  while (walker.nextNode()) {
+    if (walker.currentNode instanceof Comment) {
+      comments.push(walker.currentNode);
+    }
+  }
+
+  for (const comment of comments) {
+    comment.remove();
+  }
+};
+
+const minifyHtmlString = (html: string): string =>
+  html
+    .replaceAll(/<!--[\s\S]*?-->/g, "")
+    .replaceAll(/>\s+</g, "><")
+    .trim();
+
+const elementMatchesSnapshot = (
+  element: Element,
+  snapshot: ElementSnapshot
+): boolean => {
+  if (element.tagName.toLowerCase() !== snapshot.tagName) {
+    return false;
+  }
+
+  for (const className of snapshot.classList) {
+    if (!element.classList.contains(className)) {
+      return false;
+    }
+  }
+
+  for (const [name, value] of Object.entries(snapshot.attributes)) {
+    if (name === "class") {
+      continue;
+    }
+
+    if (element.getAttribute(name) !== value) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const findMatchingElementIndex = (
+  candidates: Element[],
+  snapshot: ElementSnapshot,
+  startIndex: number
+): number => {
+  for (let index = startIndex; index < candidates.length; index += 1) {
+    if (elementMatchesSnapshot(candidates[index], snapshot)) {
+      return index;
+    }
+  }
+
+  return -1;
+};
+
+const annotateCaptureHtml = (capture: CaptureResult): HtmlAnnotationResult => {
   const refs = buildCompactRefs(capture.order);
 
   if (!capture.rootOuterHtml.trim()) {
@@ -134,7 +186,7 @@ function annotateCaptureHtml(capture: CaptureResult): HtmlAnnotationResult {
 
   stripCommentNodes(root);
 
-  const candidates = [root, ...Array.from(root.querySelectorAll("*"))];
+  const candidates = [root, ...root.querySelectorAll("*")];
   const selectors = buildFallbackSelectors(capture);
   let searchStartIndex = 0;
 
@@ -167,139 +219,46 @@ function annotateCaptureHtml(capture: CaptureResult): HtmlAnnotationResult {
     refs,
     selectors,
   };
-}
+};
 
-function buildCompactRefs(order: string[]): Record<string, string> {
-  const refs: Record<string, string> = {};
-
-  order.forEach((elementId, index) => {
-    refs[elementId] = index.toString(36);
-  });
-
-  return refs;
-}
-
-function buildCompactSelector(ref: string): string {
-  return `[${CAPTURE_NODE_ATTRIBUTE}="${ref}"]`;
-}
-
-function buildFallbackSelectors(
-  capture: CaptureResult
-): Record<string, string> {
-  const selectors: Record<string, string> = {};
-
-  for (const elementId of capture.order) {
-    const snapshot = capture.elements[elementId];
-
-    if (!snapshot) {
-      continue;
-    }
-
-    selectors[elementId] = compactSelector(snapshot.selector);
+const formatCssPropertyName = (property: string): string => {
+  if (property.includes("-")) {
+    return property;
   }
 
-  return selectors;
-}
+  return property.replaceAll(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
+};
 
-function stripCommentNodes(root: Element): void {
-  const walker = root.ownerDocument.createTreeWalker(
-    root,
-    NodeFilter.SHOW_COMMENT
-  );
-  const comments: Comment[] = [];
+const formatDeclarationBlock = (styles: Record<string, string>): string =>
+  Object.entries(styles)
+    .filter(([, value]) => value.trim().length > 0)
+    .toSorted(([left], [right]) => left.localeCompare(right))
+    .map(
+      ([property, value]) =>
+        `${formatCssPropertyName(property)}:${compactInlineText(value)}`
+    )
+    .join(";");
 
-  while (walker.nextNode()) {
-    if (walker.currentNode instanceof Comment) {
-      comments.push(walker.currentNode);
-    }
+const formatPseudoBlock = (
+  selector: string,
+  pseudo: PseudoElementSnapshot | undefined
+): string => {
+  if (!pseudo) {
+    return "";
   }
 
-  for (const comment of comments) {
-    comment.remove();
-  }
-}
-
-function minifyHtmlString(html: string): string {
-  return html
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/>\s+</g, "><")
-    .trim();
-}
-
-function compactSelector(selector: string): string {
-  return selector
-    .replace(/\s*([>+~])\s*/g, "$1")
-    .replace(/,\s+/g, ",")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function findMatchingElementIndex(
-  candidates: Element[],
-  snapshot: ElementSnapshot,
-  startIndex: number
-): number {
-  for (let index = startIndex; index < candidates.length; index += 1) {
-    if (elementMatchesSnapshot(candidates[index], snapshot)) {
-      return index;
-    }
+  const declarationBlock = formatDeclarationBlock(pseudo.styles);
+  if (!declarationBlock) {
+    return "";
   }
 
-  return -1;
-}
+  return `${selector}::${pseudo.kind}{${declarationBlock}}`;
+};
 
-function elementMatchesSnapshot(
-  element: Element,
-  snapshot: ElementSnapshot
-): boolean {
-  if (element.tagName.toLowerCase() !== snapshot.tagName) {
-    return false;
-  }
-
-  for (const className of snapshot.classList) {
-    if (!element.classList.contains(className)) {
-      return false;
-    }
-  }
-
-  for (const [name, value] of Object.entries(snapshot.attributes)) {
-    if (name === "class") {
-      continue;
-    }
-
-    if (element.getAttribute(name) !== value) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function formatCaptureCss(
-  capture: CaptureResult,
-  selectors: Record<string, string>
-): string {
-  return capture.order
-    .map((elementId) => {
-      const snapshot = capture.elements[elementId];
-
-      if (!snapshot) {
-        return "";
-      }
-
-      return formatElementCssBlock(
-        snapshot,
-        selectors[elementId] ?? snapshot.selector
-      );
-    })
-    .filter(Boolean)
-    .join("");
-}
-
-function formatElementCssBlock(
+const formatElementCssBlock = (
   snapshot: ElementSnapshot,
   selector: string
-): string {
+): string => {
   const parts: string[] = [];
   const declarationBlock = formatDeclarationBlock(snapshot.styles);
   const beforeBlock = formatPseudoBlock(selector, snapshot.pseudo.before);
@@ -318,48 +277,33 @@ function formatElementCssBlock(
   }
 
   return parts.join("");
-}
+};
 
-function formatPseudoBlock(
-  selector: string,
-  pseudo: PseudoElementSnapshot | undefined
-): string {
-  if (!pseudo) {
-    return "";
-  }
+const formatCaptureCss = (
+  capture: CaptureResult,
+  selectors: Record<string, string>
+): string =>
+  capture.order
+    .map((elementId) => {
+      const snapshot = capture.elements[elementId];
 
-  const declarationBlock = formatDeclarationBlock(pseudo.styles);
-  if (!declarationBlock) {
-    return "";
-  }
+      if (!snapshot) {
+        return "";
+      }
 
-  return `${selector}::${pseudo.kind}{${declarationBlock}}`;
-}
+      return formatElementCssBlock(
+        snapshot,
+        selectors[elementId] ?? snapshot.selector
+      );
+    })
+    .filter(Boolean)
+    .join("");
 
-function formatDeclarationBlock(styles: Record<string, string>): string {
-  return Object.entries(styles)
-    .filter(([, value]) => value.trim().length > 0)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(
-      ([property, value]) =>
-        `${formatCssPropertyName(property)}:${compactInlineText(value)}`
-    )
-    .join(";");
-}
-
-function formatCssPropertyName(property: string): string {
-  if (property.includes("-")) {
-    return property;
-  }
-
-  return property.replaceAll(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
-}
-
-function buildTailwindHintEntries(
+const buildTailwindHintEntries = (
   capture: CaptureResult,
   mapping: TailwindMappingResult | null,
   refs: Record<string, string>
-): ClaudePromptEntry[] {
+): ClaudePromptEntry[] => {
   if (!mapping) {
     return [];
   }
@@ -390,12 +334,12 @@ function buildTailwindHintEntries(
   }
 
   return entries;
-}
+};
 
-function buildOpenQuestionEntries(
+const buildOpenQuestionEntries = (
   mapping: TailwindMappingResult | null,
   refs: Record<string, string>
-): ClaudePromptEntry[] {
+): ClaudePromptEntry[] => {
   if (!mapping || mapping.reviewQueue.length === 0) {
     return [];
   }
@@ -404,16 +348,65 @@ function buildOpenQuestionEntries(
     key: refs[item.elementId] ?? item.elementId,
     value: item.reasons.join("; "),
   }));
-}
+};
 
-function compactInlineText(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
-}
+export const buildClaudeCapturePrompt = (
+  capture: CaptureResult,
+  mapping: TailwindMappingResult | null
+): ClaudeCapturePrompt => {
+  const annotation = annotateCaptureHtml(capture);
+  const rootElement = capture.elements[capture.rootElementId];
 
-function escapeXmlAttribute(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
+  return {
+    cssCapture: formatCaptureCss(capture, annotation.selectors),
+    htmlCapture: annotation.html,
+    instruction: CLAUDE_CAPTURE_INSTRUCTION,
+    metadata: {
+      elementCount: capture.summary.elementCount,
+      mode: capture.settings.captureMode,
+      pseudoCount: capture.summary.pseudoElementCount,
+      rootRef: annotation.refs[capture.rootElementId] ?? capture.rootElementId,
+      rootSelector: rootElement?.selector ?? "Unavailable",
+      url: capture.metadata.url,
+    },
+    openQuestions: buildOpenQuestionEntries(mapping, annotation.refs),
+    tailwindHints: buildTailwindHintEntries(capture, mapping, annotation.refs),
+  };
+};
+
+export const formatCaptureForClaudeMarkdown = (
+  capture: CaptureResult,
+  mapping: TailwindMappingResult | null
+): string => {
+  const prompt = buildClaudeCapturePrompt(capture, mapping);
+
+  const sections = [
+    `<style_capture url="${escapeXmlAttribute(prompt.metadata.url)}" mode="${prompt.metadata.mode}" root_ref="${prompt.metadata.rootRef}" root_selector="${escapeXmlAttribute(prompt.metadata.rootSelector)}" elements="${prompt.metadata.elementCount}" pseudos="${prompt.metadata.pseudoCount}">`,
+    prompt.instruction,
+    `<html_capture>${prompt.htmlCapture}</html_capture>`,
+    `<css_capture>${prompt.cssCapture}</css_capture>`,
+  ];
+
+  if (prompt.tailwindHints.length > 0) {
+    sections.push(
+      "<tailwind_hints>",
+      ...prompt.tailwindHints.map(
+        (entry) => `${entry.key}=${compactInlineText(entry.value)}`
+      ),
+      "</tailwind_hints>"
+    );
+  }
+
+  if (prompt.openQuestions.length > 0) {
+    sections.push(
+      "<open_questions>",
+      ...prompt.openQuestions.map(
+        (entry) => `${entry.key}:${compactInlineText(entry.value)}`
+      ),
+      "</open_questions>"
+    );
+  }
+
+  sections.push("</style_capture>");
+  return sections.join("\n").trim();
+};

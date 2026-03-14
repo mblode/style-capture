@@ -1,22 +1,65 @@
 {
   "name": "@style-capture/core",
   "version": "0.0.1",
-  "private": true,
+  "description": "Shared capture mapping and Claude export helpers for Style Capture",
+  "keywords": [
+    "ai",
+    "claude",
+    "css",
+    "html",
+    "style-capture",
+    "tailwind"
+  ],
+  "homepage": "https://github.com/mblode/style-capture/tree/main/packages/core",
+  "bugs": {
+    "url": "https://github.com/mblode/style-capture/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mblode/style-capture.git",
+    "directory": "packages/core"
+  },
   "files": [
-    "src"
+    "dist",
+    "README.md",
+    "LICENSE.md"
   ],
   "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "npm run build:js && npm run build:types",
+    "build:js": "tsdown",
+    "build:types": "tsc -p tsconfig.build.json",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "oxlint --ignore-path .oxlintignore .",
+    "lint:fix": "oxlint --ignore-path .oxlintignore --fix .",
+    "format": "oxfmt --ignore-path .oxfmtignore --write .",
+    "format:check": "oxfmt --ignore-path .oxfmtignore --check .",
+    "check": "npm run lint && npm run format:check && npm run check-types",
+    "fix": "npm run format && npm run lint:fix",
+    "test": "vitest run"
+  },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.5",
-    "lefthook": "^2.1.4",
+    "@types/node": "^24.12.0",
+    "jsdom": "^27.0.1",
     "oxfmt": "^0.40.0",
     "oxlint": "^1.55.0",
-    "ultracite": "^7.3.0"
+    "tsdown": "^0.12.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.0"
   }
 }

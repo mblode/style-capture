@@ -1,13 +1,15 @@
 import { vi } from "vitest";
 
-function createStorageArea() {
-  return {
-    get: vi.fn(async () => ({})),
-    getBytesInUse: vi.fn(async () => 0),
-    remove: vi.fn(async () => undefined),
-    set: vi.fn(async () => undefined),
-  };
-}
+const createStorageArea = () => ({
+  get: vi.fn(() => ({})),
+  getBytesInUse: vi.fn(() => 0),
+  remove: vi.fn(() => {
+    // noop
+  }),
+  set: vi.fn(() => {
+    // noop
+  }),
+});
 
 Object.defineProperty(globalThis, "chrome", {
   configurable: true,
@@ -16,15 +18,23 @@ Object.defineProperty(globalThis, "chrome", {
       onClicked: {
         addListener: vi.fn(),
       },
-      setIcon: vi.fn(async () => undefined),
-      setTitle: vi.fn(async () => undefined),
+      setIcon: vi.fn(() => {
+        // noop
+      }),
+      setTitle: vi.fn(() => {
+        // noop
+      }),
     },
     runtime: {
       getURL: vi.fn((path: string) => `chrome-extension://test/${path}`),
-      sendMessage: vi.fn(async () => undefined),
+      sendMessage: vi.fn(() => {
+        // noop
+      }),
     },
     scripting: {
-      executeScript: vi.fn(async () => undefined),
+      executeScript: vi.fn(() => {
+        // noop
+      }),
     },
     storage: {
       local: createStorageArea(),
@@ -35,8 +45,10 @@ Object.defineProperty(globalThis, "chrome", {
       session: createStorageArea(),
     },
     tabs: {
-      create: vi.fn(async () => undefined),
-      query: vi.fn(async () => []),
+      create: vi.fn(() => {
+        // noop
+      }),
+      query: vi.fn(() => []),
     },
   },
 });

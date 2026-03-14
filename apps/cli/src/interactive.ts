@@ -1,5 +1,3 @@
-#!/usr/bin/env tsx
-
 import {
   cancel,
   group,
@@ -20,25 +18,34 @@ import { chromium } from "playwright";
 
 import { captureElement } from "./capture.ts";
 
-async function main(): Promise<void> {
+export const interactive = async (): Promise<void> => {
   intro("style-capture");
 
   const inputs = await group(
     {
-      url: () =>
-        text({
-          message: "URL to capture",
-          placeholder: "https://example.com",
-          validate: (val) => {
-            if (!val) {
-              return "URL is required";
-            }
-            try {
-              new URL(val);
-            } catch {
-              return "Please enter a valid URL";
-            }
-          },
+      mode: () =>
+        select({
+          message: "Capture mode",
+          options: [
+            {
+              hint: "Common visual properties only",
+              label: "Curated",
+              value: "curated" as const,
+            },
+            {
+              hint: "All computed styles",
+              label: "Full",
+              value: "full" as const,
+            },
+          ],
+        }),
+      output: () =>
+        select({
+          message: "Output",
+          options: [
+            { label: "Clipboard", value: "clipboard" as const },
+            { label: "Stdout", value: "stdout" as const },
+          ],
         }),
       selector: () =>
         text({
@@ -50,29 +57,18 @@ async function main(): Promise<void> {
             }
           },
         }),
-      mode: () =>
-        select({
-          message: "Capture mode",
-          options: [
-            {
-              label: "Curated",
-              value: "curated" as const,
-              hint: "Common visual properties only",
-            },
-            {
-              label: "Full",
-              value: "full" as const,
-              hint: "All computed styles",
-            },
-          ],
-        }),
-      output: () =>
-        select({
-          message: "Output",
-          options: [
-            { label: "Clipboard", value: "clipboard" as const },
-            { label: "Stdout", value: "stdout" as const },
-          ],
+      url: () =>
+        text({
+          message: "URL to capture",
+          placeholder: "https://example.com",
+          validate: (val) => {
+            if (!val) {
+              return "URL is required";
+            }
+            if (!URL.canParse(val)) {
+              return "Please enter a valid URL";
+            }
+          },
         }),
     },
     {
@@ -144,9 +140,4 @@ async function main(): Promise<void> {
   }
 
   outro("Done");
-}
-
-main().catch((error) => {
-  log.error(String(error));
-  process.exit(1);
-});
+};

@@ -8,7 +8,8 @@ import type {
 
 export type PickerRunResult = "activated" | "already-active";
 
-export function runPicker(settings: CaptureSettings): PickerRunResult {
+// eslint-disable-next-line unicorn/consistent-function-scoping -- all inner functions must remain inside runPicker because this is a self-contained script injected via chrome.scripting.executeScript
+export const runPicker = (settings: CaptureSettings): PickerRunResult => {
   const PICKER_KEY = "__STYLE_CAPTURE_PICKER__";
   const CURSOR_STYLE_ID = "style-capture-picker-cursor-style";
   const INSPECT_CURSOR =
@@ -169,6 +170,505 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
     return "already-active";
   }
 
+  // --- Pure helper functions (no closure dependencies) ---
+
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside runPicker: self-contained injected script
+  const clamp = (value: number, min: number, max: number): number =>
+    Math.min(Math.max(value, min), max);
+
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside runPicker: self-contained injected script
+  const getBoundingBox = (rect: DOMRect): BoundingBox => ({
+    bottom: rect.bottom,
+    height: rect.height,
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+    width: rect.width,
+    x: rect.x,
+    y: rect.y,
+  });
+
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside runPicker: self-contained injected script
+  const buildSelector = (element: Element): string => {
+    if (element.id) {
+      return `#${CSS.escape(element.id)}`;
+    }
+
+    const segments: string[] = [];
+    let current: Element | null = element;
+
+    while (
+      current &&
+      current.nodeType === Node.ELEMENT_NODE &&
+      segments.length < 4
+    ) {
+      const tagName = current.tagName.toLowerCase();
+      const classes = [...current.classList].slice(0, 2);
+      const classSelector = classes
+        .map((className) => `.${CSS.escape(className)}`)
+        .join("");
+      const index = current.parentElement
+        ? [...current.parentElement.children].indexOf(current) + 1
+        : 1;
+
+      segments.unshift(`${tagName}${classSelector}:nth-child(${index})`);
+      current = current.parentElement;
+    }
+
+    return segments.join(" > ");
+  };
+
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside runPicker: self-contained injected script
+  const createOmittedElementComment = (element: Element): string =>
+    `<!--${element.tagName.toLowerCase()}-->`;
+
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside runPicker: self-contained injected script
+  const isElementHidden = (element: Element): boolean => {
+    const styles = window.getComputedStyle(element);
+    return styles.display === "none" || styles.visibility === "hidden";
+  };
+
+  const shouldOmitElement = (element: Element): boolean =>
+    OMITTED_ELEMENT_NAMES.has(element.tagName.toLowerCase());
+
+  const shouldOmitAttribute = (attributeName: string): boolean => {
+    const normalizedAttributeName = attributeName.toLowerCase();
+
+    return (
+      normalizedAttributeName.startsWith("on") ||
+      normalizedAttributeName === "nonce" ||
+      OMITTED_ATTRIBUTE_NAMES.has(normalizedAttributeName) ||
+      OMITTED_URL_ATTRIBUTE_NAMES.has(normalizedAttributeName)
+    );
+  };
+
+  const truncateToken = (value: string): string => {
+    if (value.length <= TOOLTIP_TOKEN_MAX_LENGTH) {
+      return value;
+    }
+
+    return `${value.slice(0, TOOLTIP_TOKEN_MAX_LENGTH - 3)}...`;
+  };
+
+  // --- Functions that use closure variables ---
+
+  const getTooltipArrowSize = (labelWidth: number): number => {
+    if (labelWidth <= 0) {
+      return LABEL_ARROW_MAX_SIZE;
+    }
+
+    const scaledSize = labelWidth * LABEL_ARROW_WIDTH_RATIO;
+    return clamp(scaledSize, LABEL_ARROW_MIN_SIZE, LABEL_ARROW_MAX_SIZE);
+  };
+
+  const getSafeAttributes = (element: Element): Record<string, string> => {
+    const safeAttributes: Record<string, string> = {};
+
+    for (const attribute of element.attributes) {
+      if (shouldOmitAttribute(attribute.name)) {
+        continue;
+      }
+
+      safeAttributes[attribute.name] = attribute.value;
+    }
+
+    return safeAttributes;
+  };
+
+  const sanitizeElement = (element: Element): void => {
+    if (shouldOmitElement(element)) {
+      element.replaceWith(
+        element.ownerDocument.createComment(element.tagName.toLowerCase())
+      );
+      return;
+    }
+
+    // eslint-disable-next-line unicorn/no-useless-spread -- snapshot needed: removeAttribute mutates the NamedNodeMap during iteration
+    for (const attribute of [...element.attributes]) {
+      if (shouldOmitAttribute(attribute.name)) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+
+    if (element instanceof HTMLTextAreaElement) {
+      element.textContent = "";
+    }
+  };
+
+  const pruneExcludedDescendants = (
+    sourceRoot: Element,
+    cloneRoot: Element,
+    includeHiddenElements: boolean
+  ): void => {
+    const sourceElements = [...sourceRoot.querySelectorAll("*")];
+    const cloneElements = [...cloneRoot.querySelectorAll("*")];
+
+    for (let index = cloneElements.length - 1; index >= 0; index -= 1) {
+      const sourceElement = sourceElements[index];
+      const cloneElement = cloneElements[index];
+
+      if (!(sourceElement && cloneElement)) {
+        continue;
+      }
+
+      if (
+        shouldOmitElement(sourceElement) ||
+        (!includeHiddenElements && isElementHidden(sourceElement))
+      ) {
+        cloneElement.replaceWith(
+          cloneElement.ownerDocument.createComment(
+            cloneElement.tagName.toLowerCase()
+          )
+        );
+      }
+    }
+  };
+
+  const sanitizeOuterHtml = (
+    root: Element,
+    includeHiddenElements: boolean
+  ): string => {
+    const clone = root.cloneNode(true);
+    if (!(clone instanceof Element)) {
+      return "";
+    }
+
+    if (
+      shouldOmitElement(root) ||
+      (!includeHiddenElements && isElementHidden(root))
+    ) {
+      return createOmittedElementComment(clone);
+    }
+
+    pruneExcludedDescendants(root, clone, includeHiddenElements);
+    sanitizeElement(clone);
+
+    for (const element of clone.querySelectorAll("*")) {
+      sanitizeElement(element);
+    }
+
+    return clone.outerHTML;
+  };
+
+  const snapshotDefaultStyles = (
+    styles: CSSStyleDeclaration
+  ): Record<string, string> => {
+    const output: Record<string, string> = {};
+
+    for (const property of CURATED_PROPERTIES) {
+      const value = styles.getPropertyValue(property).trim();
+      if (!value) {
+        continue;
+      }
+
+      output[property] = value;
+    }
+
+    return output;
+  };
+
+  const buildDefaultStyleCacheKey = (element: Element): string => {
+    const parts = [element.tagName.toLowerCase()];
+
+    for (const attributeName of BASELINE_ATTRIBUTE_NAMES) {
+      if (!element.hasAttribute(attributeName)) {
+        continue;
+      }
+
+      parts.push(
+        `${attributeName}=${element.getAttribute(attributeName) ?? ""}`
+      );
+    }
+
+    return parts.join("|");
+  };
+
+  const createDefaultStyleCache = (): {
+    cleanup: () => void;
+    getElementDefaults: (element: Element) => Record<string, string>;
+  } => {
+    let iframeEl: HTMLIFrameElement | null = null;
+    const cache = new Map<string, Record<string, string>>();
+
+    const cleanupCache = (): void => {
+      cache.clear();
+      iframeEl?.remove();
+      iframeEl = null;
+    };
+
+    const getFrameDocument = (): Document => {
+      if (!iframeEl) {
+        iframeEl = document.createElement("iframe");
+        iframeEl.setAttribute("aria-hidden", "true");
+        iframeEl.tabIndex = -1;
+        iframeEl.style.position = "fixed";
+        iframeEl.style.top = "-9999px";
+        iframeEl.style.left = "-9999px";
+        iframeEl.style.width = "0";
+        iframeEl.style.height = "0";
+        iframeEl.style.border = "0";
+        iframeEl.style.opacity = "0";
+        iframeEl.style.pointerEvents = "none";
+        document.documentElement.append(iframeEl);
+
+        const nextDocument = iframeEl.contentDocument;
+        if (!nextDocument) {
+          throw new Error(
+            "Could not create the default-style iframe document."
+          );
+        }
+
+        nextDocument.open();
+        nextDocument.write("<!doctype html><html><body></body></html>");
+        nextDocument.close();
+      }
+
+      if (!iframeEl.contentDocument) {
+        throw new Error("Could not access the default-style iframe document.");
+      }
+
+      return iframeEl.contentDocument;
+    };
+
+    const getElementDefaults = (element: Element): Record<string, string> => {
+      const key = buildDefaultStyleCacheKey(element);
+      const cachedDefaults = cache.get(key);
+      if (cachedDefaults) {
+        return cachedDefaults;
+      }
+
+      const frameDocument = getFrameDocument();
+      const currentFrame = iframeEl;
+      const frameWindow = currentFrame?.contentWindow;
+      if (!frameWindow) {
+        throw new Error("Could not access the default-style iframe window.");
+      }
+
+      const baselineElement = frameDocument.createElement(
+        element.tagName.toLowerCase()
+      );
+
+      for (const attributeName of BASELINE_ATTRIBUTE_NAMES) {
+        if (!element.hasAttribute(attributeName)) {
+          continue;
+        }
+
+        const attributeValue = element.getAttribute(attributeName);
+        baselineElement.setAttribute(attributeName, attributeValue ?? "");
+      }
+
+      frameDocument.body.append(baselineElement);
+      const defaults = snapshotDefaultStyles(
+        frameWindow.getComputedStyle(baselineElement)
+      );
+      baselineElement.remove();
+      cache.set(key, defaults);
+      return defaults;
+    };
+
+    return {
+      cleanup: cleanupCache,
+      getElementDefaults,
+    };
+  };
+
+  const defaultStyleCache = createDefaultStyleCache();
+
+  const snapshotStyles = (
+    element: Element,
+    styles: CSSStyleDeclaration,
+    includeAll: boolean,
+    parentStyles: Record<string, string> | null
+  ): Record<string, string> => {
+    const output: Record<string, string> = {};
+    const properties = includeAll ? [...styles] : [...CURATED_PROPERTIES];
+    const defaultStyles = includeAll
+      ? null
+      : defaultStyleCache.getElementDefaults(element);
+
+    for (const property of properties) {
+      const value = styles.getPropertyValue(property);
+      if (!value) {
+        continue;
+      }
+
+      const trimmedValue = value.trim();
+      if (!trimmedValue) {
+        continue;
+      }
+
+      if (defaultStyles?.[property] === trimmedValue) {
+        continue;
+      }
+
+      if (
+        parentStyles &&
+        INHERITED_PROPERTIES.has(property) &&
+        parentStyles[property] === trimmedValue
+      ) {
+        continue;
+      }
+
+      output[property] = trimmedValue;
+    }
+
+    return output;
+  };
+
+  const snapshotPseudoElement = (
+    element: Element,
+    kind: "before" | "after",
+    includeAll: boolean
+  ): PseudoElementSnapshot | null => {
+    const styles = window.getComputedStyle(element, `::${kind}`);
+    const content = styles.getPropertyValue("content").trim();
+    const display = styles.getPropertyValue("display").trim();
+    const pseudoWidth = styles.getPropertyValue("width").trim();
+    const pseudoHeight = styles.getPropertyValue("height").trim();
+    const backgroundColor = styles.getPropertyValue("background-color").trim();
+    const borderWidth = styles.getPropertyValue("border-top-width").trim();
+
+    if (
+      content === "none" &&
+      display === "inline" &&
+      pseudoWidth === "auto" &&
+      pseudoHeight === "auto" &&
+      backgroundColor === "rgba(0, 0, 0, 0)" &&
+      borderWidth === "0px"
+    ) {
+      return null;
+    }
+
+    return {
+      kind,
+      styles: snapshotStyles(element, styles, includeAll, null),
+    };
+  };
+
+  const buildCapture = (
+    root: Element,
+    currentSettings: CaptureSettings
+  ): CaptureResult => {
+    const elements: Record<string, ElementSnapshot> = {};
+    const order: string[] = [];
+    const idByElement = new WeakMap<Element, string>();
+    let pseudoElementCount = 0;
+    let nextId = 0;
+
+    const captureElement = (
+      element: Element,
+      parentId: string | null
+    ): string => {
+      const id = `node-${nextId}`;
+      nextId += 1;
+      idByElement.set(element, id);
+      order.push(id);
+
+      const snapshot = {
+        attributes: getSafeAttributes(element),
+        boundingBox: getBoundingBox(element.getBoundingClientRect()),
+        children: [] as string[],
+        classList: [...element.classList],
+        id,
+        parentId,
+        pseudo: {} as Partial<
+          Record<
+            "after" | "before",
+            { kind: "after" | "before"; styles: Record<string, string> }
+          >
+        >,
+        selector: buildSelector(element),
+        styles: snapshotStyles(
+          element,
+          window.getComputedStyle(element),
+          currentSettings.captureMode === "full",
+          parentId ? (elements[parentId]?.styles ?? null) : null
+        ),
+        tagName: element.tagName.toLowerCase(),
+      };
+
+      if (currentSettings.includePseudoElements) {
+        const before = snapshotPseudoElement(
+          element,
+          "before",
+          currentSettings.captureMode === "full"
+        );
+        const after = snapshotPseudoElement(
+          element,
+          "after",
+          currentSettings.captureMode === "full"
+        );
+
+        if (before) {
+          snapshot.pseudo.before = before;
+          pseudoElementCount += 1;
+        }
+
+        if (after) {
+          snapshot.pseudo.after = after;
+          pseudoElementCount += 1;
+        }
+      }
+
+      elements[id] = snapshot;
+
+      if (parentId && elements[parentId]) {
+        (elements[parentId] as { children: string[] }).children.push(id);
+      }
+
+      return id;
+    };
+
+    const rootElementId = captureElement(root, null);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, {
+      acceptNode(node) {
+        if (
+          node instanceof Element &&
+          node !== root &&
+          !currentSettings.includeHiddenElements &&
+          isElementHidden(node)
+        ) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+
+    while (walker.nextNode()) {
+      const current = walker.currentNode;
+      if (!(current instanceof Element)) {
+        continue;
+      }
+
+      const parentId = current.parentElement
+        ? (idByElement.get(current.parentElement) ?? null)
+        : null;
+      captureElement(current, parentId);
+    }
+
+    return {
+      elements,
+      metadata: {
+        url: window.location.href,
+      },
+      order,
+      rootElementId,
+      rootOuterHtml: sanitizeOuterHtml(
+        root,
+        currentSettings.includeHiddenElements
+      ),
+      settings: currentSettings,
+      summary: {
+        elementCount: order.length,
+        pseudoElementCount,
+      },
+      version: 1 as const,
+    };
+  };
+
+  // --- DOM setup ---
+
   const mountRoot = document.body ?? document.documentElement;
   const host = document.createElement("div");
   host.id = "style-capture-picker-host";
@@ -178,8 +678,8 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
   host.style.zIndex = "2147483647";
 
   const shadowRoot = host.attachShadow({ mode: "open" });
-  const style = document.createElement("style");
-  style.textContent = `
+  const styleEl = document.createElement("style");
+  styleEl.textContent = `
     :host {
       all: initial;
       direction: ltr;
@@ -296,9 +796,9 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
     }
   `;
 
-  const frame = document.createElement("div");
-  frame.className = "frame";
-  frame.hidden = true;
+  const highlightFrame = document.createElement("div");
+  highlightFrame.className = "frame";
+  highlightFrame.hidden = true;
 
   const tooltip = document.createElement("div");
   tooltip.className = "tooltip";
@@ -332,7 +832,7 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
   tooltipPanel.append(tooltipContent);
   tooltip.append(tooltipArrow, tooltipPanel);
 
-  shadowRoot.append(style, frame, tooltip);
+  shadowRoot.append(styleEl, highlightFrame, tooltip);
   mountRoot.append(host);
 
   const cursorStyle = document.createElement("style");
@@ -352,163 +852,82 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
     target.style.setProperty("cursor", INSPECT_CURSOR, "important");
   }
 
-  const state = {
-    cleanup,
-    currentTarget: null as Element | null,
-    pointerX: null as number | null,
-    pointerY: null as number | null,
+  // --- Overlay + tooltip update functions ---
+
+  const buildHoverSegment = (element: Element): string => {
+    const tagName = element.tagName.toLowerCase();
+
+    if (element.id) {
+      return `${tagName}#${truncateToken(element.id)}`;
+    }
+
+    const firstClassName = [...element.classList].find(Boolean);
+    if (firstClassName) {
+      return `${tagName}.${truncateToken(firstClassName)}`;
+    }
+
+    return tagName;
   };
-  const defaultStyleCache = createDefaultStyleCache();
 
-  view[PICKER_KEY] = state;
+  const buildHoverLabelParts = (
+    element: Element
+  ): {
+    prefix: string;
+    target: string;
+  } => {
+    const segments: string[] = [];
+    let current: Element | null = element;
 
-  function cleanup(): void {
-    document.removeEventListener("pointermove", handlePointerMove, true);
-    document.removeEventListener("mousemove", handleMouseMove, true);
-    document.removeEventListener("mouseover", handleMouseMove, true);
-    document.removeEventListener("pointerdown", handlePointerDown, true);
-    document.removeEventListener("keydown", handleKeyDown, true);
-    defaultStyleCache.cleanup();
-    cursorStyle.remove();
-    for (const { priority, target, value } of previousCursorState) {
-      if (value) {
-        target.style.setProperty("cursor", value, priority);
-      } else {
-        target.style.removeProperty("cursor");
-      }
-    }
-    host.remove();
-    delete view[PICKER_KEY];
-  }
-
-  function handlePointerMove(event: PointerEvent): void {
-    updateTargetFromEvent(event);
-  }
-
-  function handleMouseMove(event: MouseEvent): void {
-    updateTargetFromEvent(event);
-  }
-
-  function updateTargetFromEvent(event: MouseEvent | PointerEvent): void {
-    const nextTarget = resolveTargetFromEvent(event);
-    if (!nextTarget) {
-      return;
-    }
-
-    state.pointerX = event.clientX;
-    state.pointerY = event.clientY;
-    state.currentTarget = nextTarget;
-    updateOverlay(nextTarget, event.clientX);
-  }
-
-  function handlePointerDown(event: PointerEvent): void {
-    const target = resolveTargetFromEvent(event) ?? state.currentTarget;
-    if (!target) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    try {
-      const capture = buildCapture(target, settings);
-      cleanup();
-      chrome.runtime
-        .sendMessage({
-          capture,
-          type: "capture/completed",
-        })
-        .catch(() => undefined);
-    } catch (error) {
-      cleanup();
-      chrome.runtime
-        .sendMessage({
-          error: error instanceof Error ? error.message : "Capture failed.",
-          type: "capture/failed",
-        })
-        .catch(() => undefined);
-    }
-  }
-
-  function handleKeyDown(event: KeyboardEvent): void {
-    if (event.key === "Escape") {
-      cleanup();
-      chrome.runtime
-        .sendMessage({
-          reason: "Capture cancelled.",
-          type: "capture/cancelled",
-        })
-        .catch(() => undefined);
-      return;
-    }
-
-    if (!state.currentTarget) {
-      return;
-    }
-
-    if (event.key === "Shift") {
-      const parent = state.currentTarget.parentElement;
-      if (parent) {
-        state.currentTarget = parent;
-        updateOverlay(parent, state.pointerX);
-      }
-      return;
-    }
-
-    if (event.key === "Alt") {
-      const child = state.currentTarget.firstElementChild;
-      if (child) {
-        state.currentTarget = child;
-        updateOverlay(child, state.pointerX);
-      }
-    }
-  }
-
-  function resolveTargetFromEvent(
-    event: MouseEvent | PointerEvent
-  ): Element | null {
-    const pathTarget = event.composedPath()[0];
-    if (
-      pathTarget instanceof Element &&
-      pathTarget.getRootNode() !== shadowRoot &&
-      !host.contains(pathTarget)
+    while (
+      current &&
+      current.nodeType === Node.ELEMENT_NODE &&
+      segments.length < TOOLTIP_MAX_SEGMENTS
     ) {
-      return pathTarget;
+      segments.unshift(buildHoverSegment(current));
+      current = current.parentElement;
     }
 
-    const fallbackTarget = document.elementFromPoint(
-      event.clientX,
-      event.clientY
+    const targetSegment = segments.at(-1) ?? "";
+    const prefixSegments = segments.slice(0, -1);
+
+    return {
+      prefix:
+        prefixSegments.length > 0 ? `${prefixSegments.join(" > ")} > ` : "",
+      target: targetSegment,
+    };
+  };
+
+  const updateTooltipArrowPosition = (
+    labelWidth: number,
+    edgeOffsetX: number
+  ): void => {
+    if (labelWidth <= 0) {
+      tooltipArrow.style.left = "50%";
+      return;
+    }
+
+    const labelHalfWidth = labelWidth / 2;
+    const arrowCenter = clamp(
+      labelHalfWidth - edgeOffsetX,
+      Math.min(LABEL_ARROW_EDGE_MARGIN, labelHalfWidth),
+      Math.max(labelWidth - LABEL_ARROW_EDGE_MARGIN, labelHalfWidth)
     );
-    if (
-      !fallbackTarget ||
-      fallbackTarget.getRootNode() === shadowRoot ||
-      host.contains(fallbackTarget)
-    ) {
-      return null;
-    }
 
-    return fallbackTarget;
-  }
+    tooltipArrow.style.left = `${arrowCenter}px`;
+  };
 
-  function updateFrame(target: Element): void {
+  const updateFrame = (target: Element): void => {
     const box = target.getBoundingClientRect();
     const computedStyle = window.getComputedStyle(target);
 
-    frame.hidden = false;
-    frame.style.transform = `translate(${box.left}px, ${box.top}px)`;
-    frame.style.width = `${Math.max(box.width, 1)}px`;
-    frame.style.height = `${Math.max(box.height, 1)}px`;
-    frame.style.borderRadius = computedStyle.borderRadius || "0px";
-  }
+    highlightFrame.hidden = false;
+    highlightFrame.style.transform = `translate(${box.left}px, ${box.top}px)`;
+    highlightFrame.style.width = `${Math.max(box.width, 1)}px`;
+    highlightFrame.style.height = `${Math.max(box.height, 1)}px`;
+    highlightFrame.style.borderRadius = computedStyle.borderRadius || "0px";
+  };
 
-  function updateOverlay(target: Element, pointerX: number | null): void {
-    updateFrame(target);
-    updateTooltip(target, pointerX);
-  }
-
-  function updateTooltip(target: Element, pointerX: number | null): void {
+  const updateTooltip = (target: Element, pointerX: number | null): void => {
     const label = buildHoverLabelParts(target);
     tooltipLabelPrefix.textContent = label.prefix;
     tooltipLabelPrefix.hidden = label.prefix.length === 0;
@@ -560,528 +979,171 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
     tooltip.style.left = `${anchorX}px`;
     tooltip.style.top = `${top}px`;
     updateTooltipArrowPosition(labelWidth, edgeOffsetX);
-  }
+  };
 
-  function buildHoverLabelParts(element: Element): {
-    prefix: string;
-    target: string;
-  } {
-    const segments: string[] = [];
-    let current: Element | null = element;
+  const updateOverlay = (target: Element, pointerX: number | null): void => {
+    updateFrame(target);
+    updateTooltip(target, pointerX);
+  };
 
-    while (
-      current &&
-      current.nodeType === Node.ELEMENT_NODE &&
-      segments.length < TOOLTIP_MAX_SEGMENTS
-    ) {
-      segments.unshift(buildHoverSegment(current));
-      current = current.parentElement;
-    }
+  // --- State (must be defined before event handlers that reference it) ---
 
-    const targetSegment = segments.at(-1) ?? "";
-    const prefixSegments = segments.slice(0, -1);
+  const state = {
+    currentTarget: null as Element | null,
+    pointerX: null as number | null,
+    pointerY: null as number | null,
+  };
 
-    return {
-      prefix:
-        prefixSegments.length > 0 ? `${prefixSegments.join(" > ")} > ` : "",
-      target: targetSegment,
-    };
-  }
+  // --- Event handler functions ---
 
-  function buildHoverSegment(element: Element): string {
-    const tagName = element.tagName.toLowerCase();
-
-    if (element.id) {
-      return `${tagName}#${truncateToken(element.id)}`;
-    }
-
-    const firstClassName = Array.from(element.classList).find(Boolean);
-    if (firstClassName) {
-      return `${tagName}.${truncateToken(firstClassName)}`;
-    }
-
-    return tagName;
-  }
-
-  function truncateToken(value: string): string {
-    if (value.length <= TOOLTIP_TOKEN_MAX_LENGTH) {
-      return value;
-    }
-
-    return `${value.slice(0, TOOLTIP_TOKEN_MAX_LENGTH - 3)}...`;
-  }
-
-  function clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
-  }
-
-  function getTooltipArrowSize(labelWidth: number): number {
-    if (labelWidth <= 0) {
-      return LABEL_ARROW_MAX_SIZE;
-    }
-
-    const scaledSize = labelWidth * LABEL_ARROW_WIDTH_RATIO;
-    return clamp(scaledSize, LABEL_ARROW_MIN_SIZE, LABEL_ARROW_MAX_SIZE);
-  }
-
-  function updateTooltipArrowPosition(
-    labelWidth: number,
-    edgeOffsetX: number
-  ): void {
-    if (labelWidth <= 0) {
-      tooltipArrow.style.left = "50%";
-      return;
-    }
-
-    const labelHalfWidth = labelWidth / 2;
-    const arrowCenter = clamp(
-      labelHalfWidth - edgeOffsetX,
-      Math.min(LABEL_ARROW_EDGE_MARGIN, labelHalfWidth),
-      Math.max(labelWidth - LABEL_ARROW_EDGE_MARGIN, labelHalfWidth)
-    );
-
-    tooltipArrow.style.left = `${arrowCenter}px`;
-  }
-
-  function buildCapture(
-    root: Element,
-    currentSettings: CaptureSettings
-  ): CaptureResult {
-    const elements: Record<string, ElementSnapshot> = {};
-    const order: string[] = [];
-    const idByElement = new WeakMap<Element, string>();
-    let pseudoElementCount = 0;
-    let nextId = 0;
-
-    const rootElementId = captureElement(root, null);
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, {
-      acceptNode(node) {
-        if (
-          node instanceof Element &&
-          node !== root &&
-          !currentSettings.includeHiddenElements &&
-          isElementHidden(node)
-        ) {
-          return NodeFilter.FILTER_REJECT;
-        }
-
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    });
-
-    while (walker.nextNode()) {
-      const current = walker.currentNode;
-      if (!(current instanceof Element)) {
-        continue;
-      }
-
-      const parentId = current.parentElement
-        ? (idByElement.get(current.parentElement) ?? null)
-        : null;
-      captureElement(current, parentId);
-    }
-
-    return {
-      elements,
-      metadata: {
-        url: window.location.href,
-      },
-      order,
-      rootElementId,
-      rootOuterHtml: sanitizeOuterHtml(root),
-      settings: currentSettings,
-      summary: {
-        elementCount: order.length,
-        pseudoElementCount,
-      },
-      version: 1 as const,
-    };
-
-    function captureElement(element: Element, parentId: string | null): string {
-      const id = `node-${nextId}`;
-      nextId += 1;
-      idByElement.set(element, id);
-      order.push(id);
-
-      const snapshot = {
-        attributes: getSafeAttributes(element),
-        boundingBox: getBoundingBox(element.getBoundingClientRect()),
-        children: [] as string[],
-        classList: Array.from(element.classList),
-        id,
-        parentId,
-        pseudo: {} as Partial<
-          Record<
-            "before" | "after",
-            { kind: "before" | "after"; styles: Record<string, string> }
-          >
-        >,
-        selector: buildSelector(element),
-        styles: snapshotStyles(
-          element,
-          window.getComputedStyle(element),
-          currentSettings.captureMode === "full",
-          parentId ? (elements[parentId]?.styles ?? null) : null
-        ),
-        tagName: element.tagName.toLowerCase(),
-      };
-
-      if (currentSettings.includePseudoElements) {
-        const before = snapshotPseudoElement(
-          element,
-          "before",
-          currentSettings.captureMode === "full"
-        );
-        const after = snapshotPseudoElement(
-          element,
-          "after",
-          currentSettings.captureMode === "full"
-        );
-
-        if (before) {
-          snapshot.pseudo.before = before;
-          pseudoElementCount += 1;
-        }
-
-        if (after) {
-          snapshot.pseudo.after = after;
-          pseudoElementCount += 1;
-        }
-      }
-
-      elements[id] = snapshot;
-
-      if (parentId && elements[parentId]) {
-        (elements[parentId] as { children: string[] }).children.push(id);
-      }
-
-      return id;
-    }
-  }
-
-  function snapshotStyles(
-    element: Element,
-    styles: CSSStyleDeclaration,
-    includeAll: boolean,
-    parentStyles: Record<string, string> | null
-  ): Record<string, string> {
-    const output: Record<string, string> = {};
-    const properties = includeAll
-      ? Array.from(styles)
-      : [...CURATED_PROPERTIES];
-    const defaultStyles = includeAll
-      ? null
-      : defaultStyleCache.getElementDefaults(element);
-
-    for (const property of properties) {
-      const value = styles.getPropertyValue(property);
-      if (!value) {
-        continue;
-      }
-
-      const trimmedValue = value.trim();
-      if (!trimmedValue) {
-        continue;
-      }
-
-      if (defaultStyles?.[property] === trimmedValue) {
-        continue;
-      }
-
-      if (
-        parentStyles &&
-        INHERITED_PROPERTIES.has(property) &&
-        parentStyles[property] === trimmedValue
-      ) {
-        continue;
-      }
-
-      output[property] = trimmedValue;
-    }
-
-    return output;
-  }
-
-  function snapshotPseudoElement(
-    element: Element,
-    kind: "before" | "after",
-    includeAll: boolean
-  ): PseudoElementSnapshot | null {
-    const styles = window.getComputedStyle(element, `::${kind}`);
-    const content = styles.getPropertyValue("content").trim();
-    const display = styles.getPropertyValue("display").trim();
-    const width = styles.getPropertyValue("width").trim();
-    const height = styles.getPropertyValue("height").trim();
-    const backgroundColor = styles.getPropertyValue("background-color").trim();
-    const borderWidth = styles.getPropertyValue("border-top-width").trim();
-
+  const resolveTargetFromEvent = (
+    event: MouseEvent | PointerEvent
+  ): Element | null => {
+    const [pathTarget] = event.composedPath();
     if (
-      content === "none" &&
-      display === "inline" &&
-      width === "auto" &&
-      height === "auto" &&
-      backgroundColor === "rgba(0, 0, 0, 0)" &&
-      borderWidth === "0px"
+      pathTarget instanceof Element &&
+      pathTarget.getRootNode() !== shadowRoot &&
+      !host.contains(pathTarget)
+    ) {
+      return pathTarget;
+    }
+
+    const fallbackTarget = document.elementFromPoint(
+      event.clientX,
+      event.clientY
+    );
+    if (
+      !fallbackTarget ||
+      fallbackTarget.getRootNode() === shadowRoot ||
+      host.contains(fallbackTarget)
     ) {
       return null;
     }
 
-    return {
-      kind,
-      styles: snapshotStyles(element, styles, includeAll, null),
-    };
-  }
+    return fallbackTarget;
+  };
 
-  function createDefaultStyleCache(): {
-    cleanup: () => void;
-    getElementDefaults: (element: Element) => Record<string, string>;
-  } {
-    let frame: HTMLIFrameElement | null = null;
-    const cache = new Map<string, Record<string, string>>();
-
-    function cleanupCache(): void {
-      cache.clear();
-      frame?.remove();
-      frame = null;
-    }
-
-    function getElementDefaults(element: Element): Record<string, string> {
-      const key = buildDefaultStyleCacheKey(element);
-      const cachedDefaults = cache.get(key);
-      if (cachedDefaults) {
-        return cachedDefaults;
-      }
-
-      const frameDocument = getFrameDocument();
-      const currentFrame = frame;
-      const frameWindow = currentFrame?.contentWindow;
-      if (!frameWindow) {
-        throw new Error("Could not access the default-style iframe window.");
-      }
-
-      const baselineElement = frameDocument.createElement(
-        element.tagName.toLowerCase()
-      );
-
-      for (const attributeName of BASELINE_ATTRIBUTE_NAMES) {
-        if (!element.hasAttribute(attributeName)) {
-          continue;
-        }
-
-        const attributeValue = element.getAttribute(attributeName);
-        baselineElement.setAttribute(attributeName, attributeValue ?? "");
-      }
-
-      frameDocument.body.append(baselineElement);
-      const defaults = snapshotDefaultStyles(
-        frameWindow.getComputedStyle(baselineElement)
-      );
-      baselineElement.remove();
-      cache.set(key, defaults);
-      return defaults;
-    }
-
-    function getFrameDocument(): Document {
-      if (!frame) {
-        frame = document.createElement("iframe");
-        frame.setAttribute("aria-hidden", "true");
-        frame.tabIndex = -1;
-        frame.style.position = "fixed";
-        frame.style.top = "-9999px";
-        frame.style.left = "-9999px";
-        frame.style.width = "0";
-        frame.style.height = "0";
-        frame.style.border = "0";
-        frame.style.opacity = "0";
-        frame.style.pointerEvents = "none";
-        document.documentElement.append(frame);
-
-        const nextDocument = frame.contentDocument;
-        if (!nextDocument) {
-          throw new Error(
-            "Could not create the default-style iframe document."
-          );
-        }
-
-        nextDocument.open();
-        nextDocument.write("<!doctype html><html><body></body></html>");
-        nextDocument.close();
-      }
-
-      if (!frame.contentDocument) {
-        throw new Error("Could not access the default-style iframe document.");
-      }
-
-      return frame.contentDocument;
-    }
-
-    return {
-      cleanup: cleanupCache,
-      getElementDefaults,
-    };
-  }
-
-  function snapshotDefaultStyles(
-    styles: CSSStyleDeclaration
-  ): Record<string, string> {
-    const output: Record<string, string> = {};
-
-    for (const property of CURATED_PROPERTIES) {
-      const value = styles.getPropertyValue(property).trim();
-      if (!value) {
-        continue;
-      }
-
-      output[property] = value;
-    }
-
-    return output;
-  }
-
-  function buildDefaultStyleCacheKey(element: Element): string {
-    const parts = [element.tagName.toLowerCase()];
-
-    for (const attributeName of BASELINE_ATTRIBUTE_NAMES) {
-      if (!element.hasAttribute(attributeName)) {
-        continue;
-      }
-
-      parts.push(
-        `${attributeName}=${element.getAttribute(attributeName) ?? ""}`
-      );
-    }
-
-    return parts.join("|");
-  }
-
-  function getBoundingBox(rect: DOMRect): BoundingBox {
-    return {
-      bottom: rect.bottom,
-      height: rect.height,
-      left: rect.left,
-      right: rect.right,
-      top: rect.top,
-      width: rect.width,
-      x: rect.x,
-      y: rect.y,
-    };
-  }
-
-  function buildSelector(element: Element): string {
-    if (element.id) {
-      return `#${CSS.escape(element.id)}`;
-    }
-
-    const segments: string[] = [];
-    let current: Element | null = element;
-
-    while (
-      current &&
-      current.nodeType === Node.ELEMENT_NODE &&
-      segments.length < 4
-    ) {
-      const tagName = current.tagName.toLowerCase();
-      const classes = Array.from(current.classList).slice(0, 2);
-      const classSelector = classes
-        .map((className) => `.${CSS.escape(className)}`)
-        .join("");
-      const index = current.parentElement
-        ? Array.from(current.parentElement.children).indexOf(current) + 1
-        : 1;
-
-      segments.unshift(`${tagName}${classSelector}:nth-child(${index})`);
-      current = current.parentElement;
-    }
-
-    return segments.join(" > ");
-  }
-
-  function getSafeAttributes(element: Element): Record<string, string> {
-    const safeAttributes: Record<string, string> = {};
-
-    for (const attribute of Array.from(element.attributes)) {
-      if (shouldOmitAttribute(attribute.name)) {
-        continue;
-      }
-
-      safeAttributes[attribute.name] = attribute.value;
-    }
-
-    return safeAttributes;
-  }
-
-  function sanitizeOuterHtml(root: Element): string {
-    const clone = root.cloneNode(true);
-    if (!(clone instanceof Element)) {
-      return "";
-    }
-
-    if (shouldOmitElement(clone)) {
-      return createOmittedElementComment(clone);
-    }
-
-    pruneUnsafeDescendants(clone);
-    sanitizeElement(clone);
-
-    for (const element of clone.querySelectorAll("*")) {
-      sanitizeElement(element);
-    }
-
-    return clone.outerHTML;
-  }
-
-  function sanitizeElement(element: Element): void {
-    if (shouldOmitElement(element)) {
-      element.replaceWith(
-        element.ownerDocument.createComment(element.tagName.toLowerCase())
-      );
+  const updateTargetFromEvent = (event: MouseEvent | PointerEvent): void => {
+    const nextTarget = resolveTargetFromEvent(event);
+    if (!nextTarget) {
       return;
     }
 
-    for (const attribute of Array.from(element.attributes)) {
-      if (shouldOmitAttribute(attribute.name)) {
-        element.removeAttribute(attribute.name);
+    state.pointerX = event.clientX;
+    state.pointerY = event.clientY;
+    state.currentTarget = nextTarget;
+    updateOverlay(nextTarget, event.clientX);
+  };
+
+  const handlePointerMove = (event: PointerEvent): void => {
+    updateTargetFromEvent(event);
+  };
+
+  const handleMouseMove = (event: MouseEvent): void => {
+    updateTargetFromEvent(event);
+  };
+
+  // eslint-disable-next-line no-use-before-define -- circular reference: cleanup removes handlers that call cleanup; all invoked later at event time
+  const cleanup = (): void => {
+    document.removeEventListener("pointermove", handlePointerMove, true);
+    document.removeEventListener("mousemove", handleMouseMove, true);
+    document.removeEventListener("mouseover", handleMouseMove, true);
+    // eslint-disable-next-line no-use-before-define -- circular: cleanup removes handlers that reference cleanup; all invoked at event time
+    document.removeEventListener("pointerdown", handlePointerDown, true);
+    // eslint-disable-next-line no-use-before-define -- circular: cleanup removes handlers that reference cleanup; all invoked at event time
+    document.removeEventListener("keydown", handleKeyDown, true);
+    defaultStyleCache.cleanup();
+    cursorStyle.remove();
+    for (const { priority, target, value } of previousCursorState) {
+      if (value) {
+        target.style.setProperty("cursor", value, priority);
+      } else {
+        target.style.removeProperty("cursor");
       }
     }
+    host.remove();
+    view[PICKER_KEY] = undefined;
+  };
 
-    if (element instanceof HTMLTextAreaElement) {
-      element.textContent = "";
+  const handlePointerDown = (event: PointerEvent): void => {
+    const target = resolveTargetFromEvent(event) ?? state.currentTarget;
+    if (!target) {
+      return;
     }
-  }
 
-  function pruneUnsafeDescendants(root: Element): void {
-    for (const element of Array.from(root.querySelectorAll("*"))) {
-      if (shouldOmitElement(element)) {
-        element.replaceWith(
-          element.ownerDocument.createComment(element.tagName.toLowerCase())
-        );
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    try {
+      const capture = buildCapture(target, settings);
+      cleanup();
+      (async () => {
+        try {
+          await chrome.runtime.sendMessage({
+            capture,
+            type: "capture/completed",
+          });
+        } catch {
+          // noop
+        }
+      })();
+    } catch (error) {
+      cleanup();
+      (async () => {
+        try {
+          await chrome.runtime.sendMessage({
+            error: error instanceof Error ? error.message : "Capture failed.",
+            type: "capture/failed",
+          });
+        } catch {
+          // noop
+        }
+      })();
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === "Escape") {
+      cleanup();
+      (async () => {
+        try {
+          await chrome.runtime.sendMessage({
+            reason: "Capture cancelled.",
+            type: "capture/cancelled",
+          });
+        } catch {
+          // noop
+        }
+      })();
+      return;
+    }
+
+    if (!state.currentTarget) {
+      return;
+    }
+
+    if (event.key === "Shift") {
+      const parent = state.currentTarget.parentElement;
+      if (parent) {
+        state.currentTarget = parent;
+        updateOverlay(parent, state.pointerX);
+      }
+      return;
+    }
+
+    if (event.key === "Alt") {
+      const child = state.currentTarget.firstElementChild;
+      if (child) {
+        state.currentTarget = child;
+        updateOverlay(child, state.pointerX);
       }
     }
-  }
+  };
 
-  function createOmittedElementComment(element: Element): string {
-    return `<!--${element.tagName.toLowerCase()}-->`;
-  }
+  // --- Event binding ---
 
-  function shouldOmitElement(element: Element): boolean {
-    return OMITTED_ELEMENT_NAMES.has(element.tagName.toLowerCase());
-  }
-
-  function shouldOmitAttribute(attributeName: string): boolean {
-    const normalizedAttributeName = attributeName.toLowerCase();
-
-    return (
-      normalizedAttributeName.startsWith("on") ||
-      normalizedAttributeName === "nonce" ||
-      OMITTED_ATTRIBUTE_NAMES.has(normalizedAttributeName) ||
-      OMITTED_URL_ATTRIBUTE_NAMES.has(normalizedAttributeName)
-    );
-  }
-
-  function isElementHidden(element: Element): boolean {
-    const styles = window.getComputedStyle(element);
-    return styles.display === "none" || styles.visibility === "hidden";
-  }
+  view[PICKER_KEY] = { cleanup, ...state };
 
   document.addEventListener("pointermove", handlePointerMove, true);
   document.addEventListener("mousemove", handleMouseMove, true);
@@ -1089,4 +1151,4 @@ export function runPicker(settings: CaptureSettings): PickerRunResult {
   document.addEventListener("pointerdown", handlePointerDown, true);
   document.addEventListener("keydown", handleKeyDown, true);
   return "activated";
-}
+};

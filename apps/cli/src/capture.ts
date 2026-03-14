@@ -6,13 +6,13 @@ import type { Page } from "playwright";
  * This mirrors the extension's `buildCapture` from `run-picker.ts`,
  * adapted to run via `page.evaluate()`.
  */
-export async function captureElement(
+export const captureElement = async (
   page: Page,
   selector: string,
   settings: CaptureSettings
-): Promise<CaptureResult> {
+): Promise<CaptureResult> => {
   const result = await page.evaluate(
-    ({ selector, settings }) => {
+    ({ selector: sel, settings: opts }) => {
       const OMITTED_ELEMENT_NAMES = new Set([
         "base",
         "iframe",
@@ -144,9 +144,9 @@ export async function captureElement(
         "z-index",
       ];
 
-      const root = document.querySelector(selector);
-      if (!root) {
-        throw new Error(`No element found for selector: ${selector}`);
+      const rootEl = document.querySelector(sel);
+      if (!rootEl) {
+        throw new Error(`No element found for selector: ${sel}`);
       }
 
       const elements: Record<
@@ -169,7 +169,10 @@ export async function captureElement(
           parentId: string | null;
           pseudo: Record<
             string,
-            { kind: "before" | "after"; styles: Record<string, string> }
+            {
+              kind: "before" | "after";
+              styles: Record<string, string>;
+            }
           >;
           selector: string;
           styles: Record<string, string>;
@@ -196,8 +199,7 @@ export async function captureElement(
       }
       const defaultStyleCache = new Map<string, Record<string, string>>();
 
-      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: mirrors extension capture logic in self-contained page.evaluate
-      function getDefaultStyles(element: Element): Record<string, string> {
+      const getDefaultStyles = (element: Element): Record<string, string> => {
         const parts = [element.tagName.toLowerCase()];
         for (const attr of BASELINE_ATTRIBUTE_NAMES) {
           if (element.hasAttribute(attr)) {
@@ -235,19 +237,16 @@ export async function captureElement(
         baseline.remove();
         defaultStyleCache.set(key, defaults);
         return defaults;
-      }
+      };
 
-      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: mirrors extension capture logic in self-contained page.evaluate
-      function snapshotStyles(
+      const snapshotStyles = (
         element: Element,
         styles: CSSStyleDeclaration,
         includeAll: boolean,
         parentStyles: Record<string, string> | null
-      ): Record<string, string> {
+      ): Record<string, string> => {
         const output: Record<string, string> = {};
-        const properties = includeAll
-          ? Array.from(styles)
-          : [...CURATED_PROPERTIES];
+        const properties = includeAll ? [...styles] : [...CURATED_PROPERTIES];
         const defaultStyles = includeAll ? null : getDefaultStyles(element);
 
         for (const property of properties) {
@@ -272,13 +271,16 @@ export async function captureElement(
           output[property] = trimmed;
         }
         return output;
-      }
+      };
 
-      function snapshotPseudo(
+      const snapshotPseudo = (
         element: Element,
         kind: "before" | "after",
         includeAll: boolean
-      ): { kind: "before" | "after"; styles: Record<string, string> } | null {
+      ): {
+        kind: "before" | "after";
+        styles: Record<string, string>;
+      } | null => {
         const styles = window.getComputedStyle(element, `::${kind}`);
         const content = styles.getPropertyValue("content").trim();
         const display = styles.getPropertyValue("display").trim();
@@ -302,9 +304,10 @@ export async function captureElement(
           kind,
           styles: snapshotStyles(element, styles, includeAll, null),
         };
-      }
+      };
 
-      function buildSelector(element: Element): string {
+      // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside page.evaluate
+      const buildSelector = (element: Element): string => {
         if (element.id) {
           return `#${CSS.escape(element.id)}`;
         }
@@ -316,20 +319,20 @@ export async function captureElement(
           segments.length < 4
         ) {
           const tag = current.tagName.toLowerCase();
-          const classes = Array.from(current.classList)
+          const classes = [...current.classList]
             .slice(0, 2)
             .map((c) => `.${CSS.escape(c)}`)
             .join("");
           const idx = current.parentElement
-            ? Array.from(current.parentElement.children).indexOf(current) + 1
+            ? [...current.parentElement.children].indexOf(current) + 1
             : 1;
           segments.unshift(`${tag}${classes}:nth-child(${idx})`);
           current = current.parentElement;
         }
         return segments.join(" > ");
-      }
+      };
 
-      function shouldOmitAttr(name: string): boolean {
+      const shouldOmitAttr = (name: string): boolean => {
         const n = name.toLowerCase();
         return (
           n.startsWith("on") ||
@@ -337,71 +340,104 @@ export async function captureElement(
           OMITTED_ATTRIBUTE_NAMES.has(n) ||
           OMITTED_URL_ATTRIBUTE_NAMES.has(n)
         );
-      }
+      };
 
-      function getSafeAttributes(el: Element): Record<string, string> {
+      const getSafeAttributes = (el: Element): Record<string, string> => {
         const safe: Record<string, string> = {};
-        for (const attr of Array.from(el.attributes)) {
+        for (const attr of el.attributes) {
           if (!shouldOmitAttr(attr.name)) {
             safe[attr.name] = attr.value;
           }
         }
         return safe;
-      }
+      };
 
-      function getBoundingBox(rect: DOMRect) {
-        return {
-          bottom: rect.bottom,
-          height: rect.height,
-          left: rect.left,
-          right: rect.right,
-          top: rect.top,
-          width: rect.width,
-          x: rect.x,
-          y: rect.y,
-        };
-      }
+      // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside page.evaluate
+      const getBoundingBox = (rect: DOMRect) => ({
+        bottom: rect.bottom,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+        x: rect.x,
+        y: rect.y,
+      });
 
-      function isHidden(el: Element): boolean {
+      // eslint-disable-next-line unicorn/consistent-function-scoping -- must stay inside page.evaluate
+      const isHidden = (el: Element): boolean => {
         const s = window.getComputedStyle(el);
         return s.display === "none" || s.visibility === "hidden";
-      }
+      };
 
-      function sanitizeOuterHtml(root: Element): string {
-        const clone = root.cloneNode(true);
+      const pruneExcludedDescendants = (
+        sourceRoot: Element,
+        cloneRoot: Element,
+        includeHiddenElements: boolean
+      ): void => {
+        const sourceElements = [...sourceRoot.querySelectorAll("*")];
+        const cloneElements = [...cloneRoot.querySelectorAll("*")];
+
+        for (let index = cloneElements.length - 1; index >= 0; index -= 1) {
+          const sourceElement = sourceElements[index];
+          const cloneElement = cloneElements[index];
+
+          if (!(sourceElement && cloneElement)) {
+            continue;
+          }
+
+          if (
+            OMITTED_ELEMENT_NAMES.has(sourceElement.tagName.toLowerCase()) ||
+            (!includeHiddenElements && isHidden(sourceElement))
+          ) {
+            cloneElement.replaceWith(
+              cloneElement.ownerDocument.createComment(
+                cloneElement.tagName.toLowerCase()
+              )
+            );
+          }
+        }
+      };
+
+      const sanitizeOuterHtml = (
+        el: Element,
+        includeHiddenElements: boolean
+      ): string => {
+        const clone = el.cloneNode(true);
         if (!(clone instanceof Element)) {
           return "";
         }
 
-        // Remove omitted elements
-        for (const el of Array.from(clone.querySelectorAll("*"))) {
-          if (OMITTED_ELEMENT_NAMES.has(el.tagName.toLowerCase())) {
-            el.replaceWith(
-              el.ownerDocument.createComment(el.tagName.toLowerCase())
-            );
-          }
+        if (
+          OMITTED_ELEMENT_NAMES.has(el.tagName.toLowerCase()) ||
+          (!includeHiddenElements && isHidden(el))
+        ) {
+          return `<!--${el.tagName.toLowerCase()}-->`;
         }
 
-        // Sanitize attributes
-        function sanitize(el: Element) {
-          for (const attr of Array.from(el.attributes)) {
+        pruneExcludedDescendants(el, clone, includeHiddenElements);
+
+        // Sanitize attributes — snapshot attributes since we modify during iteration
+        const sanitize = (target: Element) => {
+          // eslint-disable-next-line unicorn/no-useless-spread -- attributes is a live NamedNodeMap modified during iteration
+          for (const attr of [...target.attributes]) {
             if (shouldOmitAttr(attr.name)) {
-              el.removeAttribute(attr.name);
+              target.removeAttribute(attr.name);
             }
           }
-          if (el instanceof HTMLTextAreaElement) {
-            el.textContent = "";
+          if (target instanceof HTMLTextAreaElement) {
+            target.textContent = "";
           }
-        }
+        };
         sanitize(clone);
-        for (const el of clone.querySelectorAll("*")) {
-          sanitize(el);
+        for (const child of clone.querySelectorAll("*")) {
+          sanitize(child);
         }
 
         return clone.outerHTML;
-      }
+      };
 
-      function captureEl(element: Element, parentId: string | null): string {
+      const captureEl = (element: Element, parentId: string | null): string => {
         const id = `node-${nextId}`;
         nextId += 1;
         idByElement.set(element, id);
@@ -411,33 +447,36 @@ export async function captureElement(
           attributes: getSafeAttributes(element),
           boundingBox: getBoundingBox(element.getBoundingClientRect()),
           children: [] as string[],
-          classList: Array.from(element.classList),
+          classList: [...element.classList],
           id,
           parentId,
           pseudo: {} as Record<
             string,
-            { kind: "before" | "after"; styles: Record<string, string> }
+            {
+              kind: "before" | "after";
+              styles: Record<string, string>;
+            }
           >,
           selector: buildSelector(element),
           styles: snapshotStyles(
             element,
             window.getComputedStyle(element),
-            settings.captureMode === "full",
+            opts.captureMode === "full",
             parentId ? (elements[parentId]?.styles ?? null) : null
           ),
           tagName: element.tagName.toLowerCase(),
         };
 
-        if (settings.includePseudoElements) {
+        if (opts.includePseudoElements) {
           const before = snapshotPseudo(
             element,
             "before",
-            settings.captureMode === "full"
+            opts.captureMode === "full"
           );
           const after = snapshotPseudo(
             element,
             "after",
-            settings.captureMode === "full"
+            opts.captureMode === "full"
           );
           if (before) {
             snapshot.pseudo.before = before;
@@ -454,23 +493,27 @@ export async function captureElement(
           elements[parentId].children.push(id);
         }
         return id;
-      }
+      };
 
-      const rootElementId = captureEl(root, null);
+      const rootElementId = captureEl(rootEl, null);
 
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, {
-        acceptNode(node) {
-          if (
-            node instanceof Element &&
-            node !== root &&
-            !settings.includeHiddenElements &&
-            isHidden(node)
-          ) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      });
+      const walker = document.createTreeWalker(
+        rootEl,
+        NodeFilter.SHOW_ELEMENT,
+        {
+          acceptNode(node) {
+            if (
+              node instanceof Element &&
+              node !== rootEl &&
+              !opts.includeHiddenElements &&
+              isHidden(node)
+            ) {
+              return NodeFilter.FILTER_REJECT;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+          },
+        }
+      );
 
       while (walker.nextNode()) {
         const current = walker.currentNode;
@@ -488,11 +531,14 @@ export async function captureElement(
 
       return {
         elements,
-        metadata: { url: window.location.href, title: document.title },
+        metadata: {
+          title: document.title,
+          url: window.location.href,
+        },
         order,
         rootElementId,
-        rootOuterHtml: sanitizeOuterHtml(root),
-        settings,
+        rootOuterHtml: sanitizeOuterHtml(rootEl, opts.includeHiddenElements),
+        settings: opts,
         summary: {
           elementCount: order.length,
           pseudoElementCount,
@@ -504,4 +550,4 @@ export async function captureElement(
   );
 
   return result as CaptureResult;
-}
+};

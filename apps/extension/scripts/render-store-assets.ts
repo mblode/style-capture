@@ -16,43 +16,43 @@ interface RenderJob {
 
 const JOBS: RenderJob[] = [
   {
-    path: "/store/screenshot-1-capture",
     output: "screenshot-1-capture.png",
-    viewport: { width: 1280, height: 800 },
+    path: "/store/screenshot-1-capture",
+    viewport: { height: 800, width: 1280 },
   },
   {
-    path: "/store/screenshot-2-export",
     output: "screenshot-2-export.png",
-    viewport: { width: 1280, height: 800 },
+    path: "/store/screenshot-2-export",
+    viewport: { height: 800, width: 1280 },
   },
   {
-    path: "/store/screenshot-3-settings",
     output: "screenshot-3-settings.png",
-    viewport: { width: 1280, height: 800 },
+    path: "/store/screenshot-3-settings",
+    viewport: { height: 800, width: 1280 },
   },
   {
-    path: "/store/screenshot-4-tailwind",
     output: "screenshot-4-tailwind.png",
-    viewport: { width: 1280, height: 800 },
+    path: "/store/screenshot-4-tailwind",
+    viewport: { height: 800, width: 1280 },
   },
   {
-    path: "/store/screenshot-5-privacy",
     output: "screenshot-5-privacy.png",
-    viewport: { width: 1280, height: 800 },
+    path: "/store/screenshot-5-privacy",
+    viewport: { height: 800, width: 1280 },
   },
   {
-    path: "/store/small-promo-tile",
     output: "small-promo-tile.png",
-    viewport: { width: 440, height: 280 },
+    path: "/store/small-promo-tile",
+    viewport: { height: 280, width: 440 },
   },
   {
-    path: "/store/marquee-promo-tile",
     output: "marquee-promo-tile.png",
-    viewport: { width: 1400, height: 560 },
+    path: "/store/marquee-promo-tile",
+    viewport: { height: 560, width: 1400 },
   },
 ];
 
-function getBaseUrl(): string {
+const getBaseUrl = (): string => {
   const flag = process.argv.find((arg) => arg.startsWith("--base-url="));
   if (flag) {
     return flag.split("=")[1];
@@ -62,9 +62,9 @@ function getBaseUrl(): string {
     return process.argv[idx + 1];
   }
   return "http://style-capture.localhost:1355";
-}
+};
 
-async function main() {
+const main = async () => {
   const baseUrl = getBaseUrl().replace(TRAILING_SLASHES, "");
   await mkdir(OUTPUT_DIR, { recursive: true });
 
@@ -122,10 +122,12 @@ async function main() {
   } finally {
     await browser.close();
   }
-}
+};
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);
   process.exitCode = 1;
-});
+}

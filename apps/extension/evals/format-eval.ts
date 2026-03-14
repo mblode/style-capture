@@ -5,14 +5,13 @@ import { resolve } from "node:path";
 
 import {
   buildClaudeCapturePrompt,
-  type ClaudeCapturePrompt,
   formatCaptureForClaudeMarkdown,
-} from "../src/lib/claude-export.ts";
-import { mapCaptureToTailwind } from "../src/lib/tailwind-mapper.ts";
-import {
-  FORMAT_EVAL_FIXTURES,
-  type FormatEvalFixture,
-} from "./fixtures/ui-capture-fixtures.ts";
+} from "@/lib/claude-export.ts";
+import type { ClaudeCapturePrompt } from "@/lib/claude-export.ts";
+import { mapCaptureToTailwind } from "@/lib/tailwind-mapper.ts";
+
+import { FORMAT_EVAL_FIXTURES } from "./fixtures/ui-capture-fixtures.ts";
+import type { FormatEvalFixture } from "./fixtures/ui-capture-fixtures.ts";
 
 const DEFAULT_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
 const DEFAULT_JUDGE_MODEL =
@@ -90,18 +89,18 @@ interface OpenAiResponse {
   incomplete_details?: {
     reason?: string;
   };
-  output?: Array<{
-    content?: Array<{
+  output?: {
+    content?: {
       text?: string;
       type?: string;
-    }>;
-  }>;
+    }[];
+  }[];
   output_text?: string;
   status?: string;
 }
 
-function parseArgs(argv: string[]): ParsedArgs {
-  function readValue(name: string): string | null {
+const parseArgs = (argv: string[]): ParsedArgs => {
+  const readValue = (name: string): string | null => {
     const index = argv.indexOf(`--${name}`);
 
     if (index === -1) {
@@ -109,7 +108,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
 
     return argv[index + 1] ?? null;
-  }
+  };
 
   return {
     dryRun: argv.includes("--dry-run"),
@@ -118,21 +117,19 @@ function parseArgs(argv: string[]): ParsedArgs {
     judgeModel: readValue("judge-model") ?? DEFAULT_JUDGE_MODEL,
     model: readValue("model") ?? DEFAULT_MODEL,
   };
-}
+};
 
-function escapeXml(value: string): string {
-  return value
+const escapeXml = (value: string): string =>
+  value
     .replaceAll("&", "&amp;")
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
-}
 
-function renderTagBlock(tagName: string, lines: string[]): string {
-  return [`<${tagName}>`, ...lines, `</${tagName}>`].join("\n");
-}
+const renderTagBlock = (tagName: string, lines: string[]): string =>
+  [`<${tagName}>`, ...lines, `</${tagName}>`].join("\n");
 
-function renderCompactWithUrl(prompt: ClaudeCapturePrompt): string {
+const renderCompactWithUrl = (prompt: ClaudeCapturePrompt): string => {
   const sections = [
     `<style_capture url="${escapeXml(prompt.metadata.url)}" mode="${prompt.metadata.mode}" root_ref="${prompt.metadata.rootRef}" root_selector="${escapeXml(prompt.metadata.rootSelector)}" elements="${prompt.metadata.elementCount}" pseudos="${prompt.metadata.pseudoCount}">`,
     prompt.instruction,
@@ -160,9 +157,9 @@ function renderCompactWithUrl(prompt: ClaudeCapturePrompt): string {
 
   sections.push("</style_capture>");
   return sections.join("\n");
-}
+};
 
-function renderCompactDataFirst(prompt: ClaudeCapturePrompt): string {
+const renderCompactDataFirst = (prompt: ClaudeCapturePrompt): string => {
   const sections = [
     `<style_capture url="${escapeXml(prompt.metadata.url)}" mode="${prompt.metadata.mode}" root_ref="${prompt.metadata.rootRef}" root_selector="${escapeXml(prompt.metadata.rootSelector)}" elements="${prompt.metadata.elementCount}" pseudos="${prompt.metadata.pseudoCount}">`,
     `<html_capture>${prompt.htmlCapture}</html_capture>`,
@@ -190,9 +187,9 @@ function renderCompactDataFirst(prompt: ClaudeCapturePrompt): string {
   sections.push(`<instructions>${prompt.instruction}</instructions>`);
   sections.push("</style_capture>");
   return sections.join("\n");
-}
+};
 
-function renderNestedDataFirst(prompt: ClaudeCapturePrompt): string {
+const renderNestedDataFirst = (prompt: ClaudeCapturePrompt): string => {
   const sections = [
     `<style_capture url="${escapeXml(prompt.metadata.url)}" mode="${prompt.metadata.mode}" root_ref="${prompt.metadata.rootRef}" root_selector="${escapeXml(prompt.metadata.rootSelector)}" elements="${prompt.metadata.elementCount}" pseudos="${prompt.metadata.pseudoCount}">`,
     "<source_of_truth>",
@@ -228,9 +225,9 @@ function renderNestedDataFirst(prompt: ClaudeCapturePrompt): string {
   sections.push(`<instructions>${prompt.instruction}</instructions>`);
   sections.push("</style_capture>");
   return sections.join("\n");
-}
+};
 
-function renderMarkdownSections(prompt: ClaudeCapturePrompt): string {
+const renderMarkdownSections = (prompt: ClaudeCapturePrompt): string => {
   const lines = [
     "# Style Capture",
     "",
@@ -274,7 +271,7 @@ function renderMarkdownSections(prompt: ClaudeCapturePrompt): string {
 
   lines.push("", "## Task", prompt.instruction);
   return lines.join("\n").trim();
-}
+};
 
 const FORMATS: EvalFormat[] = [
   {
@@ -306,43 +303,35 @@ const FORMATS: EvalFormat[] = [
   },
 ];
 
-function stripHtml(value: string): string {
-  return value
-    .replace(HTML_TAG_REGEX, " ")
-    .replace(ANSWER_TEXT_REGEX, " ")
-    .trim();
-}
+const stripHtml = (value: string): string =>
+  value.replace(HTML_TAG_REGEX, " ").replace(ANSWER_TEXT_REGEX, " ").trim();
 
-function normalizeAnswer(value: string): string {
-  return value
+const normalizeAnswer = (value: string): string =>
+  value
     .toLowerCase()
     .trim()
     .replace(QUOTE_REGEX, "")
     .replace(ANSWER_TEXT_REGEX, " ");
-}
 
-function splitList(value: string): string[] {
-  return value
+const splitList = (value: string): string[] =>
+  value
     .replace(AND_REGEX, ",")
     .split(LIST_SPLIT_REGEX)
     .map((item) => normalizeAnswer(item).replace(LEADING_LIST_MARKER_REGEX, ""))
     .filter(Boolean);
-}
 
-function flattenOpenQuestionItems(prompt: ClaudeCapturePrompt): string[] {
-  return prompt.openQuestions.flatMap((entry) => {
-    return entry.value
+const flattenOpenQuestionItems = (prompt: ClaudeCapturePrompt): string[] =>
+  prompt.openQuestions.flatMap((entry) =>
+    entry.value
       .split("; ")
       .map((item) => `${entry.key}:${item}`.trim())
-      .filter(Boolean);
-  });
-}
+      .filter(Boolean)
+  );
 
-function hasWidthAmbiguity(prompt: ClaudeCapturePrompt): boolean {
-  return flattenOpenQuestionItems(prompt).some((item) => {
-    return item.includes("w-[") || item.includes("width");
-  });
-}
+const hasWidthAmbiguity = (prompt: ClaudeCapturePrompt): boolean =>
+  flattenOpenQuestionItems(prompt).some(
+    (item) => item.includes("w-[") || item.includes("width")
+  );
 
 const QUESTIONS: EvalQuestion[] = [
   {
@@ -424,7 +413,7 @@ const QUESTIONS: EvalQuestion[] = [
   },
 ];
 
-function scoreExact(predicted: string, expected: string): number {
+const scoreExact = (predicted: string, expected: string): number => {
   const normalizedPredicted = normalizeAnswer(predicted);
   const normalizedExpected = normalizeAnswer(expected);
 
@@ -451,9 +440,9 @@ function scoreExact(predicted: string, expected: string): number {
   }
 
   return 0;
-}
+};
 
-function scoreBoolean(predicted: string, expected: string): number {
+const scoreBoolean = (predicted: string, expected: string): number => {
   const normalizedPredicted = normalizeAnswer(predicted);
   const normalizedExpected = normalizeAnswer(expected);
 
@@ -466,9 +455,9 @@ function scoreBoolean(predicted: string, expected: string): number {
   }
 
   return reducedPrediction === normalizedExpected ? 1 : 0;
-}
+};
 
-function scoreList(predicted: string, expected: string): number {
+const scoreList = (predicted: string, expected: string): number => {
   const expectedItems = new Set(splitList(expected));
   const predictedItems = new Set(splitList(predicted));
 
@@ -476,9 +465,7 @@ function scoreList(predicted: string, expected: string): number {
     return 1;
   }
 
-  const overlap = [...expectedItems].filter((item) => {
-    return predictedItems.has(item);
-  });
+  const overlap = [...expectedItems].filter((item) => predictedItems.has(item));
   const unionSize = new Set([...expectedItems, ...predictedItems]).size;
 
   if (unionSize === 0) {
@@ -486,13 +473,12 @@ function scoreList(predicted: string, expected: string): number {
   }
 
   return overlap.length / unionSize;
-}
+};
 
-function estimateTokens(value: string): number {
-  return Math.ceil(value.length / TOKEN_DIVISOR);
-}
+const estimateTokens = (value: string): number =>
+  Math.ceil(value.length / TOKEN_DIVISOR);
 
-function extractResponseText(response: OpenAiResponse): string {
+const extractResponseText = (response: OpenAiResponse): string => {
   if (
     typeof response.output_text === "string" &&
     response.output_text.length > 0
@@ -507,16 +493,16 @@ function extractResponseText(response: OpenAiResponse): string {
       .map((item) => item.text ?? "") ?? [];
 
   return chunks.join("").trim();
-}
+};
 
-async function callOpenAi(
+const callOpenAi = async (
   apiKey: string,
   model: string,
   instructions: string,
   input: string,
   maxOutputTokens: number
-): Promise<string> {
-  async function request(tokens: number): Promise<OpenAiResponse> {
+): Promise<string> => {
+  const request = async (tokens: number): Promise<OpenAiResponse> => {
     const response = await fetch(RESPONSE_ENDPOINT, {
       body: JSON.stringify({
         input,
@@ -550,7 +536,7 @@ async function callOpenAi(
     }
 
     return payload;
-  }
+  };
 
   const initialPayload = await request(maxOutputTokens);
   const initialText = extractResponseText(initialPayload);
@@ -575,15 +561,15 @@ async function callOpenAi(
   }
 
   return retryText;
-}
+};
 
-async function answerQuestion(
+const answerQuestion = (
   apiKey: string,
   model: string,
   question: EvalQuestion,
   serialized: string
-): Promise<string> {
-  return await callOpenAi(
+): Promise<string> =>
+  callOpenAi(
     apiKey,
     model,
     question.id === IMPLEMENTATION_BRIEF_ID
@@ -594,16 +580,15 @@ async function answerQuestion(
     ),
     question.id === IMPLEMENTATION_BRIEF_ID ? 220 : 120
   );
-}
 
-async function scoreLlmJudge(
+const scoreLlmJudge = async (
   apiKey: string,
   judgeModel: string,
   context: EvalContext,
   question: string,
   expected: string,
   predicted: string
-): Promise<{ reasoning: string; score: number }> {
+): Promise<{ reasoning: string; score: number }> => {
   const ambiguityList = flattenOpenQuestionItems(context.prompt).join(" | ");
   const raw = await callOpenAi(
     apiKey,
@@ -638,46 +623,46 @@ async function scoreLlmJudge(
       score: 0.5,
     };
   }
-}
+};
 
-async function mapWithConcurrency<Input, Output>(
+const mapWithConcurrency = async <Input, Output>(
   items: Input[],
   concurrency: number,
   worker: (item: Input) => Promise<Output>
-): Promise<Output[]> {
-  const results: Output[] = new Array(items.length);
+): Promise<Output[]> => {
+  const results: Output[] = Array.from<Output>({ length: items.length });
   let nextIndex = 0;
 
-  async function runWorker(): Promise<void> {
+  const runWorker = async (): Promise<void> => {
     while (nextIndex < items.length) {
       const currentIndex = nextIndex;
       nextIndex += 1;
       results[currentIndex] = await worker(items[currentIndex]);
     }
-  }
+  };
 
   await Promise.all(
-    Array.from({ length: Math.min(concurrency, items.length) }, () => {
-      return runWorker();
-    })
+    Array.from({ length: Math.min(concurrency, items.length) }, () =>
+      runWorker()
+    )
   );
 
   return results;
-}
+};
 
-function average(values: number[]): number {
+const average = (values: number[]): number => {
   if (values.length === 0) {
     return 0;
   }
 
   return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
+};
 
-function aggregateResults(
+const aggregateResults = (
   results: EvalResult[],
   formats: EvalFormat[],
   tokenCounts: Record<string, Record<string, number>>
-) {
+) => {
   const byCategory: Record<string, Record<string, number[]>> = {};
   const byFixture: Record<string, Record<string, number[]>> = {};
   const byFormat: Record<string, { scores: number[]; tokens: number[] }> = {};
@@ -713,61 +698,57 @@ function aggregateResults(
 
   return {
     byCategory: Object.fromEntries(
-      Object.entries(byCategory).map(([category, data]) => {
-        return [
-          category,
-          Object.fromEntries(
-            Object.entries(data).map(([format, scores]) => {
-              return [format, Number(average(scores).toFixed(3))];
-            })
-          ),
-        ];
-      })
+      Object.entries(byCategory).map(([category, data]) => [
+        category,
+        Object.fromEntries(
+          Object.entries(data).map(([format, scores]) => [
+            format,
+            Number(average(scores).toFixed(3)),
+          ])
+        ),
+      ])
     ),
     byFixture: Object.fromEntries(
-      Object.entries(byFixture).map(([fixture, data]) => {
-        return [
-          fixture,
-          Object.fromEntries(
-            Object.entries(data).map(([format, scores]) => {
-              return [format, Number(average(scores).toFixed(3))];
-            })
-          ),
-        ];
-      })
+      Object.entries(byFixture).map(([fixture, data]) => [
+        fixture,
+        Object.fromEntries(
+          Object.entries(data).map(([format, scores]) => [
+            format,
+            Number(average(scores).toFixed(3)),
+          ])
+        ),
+      ])
     ),
     byFormat: Object.fromEntries(
-      Object.entries(byFormat).map(([format, data]) => {
-        return [
-          format,
-          {
-            avgScore: Number(average(data.scores).toFixed(3)),
-            avgTokens: Math.round(average(data.tokens)),
-            scorePerToken: Number(
-              (
-                average(data.scores) / Math.max(1, average(data.tokens))
-              ).toFixed(6)
-            ),
-          },
-        ];
-      })
+      Object.entries(byFormat).map(([format, data]) => [
+        format,
+        {
+          avgScore: Number(average(data.scores).toFixed(3)),
+          avgTokens: Math.round(average(data.tokens)),
+          scorePerToken: Number(
+            (average(data.scores) / Math.max(1, average(data.tokens))).toFixed(
+              6
+            )
+          ),
+        },
+      ])
     ),
   };
-}
+};
 
-function printFormats(formats: EvalFormat[]): void {
+const printFormats = (formats: EvalFormat[]): void => {
   console.log("\nFormats");
   console.log("-------");
 
   for (const format of formats) {
     console.log(`- ${format.name}: ${format.description}`);
   }
-}
+};
 
-function printTokenTable(
+const printTokenTable = (
   tokenCounts: Record<string, Record<string, number>>,
   formats: EvalFormat[]
-): void {
+): void => {
   console.log("\nEstimated token counts");
   console.log("----------------------");
 
@@ -780,23 +761,23 @@ function printTokenTable(
       );
     }
   }
-}
+};
 
-function printSummaryTable(summary: {
+const printSummaryTable = (summary: {
   byFormat: Record<
     string,
     { avgScore: number; avgTokens: number; scorePerToken: number }
   >;
-}): void {
+}): void => {
   console.log("\nSummary");
   console.log("-------");
   console.log(
     "format                        avg_score   avg_tokens  score/token"
   );
 
-  const sorted = Object.entries(summary.byFormat).sort((left, right) => {
-    return right[1].avgScore - left[1].avgScore;
-  });
+  const sorted = Object.entries(summary.byFormat).toSorted(
+    (left, right) => right[1].avgScore - left[1].avgScore
+  );
 
   for (const [format, stats] of sorted) {
     console.log(
@@ -805,28 +786,28 @@ function printSummaryTable(summary: {
       ).padStart(12)} ${stats.scorePerToken.toFixed(6).padStart(12)}`
     );
   }
-}
+};
 
-function filterFixtures(fixtureSlug: string | null): FormatEvalFixture[] {
+const filterFixtures = (fixtureSlug: string | null): FormatEvalFixture[] => {
   if (!fixtureSlug) {
     return FORMAT_EVAL_FIXTURES;
   }
 
   return FORMAT_EVAL_FIXTURES.filter((fixture) => fixture.slug === fixtureSlug);
-}
+};
 
-function filterFormats(formatName: string | null): EvalFormat[] {
+const filterFormats = (formatName: string | null): EvalFormat[] => {
   if (!formatName) {
     return FORMATS;
   }
 
   return FORMATS.filter((format) => format.name === formatName);
-}
+};
 
-function buildSerializedFixtures(
+const buildSerializedFixtures = (
   fixtures: FormatEvalFixture[]
-): SerializedFixture[] {
-  return fixtures.map((fixture) => {
+): SerializedFixture[] =>
+  fixtures.map((fixture) => {
     const mapping = mapCaptureToTailwind(fixture.capture);
     const prompt = buildClaudeCapturePrompt(fixture.capture, mapping);
 
@@ -836,12 +817,11 @@ function buildSerializedFixtures(
       prompt,
     };
   });
-}
 
-function computeTokenCounts(
+const computeTokenCounts = (
   serializedFixtures: SerializedFixture[],
   formats: EvalFormat[]
-): Record<string, Record<string, number>> {
+): Record<string, Record<string, number>> => {
   const counts: Record<string, Record<string, number>> = {};
 
   for (const item of serializedFixtures) {
@@ -858,13 +838,13 @@ function computeTokenCounts(
   }
 
   return counts;
-}
+};
 
-function showDryRun(
+const showDryRun = (
   serializedFixtures: SerializedFixture[],
   formats: EvalFormat[]
-): void {
-  const firstFixture = serializedFixtures[0];
+): void => {
+  const [firstFixture] = serializedFixtures;
 
   if (!firstFixture) {
     return;
@@ -884,9 +864,38 @@ function showDryRun(
     );
     console.log(serialized.split("\n").slice(0, 28).join("\n"));
   }
-}
+};
 
-async function main(): Promise<void> {
+const countPlannedCalls = (
+  serializedFixtures: SerializedFixture[],
+  formats: EvalFormat[]
+): number => {
+  let count = 0;
+
+  for (const item of serializedFixtures) {
+    for (const format of formats) {
+      const context: EvalContext = {
+        fixture: item.fixture,
+        prompt: item.prompt,
+        serialized: format.serialize({
+          fixture: item.fixture,
+          prompt: item.prompt,
+          serialized: item.liveSerialized,
+        }),
+      };
+
+      for (const question of QUESTIONS) {
+        if (question.getExpected(context) !== null) {
+          count += 1;
+        }
+      }
+    }
+  }
+
+  return count;
+};
+
+const main = async (): Promise<void> => {
   const args = parseArgs(process.argv.slice(2));
   const fixtures = filterFixtures(args.fixture);
   const formats = filterFormats(args.format);
@@ -901,28 +910,7 @@ async function main(): Promise<void> {
 
   const serializedFixtures = buildSerializedFixtures(fixtures);
   const tokenCounts = computeTokenCounts(serializedFixtures, formats);
-  const plannedCalls = serializedFixtures.reduce((count, item) => {
-    return (
-      count +
-      formats.reduce((formatCount, format) => {
-        const context: EvalContext = {
-          fixture: item.fixture,
-          prompt: item.prompt,
-          serialized: format.serialize({
-            fixture: item.fixture,
-            prompt: item.prompt,
-            serialized: item.liveSerialized,
-          }),
-        };
-
-        return (
-          formatCount +
-          QUESTIONS.filter((question) => question.getExpected(context) !== null)
-            .length
-        );
-      }, 0)
-    );
-  }, 0);
+  const plannedCalls = countPlannedCalls(serializedFixtures, formats);
 
   console.log(
     `Eval: ${fixtures.length} fixtures x ${formats.length} formats x variable question set = ${plannedCalls} calls`
@@ -944,8 +932,8 @@ async function main(): Promise<void> {
     );
   }
 
-  const jobs = serializedFixtures.flatMap((item) => {
-    return formats.flatMap((format) => {
+  const jobs = serializedFixtures.flatMap((item) =>
+    formats.flatMap((format) => {
       const serialized = format.serialize({
         fixture: item.fixture,
         prompt: item.prompt,
@@ -957,17 +945,15 @@ async function main(): Promise<void> {
         serialized,
       } satisfies EvalContext;
 
-      return QUESTIONS.filter((question) => {
-        return question.getExpected(context) !== null;
-      }).map((question) => {
-        return {
-          context,
-          format: format.name,
-          question,
-        };
-      });
-    });
-  });
+      return QUESTIONS.filter(
+        (question) => question.getExpected(context) !== null
+      ).map((question) => ({
+        context,
+        format: format.name,
+        question,
+      }));
+    })
+  );
 
   const results = await mapWithConcurrency(jobs, CONCURRENCY, async (job) => {
     const expected = job.question.getExpected(job.context);
@@ -1077,10 +1063,12 @@ async function main(): Promise<void> {
 
   printSummaryTable(summary);
   console.log(`\nWrote results to ${RESULTS_DIR}`);
-}
+};
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error("\nformat-eval failed");
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
-});
+}

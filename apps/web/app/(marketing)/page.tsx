@@ -19,61 +19,61 @@ import {
 } from "@/lib/seo";
 
 export const metadata: Metadata = createPublicMetadata({
-  title: "Capture CSS, get Tailwind",
   description:
     "Chrome extension that captures real CSS from any element and maps it to Tailwind classes for AI coding agents.",
   path: "/",
+  title: "Capture CSS, get Tailwind",
 });
 
 const steps = [
   {
+    description: "Click the toolbar icon on any site to start picking.",
     icon: CursorClickIcon,
     title: "Activate",
-    description: "Click the toolbar icon on any site to start picking.",
   },
   {
-    icon: CaptureIcon,
-    title: "Select",
     description:
       "Hover to preview, click to capture. Shift to climb the DOM, Alt to descend.",
+    icon: CaptureIcon,
+    title: "Select",
   },
   {
-    icon: ClipboardIcon,
-    title: "Paste",
     description:
       "Tailwind-mapped styles land on your clipboard, formatted for your agent.",
+    icon: ClipboardIcon,
+    title: "Paste",
   },
 ];
 
 const features = [
   {
-    icon: CodeIcon,
-    title: "Real rendered styles",
     description:
       "Captures what the browser actually computes with getComputedStyle — not source CSS.",
+    icon: CodeIcon,
+    title: "Real rendered styles",
   },
   {
-    icon: MagicWandIcon,
-    title: "Automatic Tailwind mapping",
     description:
       "Every property mapped to utilities with confidence scores. No manual conversion.",
+    icon: MagicWandIcon,
+    title: "Automatic Tailwind mapping",
   },
   {
-    icon: ChromeIcon,
-    title: "Any site, zero config",
     description:
       "Works everywhere the moment you click. No setup, no permissions prompts.",
+    icon: ChromeIcon,
+    title: "Any site, zero config",
   },
   {
+    description: "All processing happens locally. No data sent anywhere.",
     icon: ShieldCheckIcon,
     title: "Nothing leaves your device",
-    description: "All processing happens locally. No data sent anywhere.",
   },
   {
-    icon: SparkleIcon,
-    title: "Built for AI agents",
     description:
       "Structured output for Claude Code, Cursor, or whichever coding agent you use.",
+    icon: SparkleIcon,
+    title: "Built for AI agents",
   },
 ];
 

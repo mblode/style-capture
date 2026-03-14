@@ -5,7 +5,7 @@ const SETTINGS_STORAGE_KEY = "style-capture.settings";
 // Preserve migration from pre-Style Capture installs.
 const LEGACY_SETTINGS_STORAGE_KEY = "live-css.settings";
 
-export async function getSettings(): Promise<CaptureSettings> {
+export const getSettings = async (): Promise<CaptureSettings> => {
   const stored = await chrome.storage.local.get([
     SETTINGS_STORAGE_KEY,
     LEGACY_SETTINGS_STORAGE_KEY,
@@ -40,10 +40,12 @@ export async function getSettings(): Promise<CaptureSettings> {
   await chrome.storage.local.remove(LEGACY_SETTINGS_STORAGE_KEY);
 
   return migratedSettings;
-}
+};
 
-export async function saveSettings(settings: CaptureSettings): Promise<void> {
+export const saveSettings = async (
+  settings: CaptureSettings
+): Promise<void> => {
   await chrome.storage.local.set({
     [SETTINGS_STORAGE_KEY]: settings,
   });
-}
+};

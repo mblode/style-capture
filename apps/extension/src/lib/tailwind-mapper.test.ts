@@ -1,68 +1,65 @@
-import { describe, expect, it } from "vitest";
-
 import { mapCaptureToTailwind } from "./tailwind-mapper.ts";
 import type { CaptureResult } from "./types.ts";
 
-function createCaptureFixture(): CaptureResult {
-  return {
-    elements: {
-      "node-0": {
-        attributes: {},
-        boundingBox: {
-          bottom: 0,
-          height: 0,
-          left: 0,
-          right: 0,
-          top: 0,
-          width: 0,
-          x: 0,
-          y: 0,
-        },
-        children: [],
-        classList: [],
-        id: "node-0",
-        parentId: null,
-        pseudo: {},
-        selector: "div:nth-child(1)",
-        styles: {
-          "align-items": "center",
-          "background-color": "rgb(255, 0, 0)",
-          color: "rgb(255, 255, 255)",
-          display: "flex",
-          "justify-content": "space-between",
-          "padding-bottom": "16px",
-          "padding-left": "16px",
-          "padding-right": "16px",
-          "padding-top": "16px",
-        },
-        tagName: "div",
+const createCaptureFixture = (): CaptureResult => ({
+  elements: {
+    "node-0": {
+      attributes: {},
+      boundingBox: {
+        bottom: 0,
+        height: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+        width: 0,
+        x: 0,
+        y: 0,
       },
+      children: [],
+      classList: [],
+      id: "node-0",
+      parentId: null,
+      pseudo: {},
+      selector: "div:nth-child(1)",
+      styles: {
+        "align-items": "center",
+        "background-color": "rgb(255, 0, 0)",
+        color: "rgb(255, 255, 255)",
+        display: "flex",
+        "justify-content": "space-between",
+        "padding-bottom": "16px",
+        "padding-left": "16px",
+        "padding-right": "16px",
+        "padding-top": "16px",
+      },
+      tagName: "div",
     },
-    metadata: {
-      url: "https://example.com/fixture",
-    },
-    order: ["node-0"],
-    rootElementId: "node-0",
-    rootOuterHtml: "<div></div>",
-    settings: {
-      captureMode: "curated",
-      includeHiddenElements: false,
-      includePseudoElements: true,
-    },
-    summary: {
-      elementCount: 1,
-      pseudoElementCount: 0,
-    },
-    version: 1,
-  };
-}
+  },
+  metadata: {
+    url: "https://example.com/fixture",
+  },
+  order: ["node-0"],
+  rootElementId: "node-0",
+  rootOuterHtml: "<div></div>",
+  settings: {
+    captureMode: "curated",
+    includeHiddenElements: false,
+    includePseudoElements: true,
+  },
+  summary: {
+    elementCount: 1,
+    pseudoElementCount: 0,
+  },
+  version: 1,
+});
 
-describe("mapCaptureToTailwind", () => {
+/* eslint-disable vitest/max-expects -- mapping tests verify many properties of the output */
+describe("mapCaptureToTailwind()", () => {
   it("derives semantic and scale utilities for a simple flex container", () => {
     const result = mapCaptureToTailwind(createCaptureFixture());
     const rootMapping = result.elements["node-0"];
 
-    expect(rootMapping.className.split(" ")).toEqual(
+    expect(rootMapping.className.split(" ")).toStrictEqual(
       expect.arrayContaining([
         "flex",
         "justify-between",
@@ -72,7 +69,7 @@ describe("mapCaptureToTailwind", () => {
         "bg-[#ff0000]",
       ])
     );
-    expect(rootMapping.suggestedClassName.split(" ")).toEqual(
+    expect(rootMapping.suggestedClassName.split(" ")).toStrictEqual(
       expect.arrayContaining([
         "flex",
         "justify-between",
@@ -133,7 +130,7 @@ describe("mapCaptureToTailwind", () => {
       reviewUtilityCount: 4,
       utilityCount: 8,
     });
-    expect(result.reviewQueue[0]?.reasons).toEqual(
+    expect(result.reviewQueue[0]?.reasons).toStrictEqual(
       expect.arrayContaining([
         "w-[352px]: Computed size values are often layout-dependent.",
         "h-8: Computed size values are often layout-dependent.",

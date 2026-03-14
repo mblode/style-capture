@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["chrome", "vite/client"],
+    "types": ["chrome", "vite/client", "vitest/globals"],
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {

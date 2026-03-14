@@ -1,7 +1,7 @@
-export function showToast(message: string, isError: boolean): void {
+export const showToast = (message: string, isError: boolean): void => {
   const HOST_ID = "__style-capture-toast__";
 
-  const existing = document.getElementById(HOST_ID);
+  const existing = document.querySelector(`#${HOST_ID}`);
   if (existing) {
     existing.remove();
   }
@@ -40,8 +40,8 @@ export function showToast(message: string, isError: boolean): void {
     "white-space: nowrap",
   ].join("; ");
 
-  shadow.appendChild(toast);
-  document.documentElement.appendChild(host);
+  shadow.append(toast);
+  document.documentElement.append(host);
 
   requestAnimationFrame(() => {
     toast.style.opacity = "1";
@@ -51,4 +51,4 @@ export function showToast(message: string, isError: boolean): void {
     toast.style.opacity = "0";
     setTimeout(() => host.remove(), 200);
   }, 2000);
-}
+};
