@@ -39,5 +39,9 @@
     "tailwindcss": "^4",
     "typescript": "~5.9.3",
     "ultracite": "^7.3.0"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-linux-x64-gnu": "1.0.0-rc.9",
+    "lightningcss-linux-x64-gnu": "1.31.1"
   }
 }

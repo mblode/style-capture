@@ -1,3 +1,0 @@
-{
-  "installCommand": "rm -f ../../package-lock.json && npm install --prefix=../.."
-}

@@ -22,11 +22,7 @@ padding:32px;box-shadow:0 16px 32px rgba(0,0,0,.08)}
 export default function Screenshot1Capture() {
   return (
     <StoreFrame>
-      <BrowserFrame
-        active
-        address="https://example.com/pricing"
-        badge="Toolbar click starts capture"
-      >
+      <BrowserFrame active address="https://example.com/pricing">
         <div className="grid h-[calc(100%-67px)] grid-cols-[1.2fr_0.8fr] gap-[22px] p-[22px]">
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
@@ -34,7 +30,7 @@ export default function Screenshot1Capture() {
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
                 Pick the exact subtree you want.
               </h1>
-              <p className="max-w-[28ch] text-[#666] text-lg leading-[1.55]">
+              <p className="max-w-[28ch] text-black/60 text-lg leading-[1.55]">
                 Hover to select. Shift for parent, Alt for child.
               </p>
             </div>

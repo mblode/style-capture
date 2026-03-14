@@ -11,7 +11,7 @@ export default function SmallPromoTile() {
         <h1 className="mt-3.5 mb-2.5 max-w-[10ch] font-bold text-[42px] leading-[0.95] tracking-[-0.06em]">
           Capture live CSS.
         </h1>
-        <p className="max-w-[24ch] text-[#666] text-lg">
+        <p className="max-w-[24ch] text-black/60 text-lg">
           Select, capture, paste. Claude-ready with Tailwind hints.
         </p>
         <div className="mt-[18px] flex flex-wrap gap-2.5">

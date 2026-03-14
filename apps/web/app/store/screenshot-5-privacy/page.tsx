@@ -15,7 +15,7 @@ function PermissionRow({
     <div className="flex items-center justify-between gap-4 rounded-[18px] border border-black/10 bg-[#fafafa] px-4 py-3.5">
       <div>
         <strong>{title}</strong>
-        <div className="text-[#666] text-sm">{description}</div>
+        <div className="text-black/60 text-sm">{description}</div>
       </div>
       <Badge>Required</Badge>
     </div>
@@ -25,10 +25,7 @@ function PermissionRow({
 export default function Screenshot5Privacy() {
   return (
     <StoreFrame>
-      <BrowserFrame
-        address="chrome-extension://style-capture"
-        badge="Privacy-first design"
-      >
+      <BrowserFrame address="chrome-extension://style-capture">
         <div className="p-7">
           <div className="grid h-full grid-cols-[1.2fr_0.8fr] gap-[18px]">
             <Card className="p-[22px]">
@@ -36,7 +33,7 @@ export default function Screenshot5Privacy() {
               <h2 className="mb-2 font-bold text-2xl tracking-[-0.04em]">
                 Minimal permissions, local-only.
               </h2>
-              <p className="max-w-[42ch] text-[#666] text-base leading-[1.55]">
+              <p className="max-w-[42ch] text-base text-black/60 leading-[1.55]">
                 Smallest permission set. No data leaves your device.
               </p>
               <div className="mt-[22px] grid gap-4">
