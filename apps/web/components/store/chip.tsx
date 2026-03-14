@@ -10,7 +10,7 @@ export function Chip({
   return (
     <div
       className={cn(
-        "rounded-full border border-black/8 bg-[#f4f4f4] px-3 py-[9px] font-bold text-xs",
+        "rounded-full border border-black/8 bg-black/[0.04] px-3 py-[9px] font-bold text-xs",
         className
       )}
     >

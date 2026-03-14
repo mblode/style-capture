@@ -5,12 +5,9 @@ import { StoreFrame } from "@/components/store/store-frame";
 export default function Screenshot3Settings() {
   return (
     <StoreFrame>
-      <BrowserFrame
-        address="chrome-extension://style-capture/options.html"
-        badge="Options page"
-      >
+      <BrowserFrame address="chrome-extension://style-capture/options.html">
         <div className="grid h-[calc(100%-67px)] grid-cols-[1.2fr_0.8fr] gap-[22px] p-[22px]">
-          <div className="flex items-start justify-center pt-8">
+          <div className="flex items-center justify-center">
             <div className="flex w-full max-w-md flex-col gap-4">
               <h1 className="font-bold text-xl tracking-[-0.03em]">Settings</h1>
 
@@ -44,7 +41,7 @@ export default function Screenshot3Settings() {
             </div>
           </div>
 
-          <div className="grid content-start gap-4">
+          <div className="grid content-center gap-4">
             <Panel>
               <h3>Predictable</h3>
               <p>Settings apply on next capture.</p>

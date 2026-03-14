@@ -19,10 +19,10 @@ export default function MarqueePromoTile() {
             <h1 className="mt-3.5 mb-3 font-bold text-[64px] leading-[0.92] tracking-[-0.06em]">
               Computed CSS from the live page.
             </h1>
-            <p className="max-w-[28ch] text-[#666] text-[22px] leading-[1.45]">
+            <p className="max-w-[28ch] text-[22px] text-black/60 leading-[1.45]">
               Capture a DOM subtree. Export computed CSS with Tailwind hints.
             </p>
-            <ol className="mt-5 flex flex-col gap-2 text-[#666] text-[15px]">
+            <ol className="mt-5 flex flex-col gap-2 text-[15px] text-black/60">
               <li className="flex gap-2.5">
                 <span className="font-bold text-black">1.</span> Local-only
                 processing
@@ -50,7 +50,7 @@ export default function MarqueePromoTile() {
                   <h2 className="mb-2 font-bold text-[28px] leading-none tracking-[-0.04em]">
                     Hero card
                   </h2>
-                  <p className="text-[#666] text-[15px]">
+                  <p className="text-[15px] text-black/60">
                     Layout and spacing from one click.
                   </p>
                   <div

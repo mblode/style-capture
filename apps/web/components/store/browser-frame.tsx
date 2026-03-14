@@ -10,7 +10,7 @@ export function BrowserFrame({
 }: {
   active?: boolean;
   address: string;
-  badge: string;
+  badge?: string;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -27,10 +27,10 @@ export function BrowserFrame({
           <span className="size-2.5 rounded-full bg-black/15" />
           <span className="size-2.5 rounded-full bg-black/15" />
         </div>
-        <div className="flex-1 rounded-full border border-black/6 bg-[#f4f4f4] px-4 py-[11px] text-[#666] text-sm">
+        <div className="flex-1 rounded-full border border-black/6 bg-black/[0.04] px-4 py-[11px] text-black/60 text-sm">
           {address}
         </div>
-        <Badge>{badge}</Badge>
+        {badge && <Badge>{badge}</Badge>}
         <Image
           alt=""
           className="size-5 shrink-0"

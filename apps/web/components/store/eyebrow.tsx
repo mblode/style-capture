@@ -10,7 +10,7 @@ export function Eyebrow({
   return (
     <div
       className={cn(
-        "inline-flex w-fit items-center gap-2.5 rounded-full border border-black/8 bg-[#f4f4f4] px-3.5 py-2 font-bold text-[11px] text-black uppercase tracking-[0.18em]",
+        "inline-flex w-fit items-center gap-2.5 rounded-full border border-black/8 bg-black/[0.04] px-3.5 py-2 font-bold text-[11px] text-black uppercase tracking-[0.18em]",
         className
       )}
     >

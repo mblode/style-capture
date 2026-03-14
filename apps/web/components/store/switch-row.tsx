@@ -15,7 +15,7 @@ export function SwitchRow({
     <div className="flex items-center justify-between gap-4 rounded-[18px] border border-black/10 bg-[#fafafa] px-4 py-3.5">
       <div>
         <strong>{title}</strong>
-        <div className="text-[#666] text-sm">{description}</div>
+        <div className="text-black/60 text-sm">{description}</div>
       </div>
       {badge ? (
         <Badge>{badge}</Badge>

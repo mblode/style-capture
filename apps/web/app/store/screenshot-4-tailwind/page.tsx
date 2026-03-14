@@ -24,10 +24,7 @@ const TAILWIND_HINTS = `<tailwind_hints>
 export default function Screenshot4Tailwind() {
   return (
     <StoreFrame>
-      <BrowserFrame
-        address="https://example.com/pricing"
-        badge="Tailwind mapping"
-      >
+      <BrowserFrame address="https://example.com/pricing">
         <div className="grid h-[calc(100%-67px)] grid-cols-[1.2fr_0.8fr] gap-[22px] p-[22px]">
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
@@ -35,7 +32,7 @@ export default function Screenshot4Tailwind() {
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
                 Computed CSS to Tailwind.
               </h1>
-              <p className="max-w-[28ch] text-[#666] text-lg leading-[1.55]">
+              <p className="max-w-[28ch] text-black/60 text-lg leading-[1.55]">
                 Each property mapped to the closest Tailwind utility.
               </p>
             </div>
