@@ -3,7 +3,8 @@
   "private": true,
   "packageManager": "npm@10.9.3",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "build": "turbo build",
@@ -18,6 +19,7 @@
     "fix": "ultracite fix",
     "changeset": "changeset",
     "version": "changeset version",
+    "release": "turbo build && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {

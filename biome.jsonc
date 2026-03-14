@@ -11,6 +11,22 @@
       "javascript": {
         "globals": ["chrome", "PICKER_KEY"]
       }
+    },
+    {
+      "includes": [
+        "packages/core/src/index.ts",
+        "apps/extension/src/lib/types.ts",
+        "apps/extension/src/lib/tailwind-mapper.ts",
+        "apps/extension/src/lib/claude-export.ts",
+        "apps/extension/src/lib/messages.ts"
+      ],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
     }
   ]
 }
