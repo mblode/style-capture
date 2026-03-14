@@ -1,5 +1,11 @@
 # @style-capture/core
 
+## 2.0.0
+
+### Major Changes
+
+- 9bc2e2e: Align all package versions to 1.0.0
+
 ## 0.1.0
 
 ### Minor Changes
