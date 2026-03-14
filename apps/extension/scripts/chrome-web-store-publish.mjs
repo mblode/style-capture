@@ -292,7 +292,9 @@ async function runCommand(options) {
     return;
   }
 
-  const accessToken = options.dryRun ? "<token>" : await getAccessToken();
+  const accessToken =
+    options._accessToken ??
+    (options.dryRun ? "<token>" : await getAccessToken());
   const headers = {
     Authorization: `Bearer ${accessToken}`,
   };
@@ -365,10 +367,12 @@ async function runCommand(options) {
           const upload = await runCommand({
             ...options,
             command: "upload-v2",
+            _accessToken: accessToken,
           });
           const publish = await runCommand({
             ...options,
             command: "publish-v2",
+            _accessToken: accessToken,
           });
           return { publish, upload };
         }
@@ -376,10 +380,12 @@ async function runCommand(options) {
         const upload = await runCommand({
           ...options,
           command: "update-v1",
+          _accessToken: accessToken,
         });
         const publish = await runCommand({
           ...options,
           command: "publish-v1",
+          _accessToken: accessToken,
         });
         return { publish, upload };
       }
@@ -387,6 +393,7 @@ async function runCommand(options) {
       const create = await runCommand({
         ...options,
         command: "create-v1",
+        _accessToken: accessToken,
       });
 
       return {

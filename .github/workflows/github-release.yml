@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: github-release
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
@@ -19,7 +23,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Install dependencies
         run: rm -f package-lock.json && npm install
@@ -32,17 +35,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build extension
-        if: steps.changesets.outputs.hasChangesets == 'false'
-        run: npx turbo run build --filter=@style-capture/extension
-
       - name: Get extension version
         if: steps.changesets.outputs.hasChangesets == 'false'
         id: version
         run: echo "version=$(node -p "require('./apps/extension/package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
+      - name: Check if release exists
         if: steps.changesets.outputs.hasChangesets == 'false'
+        id: check_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" &>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build extension
+        if: steps.changesets.outputs.hasChangesets == 'false' && steps.check_release.outputs.exists == 'false'
+        run: npx turbo run build --filter=@style-capture/extension
+
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.hasChangesets == 'false' && steps.check_release.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -59,3 +74,15 @@ jobs:
           5. Click **Load unpacked** and select the unzipped folder
           EOF
           )"
+
+      - name: Publish to Chrome Web Store
+        if: steps.changesets.outputs.hasChangesets == 'false' && steps.check_release.outputs.exists == 'false'
+        continue-on-error: true
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_PUBLISH_TARGET: default
+        run: node apps/extension/scripts/chrome-web-store-publish.mjs release --target "$CWS_PUBLISH_TARGET"
