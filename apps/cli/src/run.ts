@@ -5,6 +5,7 @@ import {
   mapCaptureToTailwind,
 } from "@style-capture/core";
 import { chromium } from "playwright";
+
 import { captureElement } from "./capture.ts";
 
 export interface RunOptions {

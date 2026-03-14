@@ -9,6 +9,7 @@ import {
   SparkleIcon,
 } from "blode-icons-react";
 import type { Metadata } from "next";
+
 import { JsonLd } from "@/components/shared/json-ld";
 import { Button } from "@/components/ui/button";
 import {

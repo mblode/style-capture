@@ -7,6 +7,7 @@ import {
   MESSAGE_TYPE_CAPTURE_COMPLETED,
 } from "@/lib/messages.ts";
 import type { CaptureSettings } from "@/lib/types.ts";
+
 import { runPicker } from "./run-picker.ts";
 
 const settings: CaptureSettings = {

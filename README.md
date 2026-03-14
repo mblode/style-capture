@@ -31,10 +31,10 @@ Then use it with `/style-capture`:
 
 ```bash
 # Run directly via npx
-npx @style-capture/cli https://example.com "main" --mode curated
+npx style-capture https://example.com "main" --mode curated
 
 # Or install globally
-npm i -g @style-capture/cli
+npm i -g style-capture
 style-capture https://example.com ".hero"
 ```
 

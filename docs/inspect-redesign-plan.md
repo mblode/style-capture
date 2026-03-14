@@ -79,7 +79,7 @@ Owns picker/background tests and doc updates.
 - [ ] Decide whether `Shift` parent and `Alt` child traversal survive the redesign.
 - [ ] Decide whether the inspect cursor uses native `crosshair`/`cell` for MVP or a custom plus cursor asset for exact visual fidelity.
 - [ ] Define the tooltip content contract:
-  `tag#id` when available, otherwise `tag.class`, rendered as a compact 2-4 segment breadcrumb.
+      `tag#id` when available, otherwise `tag.class`, rendered as a compact 2-4 segment breadcrumb.
 - [ ] Explicitly keep persisted capture selectors separate from hover-label text.
 
 Exit criteria:
@@ -119,9 +119,9 @@ Exit criteria:
 - [ ] Add a dedicated hover-label node inside the overlay host.
 - [ ] Implement `buildHoverLabel()` separately from the persisted `buildSelector()` path.
 - [ ] Format hover labels as compact breadcrumbs, for example:
-  `main > section.pricing > button.primary`
+      `main > section.pricing > button.primary`
 - [ ] Limit each breadcrumb segment to a compact representation:
-  prefer `tag#id`, otherwise `tag.class`, with at most one meaningful class.
+      prefer `tag#id`, otherwise `tag.class`, with at most one meaningful class.
 - [ ] Do not show `:nth-child()` in the hover label.
 - [ ] Position the label from cursor coordinates with viewport clamping.
 - [ ] Flip the label above the highlighted element when there is not enough space below.
@@ -142,7 +142,7 @@ Exit criteria:
 - [ ] Add Escape-cancel tests.
 - [ ] If `Shift` and `Alt` remain, add parent/child retargeting tests.
 - [ ] Add background tests for `capture/start` status transitions:
-  no active tab, successful injection, already-active picker, injection failure.
+      no active tab, successful injection, already-active picker, injection failure.
 - [ ] Add background tests for `capture/completed`, `capture/failed`, and storage failure handling.
 - [ ] Update docs if keyboard behavior, popup responsibilities, or inspect visuals changed materially.
 

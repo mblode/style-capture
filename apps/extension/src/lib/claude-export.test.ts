@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { TailwindMappingResult } from "@/lib/tailwind-mapper.ts";
 import type { CaptureResult } from "@/lib/types.ts";
+
 import {
   buildClaudeCapturePrompt,
   formatCaptureForClaudeMarkdown,

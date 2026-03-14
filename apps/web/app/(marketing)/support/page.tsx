@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { JsonLd } from "@/components/shared/json-ld";
 import { buildBreadcrumbSchema, createPublicMetadata } from "@/lib/seo";
 
