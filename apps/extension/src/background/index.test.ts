@@ -106,7 +106,7 @@ const dispatchMessage = (
     );
 
     if (returned === false) {
-      resolve();
+      resolve(null);
     }
   });
 

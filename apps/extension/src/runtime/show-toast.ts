@@ -30,7 +30,7 @@ export const showToast = (message: string, isError: boolean): void => {
     `border: ${border}`,
     "border-radius: 8px",
     "color: #fff",
-    "font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    "font: 13px/1.4 'Glide', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     "padding: 10px 16px",
     "backdrop-filter: blur(12px)",
     "-webkit-backdrop-filter: blur(12px)",

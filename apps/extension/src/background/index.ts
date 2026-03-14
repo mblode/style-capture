@@ -10,7 +10,6 @@ import { mapCaptureToTailwind } from "@/lib/tailwind-mapper.ts";
 import type { CaptureResult, CaptureSettings } from "@/lib/types.ts";
 import { runPicker } from "@/runtime/run-picker.ts";
 import type { PickerRunResult } from "@/runtime/run-picker.ts";
-import { showToast } from "@/runtime/show-toast.ts";
 
 const ICON_DEFAULT: Record<string, string> = {
   128: "icons/icon-128.png",
@@ -97,29 +96,11 @@ const handleCaptureCompleted = async (
   const mapping = mapCaptureToTailwind(capture);
   const markdown = formatCaptureForClaudeMarkdown(capture, mapping);
 
-  try {
-    await chrome.scripting.executeScript({
-      args: [markdown],
-      func: copyToClipboard,
-      target: { tabId },
-    });
-
-    await chrome.scripting.executeScript({
-      args: ["Copied prompt to clipboard", false],
-      func: showToast,
-      target: { tabId },
-    });
-  } catch {
-    try {
-      await chrome.scripting.executeScript({
-        args: ["Failed to copy prompt to clipboard", true],
-        func: showToast,
-        target: { tabId },
-      });
-    } catch {
-      // Tab may have closed or navigated away
-    }
-  }
+  await chrome.scripting.executeScript({
+    args: [markdown],
+    func: copyToClipboard,
+    target: { tabId },
+  });
 };
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -130,8 +111,6 @@ chrome.action.onClicked.addListener(async (tab) => {
   try {
     const settings = await getSettings();
 
-    await setActiveIcon(tab.id);
-
     const results = await chrome.scripting.executeScript<
       [CaptureSettings],
       PickerRunResult
@@ -141,7 +120,12 @@ chrome.action.onClicked.addListener(async (tab) => {
       target: { tabId: tab.id },
     });
 
-    console.log("[style-capture] picker injected:", results[0]?.result);
+    const result = results[0]?.result;
+    console.log("[style-capture] picker injected:", result);
+
+    await (result === "activated"
+      ? setActiveIcon(tab.id)
+      : setDefaultIcon(tab.id));
   } catch (error) {
     console.error("[style-capture] injection failed:", error);
     await setDefaultIcon(tab.id);
@@ -168,10 +152,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ ok: true });
         } catch {
           sendResponse({ ok: false });
-        } finally {
-          if (tabId) {
-            await resetIcon(tabId);
-          }
         }
       })();
       return true;
