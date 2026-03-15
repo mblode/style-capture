@@ -13,6 +13,7 @@ import {
 } from "blode-icons-react";
 import type { Metadata } from "next";
 
+import { DemoSection } from "@/components/demo/demo-section";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,8 +110,16 @@ export default function HomePage(): React.JSX.Element {
               Use the CLI
             </a>
           </Button>
+          <Button asChild size="lg" variant="secondary">
+            <a href="#demo">
+              <CursorClickIcon data-icon="inline-start" />
+              Try it now
+            </a>
+          </Button>
         </div>
       </section>
+
+      <DemoSection />
 
       <section className="mb-24" id="skills">
         <h2 className="mb-4 text-center font-semibold text-2xl">Agent skill</h2>
