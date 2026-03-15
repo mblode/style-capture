@@ -2,7 +2,7 @@
 
 import type { CaptureResult, TailwindMappingResult } from "@style-capture/core";
 import { ClipboardIcon, XIcon } from "blode-icons-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +20,16 @@ export const CaptureResults = ({
   tailwindMapping,
 }: CaptureResultsProps): React.JSX.Element => {
   const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    },
+    []
+  );
 
   const rootElement = captureResult.elements[captureResult.rootElementId];
   const rootMapping = rootElement
@@ -29,7 +39,10 @@ export const CaptureResults = ({
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(capturedExport);
     setCopied(true);
-    setTimeout(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => {
       setCopied(false);
     }, 2000);
   }, [capturedExport]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 const GRAB_RGB = "67, 137, 245";
@@ -44,20 +44,13 @@ interface InspectOverlayProps {
 export const InspectOverlay = ({
   onCapture,
   onDeactivate,
-}: InspectOverlayProps): React.JSX.Element | null => {
+}: InspectOverlayProps): React.JSX.Element => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipPanelRef = useRef<HTMLDivElement>(null);
   const currentTargetRef = useRef<Element | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    return () => {
-      setMounted(false);
-    };
-  }, []);
+  const lastPointerRef = useRef({ x: 0, y: 0 });
 
   // Inject crosshair cursor style
   useEffect(() => {
@@ -70,94 +63,83 @@ export const InspectOverlay = ({
     };
   }, []);
 
-  const isOwnElement = useCallback((target: Element): boolean => {
+  const isOwnElement = (target: Element): boolean => {
     const overlay = overlayRef.current;
     if (!overlay) {
       return false;
     }
     return overlay.contains(target);
-  }, []);
+  };
 
-  const updateOverlay = useCallback(
-    (target: Element, pointerX: number, pointerY: number) => {
-      const frame = frameRef.current;
-      const tooltip = tooltipRef.current;
-      const tooltipPanel = tooltipPanelRef.current;
-      if (!frame || !tooltip || !tooltipPanel) {
-        return;
-      }
-
-      // Update frame
-      const box = target.getBoundingClientRect();
-      const computedStyle = window.getComputedStyle(target);
-      frame.style.display = "block";
-      frame.style.transform = `translate(${box.left}px, ${box.top}px)`;
-      frame.style.width = `${Math.max(box.width, 1)}px`;
-      frame.style.height = `${Math.max(box.height, 1)}px`;
-      frame.style.borderRadius = computedStyle.borderRadius || "0px";
-
-      // Update tooltip
-      tooltipPanel.textContent = buildHoverLabel(target);
-      tooltip.style.display = "block";
-
-      // Force layout so getBoundingClientRect returns real dimensions
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      tooltip.offsetHeight;
-
-      const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
-      const viewportHeight =
-        window.visualViewport?.height ?? window.innerHeight;
-      const panelRect = tooltipPanel.getBoundingClientRect();
-      const labelWidth =
-        panelRect.width || tooltipPanel.scrollWidth || tooltipPanel.offsetWidth;
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const labelHeight =
-        tooltipRect.height ||
-        tooltip.scrollHeight ||
-        tooltip.offsetHeight ||
-        panelRect.height;
-
-      let left = pointerX + TOOLTIP_CURSOR_OFFSET_X;
-      let top = pointerY - labelHeight - TOOLTIP_CURSOR_OFFSET_Y;
-
-      if (left + labelWidth > viewportWidth - LABEL_VIEWPORT_MARGIN) {
-        left = pointerX - labelWidth - TOOLTIP_CURSOR_OFFSET_X;
-      }
-      left = Math.max(left, LABEL_VIEWPORT_MARGIN);
-
-      if (top < LABEL_VIEWPORT_MARGIN) {
-        top = pointerY + TOOLTIP_CURSOR_OFFSET_Y + 20;
-      }
-      top = clamp(
-        top,
-        LABEL_VIEWPORT_MARGIN,
-        viewportHeight - labelHeight - LABEL_VIEWPORT_MARGIN
-      );
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    },
-    []
-  );
-
-  const hideOverlay = useCallback(() => {
+  const updateOverlay = (
+    target: Element,
+    pointerX: number,
+    pointerY: number
+  ) => {
     const frame = frameRef.current;
     const tooltip = tooltipRef.current;
-    if (frame) {
-      frame.style.display = "none";
+    const tooltipPanel = tooltipPanelRef.current;
+    if (!frame || !tooltip || !tooltipPanel) {
+      return;
     }
-    if (tooltip) {
-      tooltip.style.display = "none";
+
+    // Update frame
+    const box = target.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(target);
+    frame.style.display = "block";
+    frame.style.transform = `translate(${box.left}px, ${box.top}px)`;
+    frame.style.width = `${Math.max(box.width, 1)}px`;
+    frame.style.height = `${Math.max(box.height, 1)}px`;
+    frame.style.borderRadius = computedStyle.borderRadius || "0px";
+
+    // Update tooltip
+    tooltipPanel.textContent = buildHoverLabel(target);
+    tooltip.style.display = "block";
+
+    // Force layout so getBoundingClientRect returns real dimensions
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    tooltip.offsetHeight;
+
+    const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const panelRect = tooltipPanel.getBoundingClientRect();
+    const labelWidth =
+      panelRect.width || tooltipPanel.scrollWidth || tooltipPanel.offsetWidth;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const labelHeight =
+      tooltipRect.height ||
+      tooltip.scrollHeight ||
+      tooltip.offsetHeight ||
+      panelRect.height;
+
+    let left = pointerX + TOOLTIP_CURSOR_OFFSET_X;
+    let top = pointerY - labelHeight - TOOLTIP_CURSOR_OFFSET_Y;
+
+    if (left + labelWidth > viewportWidth - LABEL_VIEWPORT_MARGIN) {
+      left = pointerX - labelWidth - TOOLTIP_CURSOR_OFFSET_X;
     }
-  }, []);
+    left = Math.max(left, LABEL_VIEWPORT_MARGIN);
+
+    if (top < LABEL_VIEWPORT_MARGIN) {
+      top = pointerY + TOOLTIP_CURSOR_OFFSET_Y + 20;
+    }
+    top = clamp(
+      top,
+      LABEL_VIEWPORT_MARGIN,
+      viewportHeight - labelHeight - LABEL_VIEWPORT_MARGIN
+    );
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+  };
 
   // Event listeners
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent): void => {
-      const target =
-        event.composedPath()[0] instanceof Element
-          ? (event.composedPath()[0] as Element)
-          : null;
+      lastPointerRef.current = { x: event.clientX, y: event.clientY };
+
+      const path = event.composedPath();
+      const target = path[0] instanceof Element ? (path[0] as Element) : null;
 
       if (!target || isOwnElement(target)) {
         const fallback = document.elementFromPoint(
@@ -215,8 +197,8 @@ export const InspectOverlay = ({
           currentTargetRef.current = parent;
           updateOverlay(
             parent,
-            event instanceof MouseEvent ? event.clientX : 0,
-            event instanceof MouseEvent ? event.clientY : 0
+            lastPointerRef.current.x,
+            lastPointerRef.current.y
           );
         }
         return;
@@ -227,7 +209,11 @@ export const InspectOverlay = ({
         const child = currentTargetRef.current.firstElementChild;
         if (child) {
           currentTargetRef.current = child;
-          updateOverlay(child, 0, 0);
+          updateOverlay(
+            child,
+            lastPointerRef.current.x,
+            lastPointerRef.current.y
+          );
         }
       }
     };
@@ -243,19 +229,7 @@ export const InspectOverlay = ({
       document.removeEventListener("click", handleClick, true);
       document.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [isOwnElement, updateOverlay, onCapture, onDeactivate]);
-
-  // Hide overlay on unmount
-  useEffect(
-    () => () => {
-      hideOverlay();
-    },
-    [hideOverlay]
-  );
-
-  if (!mounted) {
-    return null;
-  }
+  }, [onCapture, onDeactivate]);
 
   return createPortal(
     <div
