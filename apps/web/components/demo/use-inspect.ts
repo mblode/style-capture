@@ -2,10 +2,11 @@
 
 import type { CaptureResult, TailwindMappingResult } from "@style-capture/core";
 import {
+  createDefaultSettings,
   formatCaptureForClaudeMarkdown,
   mapCaptureToTailwind,
 } from "@style-capture/core";
-import { useCallback, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { buildCapture } from "./build-capture";
 
@@ -25,46 +26,42 @@ export const useInspect = (): InspectState => {
   const [captureResult, setCaptureResult] = useState<CaptureResult | null>(
     null
   );
-  const [tailwindMapping, setTailwindMapping] =
-    useState<TailwindMappingResult | null>(null);
-  const [capturedExport, setCapturedExport] = useState<string | null>(null);
 
-  const activate = useCallback(() => {
+  const tailwindMapping = useMemo<TailwindMappingResult | null>(
+    () => (captureResult ? mapCaptureToTailwind(captureResult) : null),
+    [captureResult]
+  );
+
+  const capturedExport = useMemo<string | null>(
+    () =>
+      captureResult && tailwindMapping
+        ? formatCaptureForClaudeMarkdown(captureResult, tailwindMapping)
+        : null,
+    [captureResult, tailwindMapping]
+  );
+
+  const activate = () => {
     setIsInspecting(true);
     setCaptureResult(null);
-    setTailwindMapping(null);
-    setCapturedExport(null);
-  }, []);
+  };
 
-  const deactivate = useCallback(() => {
+  const deactivate = () => {
     setIsInspecting(false);
-  }, []);
+  };
 
-  const clearResults = useCallback(() => {
+  const clearResults = () => {
     setCaptureResult(null);
-    setTailwindMapping(null);
-    setCapturedExport(null);
-  }, []);
+  };
 
-  const handleCapture = useCallback((element: Element) => {
+  const handleCapture = (element: Element) => {
     try {
-      const capture = buildCapture(element, {
-        captureMode: "curated",
-        includeHiddenElements: false,
-        includePseudoElements: true,
-      });
-
-      const mapping = mapCaptureToTailwind(capture);
-      const exported = formatCaptureForClaudeMarkdown(capture, mapping);
-
+      const capture = buildCapture(element, createDefaultSettings());
       setCaptureResult(capture);
-      setTailwindMapping(mapping);
-      setCapturedExport(exported);
       setIsInspecting(false);
     } catch {
       setIsInspecting(false);
     }
-  }, []);
+  };
 
   return {
     activate,
