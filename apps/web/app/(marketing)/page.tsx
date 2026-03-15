@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BoltIcon,
   CaptureIcon,
@@ -11,23 +13,11 @@ import {
   ShieldCheckIcon,
   SparkleIcon,
 } from "blode-icons-react";
-import type { Metadata } from "next";
 
-import { DemoSection } from "@/components/demo/demo-section";
+import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Button } from "@/components/ui/button";
-import {
-  buildOrganizationSchema,
-  buildWebSiteSchema,
-  createPublicMetadata,
-} from "@/lib/seo";
-
-export const metadata: Metadata = createPublicMetadata({
-  description:
-    "Capture real CSS from any element and map it to Tailwind classes — as a Chrome extension, CLI, or AI agent skill.",
-  path: "/",
-  title: "Capture CSS, get Tailwind",
-});
+import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo";
 
 const extensionSteps = [
   {
@@ -82,146 +72,157 @@ const features = [
 ];
 
 export default function HomePage(): React.JSX.Element {
+  const inspect = useInspect();
+  const handleTryItNow = inspect.activate;
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 md:py-24">
+    <div>
       <JsonLd data={buildWebSiteSchema()} />
       <JsonLd data={buildOrganizationSchema()} />
 
-      <section className="mb-24 text-center">
-        <h1 className="mb-4 font-bold text-4xl tracking-tight lg:text-5xl">
-          Capture CSS.
-          <br />
-          Get Tailwind.
-        </h1>
-        <p className="mx-auto mb-8 max-w-lg text-lg text-muted-foreground leading-relaxed">
-          Capture rendered CSS from any element on any website and get Tailwind
-          utilities — ready to paste into your AI coding agent.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button asChild size="lg">
-            <a href="https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd">
-              <ChromeIcon data-icon="inline-start" />
-              Add to Chrome — Free
-            </a>
-          </Button>
-          <Button asChild size="lg" variant="secondary">
-            <a href="#cli">
-              <ConsoleIcon data-icon="inline-start" />
-              Use the CLI
-            </a>
-          </Button>
-          <Button asChild size="lg" variant="secondary">
-            <a href="#demo">
+      {/* Hero */}
+      <section className="@container py-24">
+        <div className="mx-auto max-w-2xl px-6 text-center">
+          <h1 className="text-balance text-4xl font-medium">
+            Capture CSS.
+            <br />
+            Get Tailwind.
+          </h1>
+          <p className="mt-4 text-muted-foreground">
+            Capture rendered CSS from any element on any website and get
+            Tailwind utilities — ready to paste into your AI coding agent.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg">
+              <a href="https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd">
+                <ChromeIcon data-icon="inline-start" />
+                Add to Chrome — Free
+              </a>
+            </Button>
+            <Button onClick={handleTryItNow} size="lg" variant="secondary">
               <CursorClickIcon data-icon="inline-start" />
               Try it now
-            </a>
-          </Button>
-        </div>
-      </section>
-
-      <DemoSection />
-
-      <section className="mb-24" id="skills">
-        <h2 className="mb-4 text-center font-semibold text-2xl">Agent skill</h2>
-        <p className="mx-auto mb-8 max-w-lg text-center text-muted-foreground leading-relaxed">
-          Add Style Capture as a skill for Claude Code, Cursor, or any
-          compatible AI agent.
-        </p>
-        <div className="mx-auto max-w-xl space-y-4">
-          <div className="rounded-xl bg-secondary p-5">
-            <p className="mb-2 flex items-center gap-2 font-semibold text-sm">
-              <PromptIcon className="size-4 text-foreground" />
-              Install the skill
-            </p>
-            <code className="block font-mono text-sm text-muted-foreground">
-              npx skills add mblode/style-capture -g --all -y
-            </code>
-          </div>
-          <div className="rounded-xl bg-secondary p-5">
-            <p className="mb-2 flex items-center gap-2 font-semibold text-sm">
-              <SparkleIcon className="size-4 text-foreground" />
-              Use it
-            </p>
-            <code className="block font-mono text-sm text-muted-foreground">
-              /style-capture https://linear.app .hero
-            </code>
+            </Button>
           </div>
         </div>
       </section>
 
-      <section className="mb-24" id="cli">
-        <h2 className="mb-4 text-center font-semibold text-2xl">CLI</h2>
-        <p className="mx-auto mb-8 max-w-lg text-center text-muted-foreground leading-relaxed">
-          Capture from the terminal. Give it a URL and a selector — it launches
-          a headless browser and outputs Tailwind-mapped styles.
-        </p>
-        <div className="mx-auto max-w-xl space-y-4">
-          <div className="rounded-xl bg-secondary p-5">
-            <p className="mb-2 flex items-center gap-2 font-semibold text-sm">
-              <ConsoleIcon className="size-4 text-foreground" />
-              Run directly
-            </p>
-            <code className="block font-mono text-sm text-muted-foreground">
-              npx style-capture https://example.com &quot;main&quot;
-            </code>
-          </div>
-          <div className="rounded-xl bg-secondary p-5">
-            <p className="mb-2 flex items-center gap-2 font-semibold text-sm">
-              <PromptIcon className="size-4 text-foreground" />
-              Or install globally
-            </p>
-            <code className="block font-mono text-sm text-muted-foreground">
-              npm i -g style-capture
-            </code>
-          </div>
-        </div>
-      </section>
-
-      <section className="mb-24" id="extension">
-        <h2 className="mb-4 text-center font-semibold text-2xl">
-          Chrome extension
-        </h2>
-        <p className="mx-auto mb-8 max-w-lg text-center text-muted-foreground leading-relaxed">
-          Point and click to capture. No setup, no permissions prompts.
-        </p>
-        <div className="grid gap-8 md:grid-cols-3">
-          {extensionSteps.map((step, index) => (
-            <div className="text-center" key={step.title}>
-              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-secondary">
-                <step.icon className="size-6 text-foreground" />
-              </div>
-              <p className="mb-1 font-mono text-muted-foreground text-xs">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-              <h3 className="mb-2 font-semibold text-lg">{step.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {step.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-semibold text-2xl">
-          Why Style Capture
-        </h2>
-        <div className="space-y-8">
-          {features.map((feature) => (
-            <div className="flex gap-4" key={feature.title}>
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                <feature.icon className="size-5 text-foreground" />
-              </div>
-              <div>
-                <h3 className="mb-1 font-semibold">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+      {/* Features */}
+      <section className="@container py-24">
+        <div className="mx-auto max-w-2xl px-6">
+          <h2 className="text-balance text-4xl font-medium">
+            Why Style Capture
+          </h2>
+          <div className="mt-12 grid grid-cols-2 gap-6 text-sm @xl:grid-cols-3">
+            {features.map((feature) => (
+              <div className="space-y-3 border-t pt-6" key={feature.title}>
+                <feature.icon className="size-4 text-muted-foreground" />
+                <p className="text-muted-foreground leading-5">
+                  <span className="font-medium text-foreground">
+                    {feature.title}
+                  </span>{" "}
                   {feature.description}
                 </p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
+
+      {/* Chrome extension */}
+      <section className="@container py-24" id="extension">
+        <div className="mx-auto max-w-2xl px-6">
+          <h2 className="text-balance text-4xl font-medium">
+            Chrome extension
+          </h2>
+          <p className="mt-4 text-muted-foreground">
+            Point and click to capture. No setup, no permissions prompts.
+          </p>
+          <div className="mt-12 grid grid-cols-3 gap-6 text-sm">
+            {extensionSteps.map((step) => (
+              <div className="space-y-3 border-t pt-6" key={step.title}>
+                <step.icon className="size-4 text-muted-foreground" />
+                <p className="text-muted-foreground leading-5">
+                  <span className="font-medium text-foreground">
+                    {step.title}
+                  </span>{" "}
+                  {step.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Agent skill */}
+      <section className="@container py-24" id="skills">
+        <div className="mx-auto max-w-2xl px-6">
+          <h2 className="text-balance text-4xl font-medium">Agent skill</h2>
+          <p className="mt-4 text-muted-foreground">
+            Add Style Capture as a skill for Claude Code, Cursor, or any
+            compatible AI agent.
+          </p>
+          <div className="mt-12 grid grid-cols-2 gap-6 text-sm">
+            <div className="space-y-3 border-t pt-6">
+              <PromptIcon className="size-4 text-muted-foreground" />
+              <p className="text-muted-foreground leading-5">
+                <span className="font-medium text-foreground">
+                  Install the skill
+                </span>
+              </p>
+              <code className="block font-mono text-xs text-muted-foreground">
+                npx skills add mblode/style-capture -g --all -y
+              </code>
+            </div>
+            <div className="space-y-3 border-t pt-6">
+              <SparkleIcon className="size-4 text-muted-foreground" />
+              <p className="text-muted-foreground leading-5">
+                <span className="font-medium text-foreground">Use it</span>
+              </p>
+              <code className="block font-mono text-xs text-muted-foreground">
+                /style-capture https://linear.app .hero
+              </code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CLI */}
+      <section className="@container py-24" id="cli">
+        <div className="mx-auto max-w-2xl px-6">
+          <h2 className="text-balance text-4xl font-medium">CLI</h2>
+          <p className="mt-4 text-muted-foreground">
+            Capture from the terminal. Give it a URL and a selector — it
+            launches a headless browser and outputs Tailwind-mapped styles.
+          </p>
+          <div className="mt-12 grid grid-cols-2 gap-6 text-sm">
+            <div className="space-y-3 border-t pt-6">
+              <ConsoleIcon className="size-4 text-muted-foreground" />
+              <p className="text-muted-foreground leading-5">
+                <span className="font-medium text-foreground">
+                  Run directly
+                </span>
+              </p>
+              <code className="block font-mono text-xs text-muted-foreground">
+                npx style-capture https://example.com &quot;main&quot;
+              </code>
+            </div>
+            <div className="space-y-3 border-t pt-6">
+              <PromptIcon className="size-4 text-muted-foreground" />
+              <p className="text-muted-foreground leading-5">
+                <span className="font-medium text-foreground">
+                  Or install globally
+                </span>
+              </p>
+              <code className="block font-mono text-xs text-muted-foreground">
+                npm i -g style-capture
+              </code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <InspectRenderer inspect={inspect} />
     </div>
   );
 }
