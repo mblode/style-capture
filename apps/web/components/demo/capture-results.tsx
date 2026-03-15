@@ -1,7 +1,7 @@
 "use client";
 
 import type { CaptureResult, TailwindMappingResult } from "@style-capture/core";
-import { ClipboardIcon, XIcon } from "blode-icons-react";
+import { ClipboardIcon, CrossSmallIcon } from "blode-icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -53,29 +53,23 @@ export const CaptureResults = ({
         <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-lg">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
-                <span className="font-mono text-xs text-muted-foreground">
-                  {"</>"}
-                </span>
-              </div>
-              <div>
-                <p className="font-semibold text-sm">
-                  {rootElement?.tagName ?? "element"}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {captureResult.summary.elementCount} element
-                  {captureResult.summary.elementCount === 1 ? "" : "s"} captured
-                </p>
-              </div>
-            </div>
+            <p className="text-sm">
+              <span className="font-semibold">
+                {rootElement?.tagName ?? "element"}
+              </span>
+              <span className="text-muted-foreground">
+                {" · "}
+                {captureResult.summary.elementCount} element
+                {captureResult.summary.elementCount === 1 ? "" : "s"}
+              </span>
+            </p>
             <div className="flex items-center gap-2">
               <Button onClick={handleCopy} size="sm" variant="secondary">
                 <ClipboardIcon data-icon="inline-start" />
-                {copied ? "Copied" : "Copy export"}
+                {copied ? "Copied" : "Copy"}
               </Button>
               <Button onClick={onClose} size="xs" variant="ghost">
-                <XIcon className="size-4" />
+                <CrossSmallIcon className="size-4" />
               </Button>
             </div>
           </div>
@@ -83,9 +77,6 @@ export const CaptureResults = ({
           {/* Tailwind classes */}
           {rootMapping && rootMapping.suggestedClassName && (
             <div className="border-b border-border px-5 py-3">
-              <p className="mb-2 font-mono text-muted-foreground text-xs">
-                Tailwind
-              </p>
               <div className="flex flex-wrap gap-1.5">
                 {rootMapping.suggestedClassName.split(" ").map((cls) => (
                   <span
