@@ -54,7 +54,7 @@ export default function MarqueePromoTile() {
                     Layout and spacing from one click.
                   </p>
                   <div
-                    className="absolute border border-black/50 bg-black/[0.08]"
+                    className="absolute border border-[rgba(67,137,245,1)] bg-[rgba(67,137,245,0.08)]"
                     style={{ height: 152, left: 16, right: 16, top: 108 }}
                   />
                 </Card>

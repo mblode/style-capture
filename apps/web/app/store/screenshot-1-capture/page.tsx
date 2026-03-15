@@ -54,20 +54,18 @@ export default function Screenshot1Capture() {
                 <Metric label="Shadow" value="Soft" />
               </div>
               <div
-                className="absolute border border-black/50 bg-black/[0.08]"
+                className="absolute cursor-crosshair border border-[rgba(67,137,245,1)] bg-[rgba(67,137,245,0.08)]"
                 style={{ height: 194, left: 18, top: 82, width: 364 }}
               />
               <div
-                className="absolute flex items-center gap-1 rounded-[10px] bg-white px-2 py-1.5 font-medium text-[13px] leading-4"
+                className="absolute inline-flex items-center rounded-lg bg-[#232425] px-[10px] py-1.5 font-medium text-[13px] text-white leading-4"
                 style={{
-                  filter: "drop-shadow(0px 1px 2px rgba(81, 81, 81, 0.25))",
+                  filter: "drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3))",
                   left: 100,
                   top: 42,
                 }}
               >
-                <span className="text-black/50">
-                  section.pricing &gt; article.card
-                </span>
+                Copied to clipboard
               </div>
             </Card>
           </div>
