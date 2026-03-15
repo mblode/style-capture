@@ -6,6 +6,11 @@
 
 <p align="center">Capture computed CSS and HTML from any web page, map the result to Tailwind utilities, and output a structured prompt for faithful UI recreation.</p>
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/style-capture"><img src="https://img.shields.io/npm/v/style-capture.svg" alt="npm version"></a>
+  <a href="../../LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+</p>
+
 ## Install
 
 ```bash
