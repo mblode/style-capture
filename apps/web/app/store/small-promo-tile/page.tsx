@@ -25,7 +25,7 @@ export default function SmallPromoTile() {
           <h3 className="mt-3 mb-1.5 font-bold text-[22px] tracking-[-0.04em]">
             Pricing card
           </h3>
-          <div className="absolute top-[54px] right-[18px] left-[18px] h-[86px] border border-black/50 bg-black/[0.08]" />
+          <div className="absolute top-[54px] right-[18px] left-[18px] h-[86px] border border-[rgba(67,137,245,1)] bg-[rgba(67,137,245,0.08)]" />
         </MiniBrowser>
       </div>
     </div>
