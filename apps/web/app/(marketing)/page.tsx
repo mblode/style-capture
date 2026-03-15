@@ -98,7 +98,7 @@ export default function HomePage(): React.JSX.Element {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">
-            <a href="https://chromewebstore.google.com">
+            <a href="https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd">
               <ChromeIcon data-icon="inline-start" />
               Add to Chrome — Free
             </a>
