@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  BoltIcon,
+  ApiConnectionIcon,
   CaptureIcon,
   ChromeIcon,
   ClipboardIcon,
@@ -55,7 +55,7 @@ const features = [
   {
     description:
       "Extension, CLI, or agent skill — use whichever fits your workflow.",
-    icon: BoltIcon,
+    icon: ApiConnectionIcon,
     title: "Three ways to capture",
   },
   {
@@ -82,8 +82,8 @@ export default function HomePage(): React.JSX.Element {
 
       {/* Hero */}
       <section className="@container py-24">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <h1 className="text-balance text-4xl font-medium">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h1 className="text-balance text-4xl font-medium sm:text-5xl">
             Capture CSS.
             <br />
             Get Tailwind.
@@ -109,11 +109,11 @@ export default function HomePage(): React.JSX.Element {
 
       {/* Features */}
       <section className="@container py-24">
-        <div className="mx-auto max-w-2xl px-6">
+        <div className="mx-auto max-w-3xl px-6">
           <h2 className="text-balance text-4xl font-medium">
             Why Style Capture
           </h2>
-          <div className="mt-12 grid grid-cols-2 gap-6 text-sm @xl:grid-cols-3">
+          <div className="mt-12 grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @xl:grid-cols-3">
             {features.map((feature) => (
               <div className="space-y-3 border-t pt-6" key={feature.title}>
                 <feature.icon className="size-4 text-muted-foreground" />
@@ -131,14 +131,16 @@ export default function HomePage(): React.JSX.Element {
 
       {/* Chrome extension */}
       <section className="@container py-24" id="extension">
-        <div className="mx-auto max-w-2xl px-6">
-          <h2 className="text-balance text-4xl font-medium">
-            Chrome extension
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Point and click to capture. No setup, no permissions prompts.
-          </p>
-          <div className="mt-12 grid grid-cols-3 gap-6 text-sm">
+        <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
+          <div className="space-y-4">
+            <h2 className="text-balance text-4xl font-medium">
+              Chrome extension
+            </h2>
+            <p className="text-muted-foreground">
+              Point and click to capture. No setup, no permissions prompts.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-3 @2xl:grid-cols-1">
             {extensionSteps.map((step) => (
               <div className="space-y-3 border-t pt-6" key={step.title}>
                 <step.icon className="size-4 text-muted-foreground" />
@@ -156,13 +158,15 @@ export default function HomePage(): React.JSX.Element {
 
       {/* Agent skill */}
       <section className="@container py-24" id="skills">
-        <div className="mx-auto max-w-2xl px-6">
-          <h2 className="text-balance text-4xl font-medium">Agent skill</h2>
-          <p className="mt-4 text-muted-foreground">
-            Add Style Capture as a skill for Claude Code, Cursor, or any
-            compatible AI agent.
-          </p>
-          <div className="mt-12 grid grid-cols-2 gap-6 text-sm">
+        <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
+          <div className="space-y-4">
+            <h2 className="text-balance text-4xl font-medium">Agent skill</h2>
+            <p className="text-muted-foreground">
+              Add Style Capture as a skill for Claude Code, Cursor, or any
+              compatible AI agent.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
             <div className="space-y-3 border-t pt-6">
               <PromptIcon className="size-4 text-muted-foreground" />
               <p className="text-muted-foreground leading-5">
@@ -189,13 +193,15 @@ export default function HomePage(): React.JSX.Element {
 
       {/* CLI */}
       <section className="@container py-24" id="cli">
-        <div className="mx-auto max-w-2xl px-6">
-          <h2 className="text-balance text-4xl font-medium">CLI</h2>
-          <p className="mt-4 text-muted-foreground">
-            Capture from the terminal. Give it a URL and a selector — it
-            launches a headless browser and outputs Tailwind-mapped styles.
-          </p>
-          <div className="mt-12 grid grid-cols-2 gap-6 text-sm">
+        <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
+          <div className="space-y-4">
+            <h2 className="text-balance text-4xl font-medium">CLI</h2>
+            <p className="text-muted-foreground">
+              Capture from the terminal. Give it a URL and a selector — it
+              launches a headless browser and outputs Tailwind-mapped styles.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
             <div className="space-y-3 border-t pt-6">
               <ConsoleIcon className="size-4 text-muted-foreground" />
               <p className="text-muted-foreground leading-5">
