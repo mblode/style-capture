@@ -1,7 +1,6 @@
-import { Badge, BrowserFrame } from "@/components/store/browser-frame";
+import { BrowserFrame } from "@/components/store/browser-frame";
 import { Card } from "@/components/store/card";
 import { CodeBlock } from "@/components/store/code-block";
-import { Eyebrow } from "@/components/store/eyebrow";
 import { Metric } from "@/components/store/metric";
 import { StoreFrame } from "@/components/store/store-frame";
 
@@ -26,17 +25,15 @@ export default function Screenshot1Capture() {
         <div className="grid h-[calc(100%-67px)] grid-cols-[1.2fr_0.8fr] gap-[22px] p-[22px]">
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
-              <Eyebrow>Live page selection</Eyebrow>
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
-                Pick the exact subtree you want.
+                Live page selection
               </h1>
-              <p className="max-w-[28ch] text-black/60 text-lg leading-[1.55]">
+              <p className=" text-black/60 text-lg leading-[1.55]">
                 Hover to select. Shift for parent, Alt for child.
               </p>
             </div>
 
             <Card className="p-6">
-              <Badge>Sample page</Badge>
               <h2 className="mb-2 font-bold text-[28px] leading-none tracking-[-0.04em]">
                 Pro plan
               </h2>
@@ -55,14 +52,14 @@ export default function Screenshot1Capture() {
               </div>
               <div
                 className="absolute cursor-crosshair border border-[rgba(67,137,245,1)] bg-[rgba(67,137,245,0.08)]"
-                style={{ height: 194, left: 18, top: 82, width: 364 }}
+                style={{ height: 210, left: 18, right: 18, top: 18 }}
               />
               <div
-                className="absolute inline-flex items-center rounded-lg bg-[#232425] px-[10px] py-1.5 font-medium text-[13px] text-white leading-4"
+                className="absolute inline-flex items-center rounded-lg bg-[#232425] px-[10px] py-1.5 font-medium text-[13px] text-white leading-4 -translate-x-1/2"
                 style={{
                   filter: "drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3))",
-                  left: 100,
-                  top: 42,
+                  left: "50%",
+                  top: -20,
                 }}
               >
                 Copied to clipboard

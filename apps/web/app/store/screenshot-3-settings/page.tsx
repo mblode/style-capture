@@ -28,13 +28,13 @@ export default function Screenshot3Settings() {
                 <div className="flex items-center justify-between gap-4 rounded-md border border-black/20 bg-black/[0.03] p-4">
                   <span className="font-medium text-sm">Pseudo-elements</span>
                   <div className="relative h-6 w-11 rounded-full bg-black">
-                    <span className="absolute top-0.5 left-[22px] size-5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]" />
+                    <span className="absolute top-0.5 left-[22px] size-5 rounded-full bg-white shadow-sm" />
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-4 rounded-md border border-black/20 bg-black/[0.03] p-4">
                   <span className="font-medium text-sm">Hidden elements</span>
                   <div className="relative h-6 w-11 rounded-full bg-black">
-                    <span className="absolute top-0.5 left-[22px] size-5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]" />
+                    <span className="absolute top-0.5 left-[22px] size-5 rounded-full bg-white shadow-sm" />
                   </div>
                 </div>
               </div>

@@ -1,6 +1,5 @@
 import { Badge, BrowserFrame } from "@/components/store/browser-frame";
 import { Card } from "@/components/store/card";
-import { Eyebrow } from "@/components/store/eyebrow";
 import { Panel } from "@/components/store/panel";
 import { StoreFrame } from "@/components/store/store-frame";
 
@@ -26,7 +25,6 @@ const Screenshot5Privacy = () => (
       <div className="p-7">
         <div className="grid h-full grid-cols-[1.2fr_0.8fr] gap-[18px]">
           <Card className="p-[22px]">
-            <Eyebrow>Security</Eyebrow>
             <h2 className="mb-2 font-bold text-2xl tracking-[-0.04em]">
               Minimal permissions, local-only.
             </h2>

@@ -9,7 +9,7 @@ export const MiniBrowser = ({
 }) => (
   <div
     className={cn(
-      "absolute right-[26px] bottom-6 w-[42%] overflow-hidden rounded-[20px] border border-black/10 bg-white shadow-[0_18px_36px_rgba(0,0,0,0.08)]",
+      "absolute right-[26px] bottom-6 w-[42%] overflow-hidden rounded-[20px] border border-black/10 bg-white shadow-lg",
       className
     )}
   >
