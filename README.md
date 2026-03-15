@@ -10,8 +10,7 @@
 
 ### Chrome Extension
 
-1. Download `style-capture.zip` from the [latest release](https://github.com/mblode/style-capture/releases/latest)
-2. Unzip, open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd)
 
 ### Agent Skill
 
