@@ -1,3 +1,4 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html className={glide.variable} lang="en">
       <body className="antialiased">{children}</body>
+      <GoogleAnalytics gaId="G-7XGBDRVZQR" />
     </html>
   );
 }
