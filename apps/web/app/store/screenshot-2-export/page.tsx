@@ -1,6 +1,5 @@
 import { BrowserFrame } from "@/components/store/browser-frame";
 import { CodeBlock } from "@/components/store/code-block";
-import { Eyebrow } from "@/components/store/eyebrow";
 import { Panel } from "@/components/store/panel";
 import { StoreFrame } from "@/components/store/store-frame";
 
@@ -11,7 +10,7 @@ Recreate or refactor this UI faithfully.
 html_capture + css_capture are ground truth.
 
 <tailwind_hints>
-0=rounded-[20px] px-8 py-7 shadow-[0_16px_32px_rgba(0,0,0,0.08)]
+0=rounded-[20px] px-8 py-7 shadow-sm
 1=text-[2rem] tracking-[-0.05em]
 2=inline-flex items-center gap-3 rounded-full
 </tailwind_hints>
@@ -28,7 +27,6 @@ export default function Screenshot2Export() {
         <div className="grid h-[calc(100%-67px)] grid-cols-[1.2fr_0.8fr] gap-[22px] p-[22px]">
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
-              <Eyebrow>Structured export</Eyebrow>
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
                 CSS truth, Tailwind hints, fewer guesses.
               </h1>

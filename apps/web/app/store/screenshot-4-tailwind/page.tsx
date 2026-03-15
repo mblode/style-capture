@@ -1,6 +1,5 @@
 import { BrowserFrame } from "@/components/store/browser-frame";
 import { CodeBlock } from "@/components/store/code-block";
-import { Eyebrow } from "@/components/store/eyebrow";
 import { Panel } from "@/components/store/panel";
 import { StoreFrame } from "@/components/store/store-frame";
 
@@ -17,7 +16,7 @@ const COMPUTED_CSS = `[data-lc="0"] {
 
 const TAILWIND_HINTS = `<tailwind_hints>
 0=grid gap-6 p-8 rounded-[20px] bg-white
-  shadow-[0_16px_32px_rgba(0,0,0,0.08)]
+  shadow-sm
   text-base leading-normal
 </tailwind_hints>`;
 
@@ -28,7 +27,6 @@ export default function Screenshot4Tailwind() {
         <div className="grid h-[calc(100%-67px)] grid-cols-[1.2fr_0.8fr] gap-[22px] p-[22px]">
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
-              <Eyebrow>Automatic conversion</Eyebrow>
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
                 Computed CSS to Tailwind.
               </h1>
