@@ -1,17 +1,17 @@
 "use client";
 
 import {
-  ApiConnectionIcon,
   ZapIcon,
-  CaptureIcon,
+  Cursor1Icon,
   ChromeIcon,
   ClipboardIcon,
   CodeIcon,
   ConsoleIcon,
   CursorClickIcon,
   MagicWandIcon,
-  PromptIcon,
+  GlobusIcon,
   ShieldCheckIcon,
+  FileDownloadIcon,
   SparkleIcon,
 } from "blode-icons-react";
 
@@ -24,7 +24,7 @@ const extensionSteps = [
   {
     description:
       "Click the toolbar icon, hover to preview, click to capture. Shift for parent, Alt for child.",
-    icon: CaptureIcon,
+    icon: Cursor1Icon,
     title: "Select",
   },
   {
@@ -38,7 +38,7 @@ const extensionSteps = [
 const features = [
   {
     description:
-      "getComputedStyle, not source CSS. Your agent gets the exact rendered values.",
+      "Computed style, not source CSS. Your agent gets the exact values.",
     icon: CodeIcon,
     title: "Ground truth",
   },
@@ -49,8 +49,8 @@ const features = [
     title: "Tailwind mapping",
   },
   {
-    description: "Chrome extension, CLI, or slash command.",
-    icon: ApiConnectionIcon,
+    description: "Chrome extension, CLI, or agent skills.",
+    icon: ChromeIcon,
     title: "Three ways to capture",
   },
   {
@@ -60,7 +60,7 @@ const features = [
   },
   {
     description:
-      "Selectors, computed styles, and Tailwind hints your agent can parse without ambiguity.",
+      "Selectors and styles your agent can parse without ambiguity.",
     icon: SparkleIcon,
     title: "Structured for agents",
   },
@@ -161,42 +161,6 @@ export default function HomePage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Agent skill */}
-      <section className="@container py-24" id="skills">
-        <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
-          <div className="space-y-4">
-            <h2 className="text-balance text-4xl font-medium">Agent skill</h2>
-            <p className="text-muted-foreground">
-              One slash command. Your agent captures computed styles from any
-              live page directly.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
-            <div className="space-y-3 border-t pt-6">
-              <PromptIcon className="size-4 text-muted-foreground" />
-              <p className="text-muted-foreground leading-5">
-                <span className="font-medium text-foreground">
-                  Install the skill
-                </span>
-              </p>
-              <code className="block font-mono text-xs text-muted-foreground">
-                npx skills add mblode/style-capture -g --all -y
-              </code>
-            </div>
-            <div className="space-y-3 border-t pt-6">
-              <SparkleIcon className="size-4 text-muted-foreground" />
-              <p className="text-muted-foreground leading-5">
-                <span className="font-medium text-foreground">
-                  Point at any page
-                </span>
-              </p>
-              <code className="block font-mono text-xs text-muted-foreground">
-                /style-capture https://linear.app .hero
-              </code>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* CLI */}
       <section className="@container py-24" id="cli">
@@ -221,7 +185,7 @@ export default function HomePage(): React.JSX.Element {
               </code>
             </div>
             <div className="space-y-3 border-t pt-6">
-              <PromptIcon className="size-4 text-muted-foreground" />
+              <GlobusIcon className="size-4 text-muted-foreground" />
               <p className="text-muted-foreground leading-5">
                 <span className="font-medium text-foreground">
                   Or install globally
@@ -229,6 +193,43 @@ export default function HomePage(): React.JSX.Element {
               </p>
               <code className="block font-mono text-xs text-muted-foreground">
                 npm i -g style-capture
+              </code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Agent skill */}
+      <section className="@container py-24" id="skills">
+        <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
+          <div className="space-y-4">
+            <h2 className="text-balance text-4xl font-medium">Agent skill</h2>
+            <p className="text-muted-foreground">
+              One slash command. Your agent captures computed styles from any
+              live page directly.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
+            <div className="space-y-3 border-t pt-6">
+              <FileDownloadIcon className="size-4 text-muted-foreground" />
+              <p className="text-muted-foreground leading-5">
+                <span className="font-medium text-foreground">
+                  Install the skill
+                </span>
+              </p>
+              <code className="block font-mono text-xs text-muted-foreground">
+                npx skills add mblode/style-capture -g --all -y
+              </code>
+            </div>
+            <div className="space-y-3 border-t pt-6">
+              <SparkleIcon className="size-4 text-muted-foreground" />
+              <p className="text-muted-foreground leading-5">
+                <span className="font-medium text-foreground">
+                  Point at any page
+                </span>
+              </p>
+              <code className="block font-mono text-xs text-muted-foreground">
+                /style-capture https://linear.app .hero
               </code>
             </div>
           </div>

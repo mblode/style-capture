@@ -97,7 +97,7 @@ export const Navbar = () => {
 
             <div
               className={cn(
-                "mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border bg-background p-6 shadow-2xl shadow-zinc-300/20 sm:m-0 sm:flex sm:w-fit sm:gap-4 sm:space-y-0 sm:border-transparent sm:bg-transparent sm:p-0 sm:shadow-none dark:shadow-none dark:sm:bg-transparent",
+                "mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border bg-background p-6 shadow-2xl shadow-zinc-300/20 dark:shadow-zinc-900/40 sm:m-0 sm:flex sm:w-fit sm:gap-4 sm:space-y-0 sm:border-transparent sm:bg-transparent sm:p-0 sm:shadow-none",
                 menuOpen && "block"
               )}
             >
