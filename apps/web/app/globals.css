@@ -199,30 +199,20 @@
     transition: border-color 200ms ease;
   }
 
-  .menu-toggle-icon__morph {
-    display: none;
-  }
-
-  .menu-toggle-icon__morph path {
-    transition:
-      d 300ms cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  @supports (d: path("M0 0 L1 1")) {
-    .menu-toggle-icon__morph {
-      display: block;
-    }
-
-    .menu-toggle-icon__fallback {
-      display: none;
-    }
-  }
-
   @media (hover: hover) and (pointer: fine) {
     .feature-card:hover {
       border-color: var(--foreground);
     }
+  }
+
+  .morph-icon {
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .morph-icon path {
+    transition:
+      d 300ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -230,7 +220,8 @@
       transition: none;
     }
 
-    .menu-toggle-icon__morph path {
+    .morph-icon,
+    .morph-icon path {
       transition: none;
     }
 
