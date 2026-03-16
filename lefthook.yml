@@ -1,7 +1,11 @@
 pre-commit:
   parallel: true
   jobs:
-    - name: ultracite
-      glob: "*.{js,ts,jsx,tsx,json,jsonc}"
-      run: npx ultracite fix {staged_files}
+    - name: lint
+      glob: "**/*.{js,ts,jsx,tsx}"
+      run: npx oxlint --fix {staged_files}
+      stage_fixed: true
+    - name: format
+      glob: "**/*.{js,ts,jsx,tsx,json,jsonc}"
+      run: npx oxfmt --write {staged_files}
       stage_fixed: true
