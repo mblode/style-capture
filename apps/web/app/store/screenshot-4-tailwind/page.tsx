@@ -28,10 +28,11 @@ export default function Screenshot4Tailwind() {
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
-                Computed CSS to Tailwind.
+                Tailwind mappings your agent can apply.
               </h1>
               <p className="max-w-[28ch] text-black/60 text-lg leading-[1.55]">
-                Each property mapped to the closest Tailwind utility.
+                Every property mapped with confidence scores, so your agent
+                knows what to apply directly.
               </p>
             </div>
 
@@ -47,9 +48,9 @@ export default function Screenshot4Tailwind() {
             <Panel>
               <h3>Confidence levels</h3>
               <ul className="mt-2.5 pl-[18px]">
-                <li>Scale match — stock Tailwind tokens</li>
-                <li>Arbitrary value — exact value in brackets</li>
-                <li>Review needed — layout-derived values</li>
+                <li>Scale match - stock Tailwind tokens</li>
+                <li>Arbitrary value - exact value in brackets</li>
+                <li>Review needed - layout-derived values</li>
               </ul>
             </Panel>
             <Panel>

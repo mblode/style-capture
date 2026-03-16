@@ -7,7 +7,7 @@ export default function SmallPromoTile() {
         Style Capture
       </h1>
       <p className="max-w-[24ch] text-black/60 text-lg">
-        Select, capture, paste. AI-ready with Tailwind hints.
+        Point at any UI. Let your agent rebuild it.
       </p>
 
       <MiniBrowser>

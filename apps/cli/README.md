@@ -4,7 +4,7 @@
 
 <h1 align="center">Style Capture CLI</h1>
 
-<p align="center">Capture computed CSS and HTML from any web page, map the result to Tailwind utilities, and output a structured prompt for faithful UI recreation.</p>
+<p align="center">Give your AI coding agent the exact computed styles from any web page. Mapped to Tailwind utilities, structured for immediate use.</p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/style-capture"><img src="https://img.shields.io/npm/v/style-capture.svg" alt="npm version"></a>
@@ -48,7 +48,7 @@ You'll be asked for a URL, CSS selector, capture mode, and output destination (c
 
 ## Agent Skill
 
-Style Capture ships as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code) that combines browser automation with the capture CLI. Instead of manually finding selectors, describe the element in natural language:
+Style Capture ships as a [Claude Code skill](https://docs.anthropic.com/en/docs/claude-code) that gives your agent direct access to any website's styles. Instead of manually finding selectors, describe the element in natural language:
 
 ```
 /style-capture https://stripe.com the pricing table
@@ -62,12 +62,12 @@ The skill opens the page with `agent-browser`, takes an interactive snapshot to 
 
 The CLI outputs a `<style_capture>` block containing:
 
-- **html_capture** — sanitized, annotated HTML of the subtree
-- **css_capture** — computed CSS grouped by element
-- **tailwind_hints** — suggested Tailwind utility classes with confidence scores
-- **open_questions** — low-confidence mappings flagged for review
+- **html_capture** - sanitised, annotated HTML of the subtree
+- **css_capture** - computed CSS grouped by element
+- **tailwind_hints** - suggested Tailwind utility classes with confidence scores
+- **open_questions** - low-confidence mappings flagged for review
 
-Use this output to faithfully recreate or refactor the captured UI in code.
+Paste the output into Claude Code, Cursor, or any AI tool. Your agent gets selectors it can grep for, styles it can trust, and Tailwind hints it can apply directly.
 
 ## Requirements
 

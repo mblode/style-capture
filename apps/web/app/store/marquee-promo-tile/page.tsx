@@ -18,17 +18,17 @@ export default function MarqueePromoTile() {
               Style Capture
             </h1>
             <p className="max-w-[28ch] text-[22px] text-black/60 leading-[1.45]">
-              Select, capture, paste. AI-ready with Tailwind hints.
+              Point at any UI. Let your agent rebuild it.
             </p>
             <ol className="mt-5 flex flex-col gap-2 text-[15px] text-black/60">
               <li className="flex gap-2.5">
-                <span>1.</span> Local-only processing
+                <span>1.</span> Computed CSS your agent can trust
               </li>
               <li className="flex gap-2.5">
-                <span>2.</span> Clipboard-first flow
+                <span>2.</span> Tailwind mappings it can apply
               </li>
               <li className="flex gap-2.5">
-                <span>3.</span> Ready for AI
+                <span>3.</span> Paste into any AI coding tool
               </li>
             </ol>
           </div>

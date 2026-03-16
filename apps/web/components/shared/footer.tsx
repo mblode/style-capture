@@ -19,6 +19,12 @@ export const Footer = (): React.JSX.Element => (
         >
           Support
         </Link>
+        <a
+          className="transition-colors hover:text-foreground"
+          href="https://github.com/mblode/style-capture"
+        >
+          GitHub
+        </a>
       </nav>
       <p>
         Created by{" "}
