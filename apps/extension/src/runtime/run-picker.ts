@@ -977,28 +977,6 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
           // noop
         }
       })();
-      return;
-    }
-
-    if (!state.currentTarget) {
-      return;
-    }
-
-    if (event.key === "Shift") {
-      const parent = state.currentTarget.parentElement;
-      if (parent) {
-        state.currentTarget = parent;
-        updateOverlay(parent, state.pointerX, state.pointerY);
-      }
-      return;
-    }
-
-    if (event.key === "Alt") {
-      const child = state.currentTarget.firstElementChild;
-      if (child) {
-        state.currentTarget = child;
-        updateOverlay(child, state.pointerX, state.pointerY);
-      }
     }
   };
 

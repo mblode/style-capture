@@ -19,7 +19,7 @@ export default function MarketingLayout({
   return (
     <>
       <Navbar />
-      <main className="min-h-[calc(100dvh-8rem)]">{children}</main>
+      <main className="min-h-[calc(100dvh-8rem)] pt-16">{children}</main>
       <Footer />
     </>
   );
