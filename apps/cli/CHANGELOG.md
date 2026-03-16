@@ -1,5 +1,11 @@
 # style-capture
 
+## 1.2.0
+
+### Minor Changes
+
+- cbcff03: Fix CI formatting, remove orphaned changeset, and replace ultracite with oxlint+oxfmt in pre-commit hook
+
 ## 0.0.3
 
 ### Patch Changes
