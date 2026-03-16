@@ -13,7 +13,9 @@ import {
   ShieldCheckIcon,
   FileDownloadIcon,
   SparkleIcon,
+  ArrowRightIcon,
 } from "blode-icons-react";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
@@ -209,6 +211,20 @@ export default function HomePage(): React.JSX.Element {
               Click, capture, paste. Your agent gets selectors it can grep for
               directly.
             </p>
+            <Button
+              render={
+                // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
+                <a
+                  href="https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                />
+              }
+            >
+              <ChromeIcon data-icon="inline-start" />
+              Add to Chrome
+              <ArrowRightIcon data-icon="inline-end" />
+            </Button>
           </div>
           <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
             {extensionSteps.map((step, index) => (
@@ -246,6 +262,19 @@ export default function HomePage(): React.JSX.Element {
               URL and selector in, structured styles out. Runs a headless
               browser and outputs context your agent can parse.
             </p>
+            <Button
+              render={
+                // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
+                <a
+                  href="https://www.npmjs.com/package/style-capture"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                />
+              }
+            >
+              View on npm
+              <ArrowRightIcon data-icon="inline-end" />
+            </Button>
           </div>
           <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
             <div
@@ -293,6 +322,15 @@ export default function HomePage(): React.JSX.Element {
               One slash command. Your agent captures computed styles from any
               live page directly.
             </p>
+            <Button
+              render={
+                // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
+                <Link href="/skills" />
+              }
+            >
+              Add skill
+              <ArrowRightIcon data-icon="inline-end" />
+            </Button>
           </div>
           <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
             <div
