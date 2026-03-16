@@ -7,7 +7,6 @@ import {
   ClipboardIcon,
   CodeIcon,
   ConsoleIcon,
-  CursorClickIcon,
   MagicWandIcon,
   GlobusIcon,
   ShieldCheckIcon,
@@ -16,7 +15,6 @@ import {
   ArrowRightIcon,
 } from "blode-icons-react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 
 import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -26,44 +24,6 @@ import {
   buildSoftwareApplicationSchema,
   buildWebSiteSchema,
 } from "@/lib/seo";
-
-const useRevealOnScroll = (
-  containerRef: React.RefObject<HTMLElement | null>
-): void => {
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-
-    const elements = container.querySelectorAll<HTMLElement>("[data-reveal]");
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      for (const el of elements) {
-        el.dataset.revealed = "true";
-      }
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            (entry.target as HTMLElement).dataset.revealed = "true";
-            observer.unobserve(entry.target);
-          }
-        }
-      },
-      { threshold: 0.15 }
-    );
-
-    for (const el of elements) {
-      observer.observe(el);
-    }
-
-    return () => observer.disconnect();
-  }, [containerRef]);
-};
 
 const extensionSteps = [
   {
@@ -118,28 +78,25 @@ const features = [
 export default function HomePage(): React.JSX.Element {
   const inspect = useInspect();
   const handleTryItNow = inspect.activate;
-  const containerRef = useRef<HTMLDivElement>(null);
-  useRevealOnScroll(containerRef);
-
   return (
-    <div ref={containerRef}>
+    <div>
       <JsonLd data={buildWebSiteSchema()} />
       <JsonLd data={buildOrganizationSchema()} />
       <JsonLd data={buildSoftwareApplicationSchema()} />
 
       {/* Hero */}
-      <section className="@container py-24">
+      <section className="@container py-16 sm:py-24">
         <div className="mx-auto max-w-3xl px-6 text-center">
-          <h1 className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500 text-balance text-4xl font-medium tracking-tight leading-[1.1] sm:text-5xl sm:tracking-[-0.03em] sm:leading-[1.05]">
+          <h1 className="text-balance text-4xl font-medium tracking-tight leading-[1.1] sm:text-5xl sm:tracking-[-0.03em] sm:leading-[1.05]">
             Point at any UI.
             <br />
             Let your agent rebuild it.
           </h1>
-          <p className="animate-in fade-in slide-in-from-bottom-2 delay-100 fill-mode-both duration-500 mx-auto mt-4 max-w-[60ch] text-lg text-muted-foreground leading-relaxed">
+          <p className="mx-auto mt-4 max-w-[60ch] text-lg text-muted-foreground leading-relaxed">
             Click any element on any website. Get computed styles and Tailwind
             mappings your coding agent can act on immediately.
           </p>
-          <div className="animate-in fade-in slide-in-from-bottom-2 delay-200 fill-mode-both duration-500 mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button
               render={
                 // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
@@ -166,7 +123,7 @@ export default function HomePage(): React.JSX.Element {
               size="lg"
               variant={inspect.isInspecting ? undefined : "secondary"}
             >
-              <CursorClickIcon data-icon="inline-start" />
+              <Cursor1Icon data-icon="inline-start" />
               Try it now
             </Button>
           </div>
@@ -174,21 +131,14 @@ export default function HomePage(): React.JSX.Element {
       </section>
 
       {/* Features */}
-      <section className="@container pt-16 pb-24">
+      <section className="@container pt-8 pb-16 sm:pt-16 sm:pb-24">
         <div className="mx-auto max-w-3xl px-6">
-          <h2
-            data-reveal
-            className="text-balance text-3xl font-medium tracking-tight leading-[1.15]"
-          >
+          <h2 className="text-balance text-3xl font-medium tracking-tight leading-[1.15]">
             Why your agent needs this
           </h2>
           <div className="mt-12 grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @xl:grid-cols-3">
-            {features.map((feature, index) => (
+            {features.map((feature) => (
               <div
-                data-reveal
-                style={
-                  { "--reveal-delay": `${index * 50}ms` } as React.CSSProperties
-                }
                 className="feature-card space-y-3 border-t pt-6"
                 key={feature.title}
               >
@@ -206,9 +156,9 @@ export default function HomePage(): React.JSX.Element {
       </section>
 
       {/* Chrome extension */}
-      <section className="@container py-24" id="extension">
+      <section className="@container py-16 sm:py-24" id="extension">
         <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
-          <div data-reveal className="space-y-4">
+          <div className="space-y-4">
             <h2 className="text-balance text-3xl font-medium tracking-tight leading-[1.15]">
               Chrome extension
             </h2>
@@ -232,14 +182,8 @@ export default function HomePage(): React.JSX.Element {
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
-            {extensionSteps.map((step, index) => (
+            {extensionSteps.map((step) => (
               <div
-                data-reveal
-                style={
-                  {
-                    "--reveal-delay": `${(index + 1) * 50}ms`,
-                  } as React.CSSProperties
-                }
                 className="feature-card space-y-3 border-t pt-6"
                 key={step.title}
               >
@@ -257,9 +201,9 @@ export default function HomePage(): React.JSX.Element {
       </section>
 
       {/* CLI */}
-      <section className="@container py-24" id="cli">
+      <section className="@container py-16 sm:py-24" id="cli">
         <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
-          <div data-reveal className="space-y-4">
+          <div className="space-y-4">
             <h2 className="text-balance text-3xl font-medium tracking-tight leading-[1.15]">
               CLI
             </h2>
@@ -282,11 +226,7 @@ export default function HomePage(): React.JSX.Element {
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
-            <div
-              data-reveal
-              style={{ "--reveal-delay": "50ms" } as React.CSSProperties}
-              className="feature-card space-y-3 border-t pt-6"
-            >
+            <div className="feature-card space-y-3 border-t pt-6">
               <ConsoleIcon className="size-4 text-muted-foreground" />
               <p className="text-muted-foreground leading-5">
                 <span className="font-medium text-foreground">
@@ -297,11 +237,7 @@ export default function HomePage(): React.JSX.Element {
                 npx style-capture https://example.com &quot;main&quot;
               </code>
             </div>
-            <div
-              data-reveal
-              style={{ "--reveal-delay": "100ms" } as React.CSSProperties}
-              className="feature-card space-y-3 border-t pt-6"
-            >
+            <div className="feature-card space-y-3 border-t pt-6">
               <GlobusIcon className="size-4 text-muted-foreground" />
               <p className="text-muted-foreground leading-5">
                 <span className="font-medium text-foreground">
@@ -317,9 +253,9 @@ export default function HomePage(): React.JSX.Element {
       </section>
 
       {/* Agent skill */}
-      <section className="@container py-24" id="skills">
+      <section className="@container py-16 sm:py-24" id="skills">
         <div className="mx-auto grid max-w-3xl gap-6 px-6 @2xl:grid-cols-2 @2xl:gap-12">
-          <div data-reveal className="space-y-4">
+          <div className="space-y-4">
             <h2 className="text-balance text-3xl font-medium tracking-tight leading-[1.15]">
               Agent skill
             </h2>
@@ -338,11 +274,7 @@ export default function HomePage(): React.JSX.Element {
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
-            <div
-              data-reveal
-              style={{ "--reveal-delay": "50ms" } as React.CSSProperties}
-              className="feature-card space-y-3 border-t pt-6"
-            >
+            <div className="feature-card space-y-3 border-t pt-6">
               <FileDownloadIcon className="size-4 text-muted-foreground" />
               <p className="text-muted-foreground leading-5">
                 <span className="font-medium text-foreground">
@@ -353,11 +285,7 @@ export default function HomePage(): React.JSX.Element {
                 npx skills add mblode/style-capture
               </code>
             </div>
-            <div
-              data-reveal
-              style={{ "--reveal-delay": "100ms" } as React.CSSProperties}
-              className="feature-card space-y-3 border-t pt-6"
-            >
+            <div className="feature-card space-y-3 border-t pt-6">
               <SparkleIcon className="size-4 text-muted-foreground" />
               <p className="text-muted-foreground leading-5">
                 <span className="font-medium text-foreground">

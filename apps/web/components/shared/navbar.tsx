@@ -1,15 +1,12 @@
 "use client";
 
-import {
-  BarsThreeIcon,
-  CrossLargeIcon,
-  GithubIcon,
-  StarIcon,
-} from "blode-icons-react";
+import { GithubIcon, StarIcon } from "blode-icons-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { MorphIcon } from "@/components/ui/morph-icon";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -59,71 +56,68 @@ export const Navbar = () => {
       <nav
         className={cn(
           "fixed z-20 w-full bg-background/80 backdrop-blur-lg transition-[border-color,background-color,backdrop-filter] duration-300",
-          isScrolled && "border-border/40 border-b"
+          (isScrolled || menuOpen) && "border-border/40 border-b"
         )}
         data-state={menuOpen ? "active" : undefined}
       >
         <div className="mx-auto max-w-3xl px-4">
-          <div className="relative flex flex-wrap items-center justify-between gap-6 py-4 sm:gap-0">
+          <div className="relative flex flex-wrap items-center justify-between py-4 sm:gap-0">
             <div className="flex w-full justify-between gap-6 sm:w-auto sm:flex-1">
-              <Link className="font-semibold tracking-[-0.02em]" href="/">
+              <Link
+                className="flex items-center gap-2 font-semibold tracking-[-0.02em]"
+                href="/"
+              >
+                <Image alt="" height={20} src="/logo.svg" width={20} />
                 Style Capture
               </Link>
 
               <button
                 aria-expanded={menuOpen}
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
-                className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 sm:hidden"
+                className="relative z-20 -m-2.5 -mr-4 flex min-h-11 min-w-11 cursor-pointer items-center justify-center sm:hidden"
                 onClick={toggleMenu}
                 type="button"
               >
-                <BarsThreeIcon
-                  aria-hidden="true"
-                  className={cn(
-                    "m-auto size-6 transition-[transform,opacity] duration-200",
-                    menuOpen && "rotate-180 scale-0 opacity-0"
-                  )}
-                />
-                <CrossLargeIcon
-                  aria-hidden="true"
-                  className={cn(
-                    "absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 transition-[transform,opacity] duration-200",
-                    menuOpen && "rotate-0 scale-100 opacity-100"
-                  )}
+                <MorphIcon
+                  icon={menuOpen ? "cross" : "menu"}
+                  size={24}
+                  strokeWidth={1.25}
                 />
               </button>
             </div>
 
             <div
               className={cn(
-                "mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border bg-background p-6 shadow-2xl shadow-zinc-300/20 dark:shadow-zinc-900/40 sm:m-0 sm:flex sm:w-fit sm:gap-4 sm:space-y-0 sm:border-transparent sm:bg-transparent sm:p-0 sm:shadow-none",
-                menuOpen && "block"
+                "grid w-full transition-[grid-template-rows] duration-200 sm:flex sm:w-fit",
+                menuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
               )}
             >
-              <div className="flex w-full flex-col gap-4 text-sm sm:w-fit sm:flex-row sm:items-center">
-                {navLinks.map((link) =>
-                  link.external ? (
-                    <a
-                      className={linkClassName}
-                      href={link.href}
-                      key={link.href}
-                      onClick={closeMenu}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link
-                      className={linkClassName}
-                      href={link.href}
-                      key={link.href}
-                      onClick={closeMenu}
-                    >
-                      {link.label}
-                    </Link>
-                  )
-                )}
+              <div className="overflow-hidden">
+                <div className="flex flex-col gap-4 pt-4 text-sm sm:flex-row sm:items-center sm:gap-4 sm:pt-0">
+                  {navLinks.map((link) =>
+                    link.external ? (
+                      <a
+                        className={linkClassName}
+                        href={link.href}
+                        key={link.href}
+                        onClick={closeMenu}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        className={linkClassName}
+                        href={link.href}
+                        key={link.href}
+                        onClick={closeMenu}
+                      >
+                        {link.label}
+                      </Link>
+                    )
+                  )}
+                </div>
               </div>
             </div>
 
