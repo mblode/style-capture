@@ -59,8 +59,7 @@ const features = [
     title: "Local only",
   },
   {
-    description:
-      "Selectors and styles your agent can parse without ambiguity.",
+    description: "Selectors and styles your agent can parse without ambiguity.",
     icon: SparkleIcon,
     title: "Structured for agents",
   },
@@ -160,7 +159,6 @@ export default function HomePage(): React.JSX.Element {
           </div>
         </div>
       </section>
-
 
       {/* CLI */}
       <section className="@container py-24" id="cli">
