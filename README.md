@@ -19,7 +19,7 @@ Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/sty
 ## CLI
 
 ```bash
-npx style-capture <url> <selector> [--mode curated|full]
+npx style-capture <url> <selector>
 ```
 
 ```bash
