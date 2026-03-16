@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,8 @@ const transition = {
   ease: [0.4, 0, 0.2, 1] as const,
 };
 
+const instantTransition = { duration: 0 };
+
 export const MorphIcon = ({
   icon,
   size = 32,
@@ -40,9 +42,11 @@ export const MorphIcon = ({
   style,
   ...props
 }: MorphIconProps) => {
+  const prefersReducedMotion = useReducedMotion();
   const def = ICONS[icon];
   const [p0, p1, p2] = def.paths;
   const [o0, o1, o2] = def.opacity;
+  const t = prefersReducedMotion ? instantTransition : transition;
 
   return (
     <svg
@@ -59,9 +63,21 @@ export const MorphIcon = ({
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <motion.path animate={{ d: p0, opacity: o0 }} transition={transition} />
-      <motion.path animate={{ d: p1, opacity: o1 }} transition={transition} />
-      <motion.path animate={{ d: p2, opacity: o2 }} transition={transition} />
+      <motion.path
+        initial={false}
+        animate={{ d: p0, opacity: o0 }}
+        transition={t}
+      />
+      <motion.path
+        initial={false}
+        animate={{ d: p1, opacity: o1 }}
+        transition={t}
+      />
+      <motion.path
+        initial={false}
+        animate={{ d: p2, opacity: o2 }}
+        transition={t}
+      />
     </svg>
   );
 };
