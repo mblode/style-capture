@@ -60,7 +60,7 @@ export const Navbar = () => {
         )}
         data-state={menuOpen ? "active" : undefined}
       >
-        <div className="mx-auto max-w-3xl px-4">
+        <div className="mx-auto max-w-3xl px-6">
           <div className="relative flex flex-wrap items-center justify-between py-4 sm:gap-0">
             <div className="flex w-full justify-between gap-6 sm:w-auto sm:flex-1">
               <Link
