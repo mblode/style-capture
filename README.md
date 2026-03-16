@@ -1,12 +1,6 @@
-<p align="center">
-  <img src=".github/assets/logo.png" width="80" height="80" alt="Style Capture logo" />
-</p>
+<img src=".github/assets/logo.png" width="50" height="50" alt="Style Capture logo" />
 
-<h1 align="center">Style Capture</h1>
-
-<p align="center">Point at any UI. Let your agent rebuild it.</p>
-
-<p align="center">Capture any element on any website, get computed CSS with Tailwind mappings, and paste it straight into your AI coding agent.</p>
+**[Style Capture](https://style-capture.blode.co)** is a Chrome extension and CLI that captures computed CSS from any element on any website, maps it to Tailwind utilities, and gives your AI coding agent everything it needs to rebuild the UI.
 
 ## Chrome extension
 
@@ -58,5 +52,7 @@ A `<style_capture>` block containing:
 All processing happens locally. Nothing leaves your device.
 
 ## Licence
+
+© 2026 Matthew Blode
 
 [MIT](LICENSE.md)

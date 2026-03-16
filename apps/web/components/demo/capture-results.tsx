@@ -3,6 +3,7 @@
 import type { CaptureResult, TailwindMappingResult } from "@style-capture/core";
 import { ClipboardIcon, CrossSmallIcon } from "blode-icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { codeToHtml } from "shiki";
 
 import { Button } from "@/components/ui/button";
 
@@ -17,9 +18,10 @@ export const CaptureResults = ({
   capturedExport,
   captureResult,
   onClose,
-  tailwindMapping,
+  tailwindMapping: _tailwindMapping,
 }: CaptureResultsProps): React.JSX.Element => {
   const [copied, setCopied] = useState(false);
+  const [highlightedHtml, setHighlightedHtml] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -31,10 +33,24 @@ export const CaptureResults = ({
     []
   );
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const html = await codeToHtml(capturedExport, {
+        defaultColor: false,
+        lang: "xml",
+        themes: { dark: "github-dark", light: "github-light" },
+      });
+      if (!cancelled) {
+        setHighlightedHtml(html);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [capturedExport]);
+
   const rootElement = captureResult.elements[captureResult.rootElementId];
-  const rootMapping = rootElement
-    ? tailwindMapping.elements[rootElement.id]
-    : null;
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(capturedExport);
@@ -50,7 +66,7 @@ export const CaptureResults = ({
   return (
     <div className="fixed inset-x-0 bottom-0 z-[2147483640] animate-in slide-in-from-bottom duration-300">
       <div className="mx-auto max-w-3xl p-4">
-        <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-lg">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <p className="text-sm">
@@ -74,27 +90,19 @@ export const CaptureResults = ({
             </div>
           </div>
 
-          {/* Tailwind classes */}
-          {rootMapping && rootMapping.suggestedClassName && (
-            <div className="border-b border-border px-5 py-3">
-              <div className="flex flex-wrap gap-1.5">
-                {rootMapping.suggestedClassName.split(" ").map((cls) => (
-                  <span
-                    className="rounded-md bg-secondary px-2 py-0.5 font-mono text-xs"
-                    key={cls}
-                  >
-                    {cls}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Export preview */}
           <div className="max-h-64 overflow-auto">
-            <pre className="p-5 font-mono text-xs text-muted-foreground leading-relaxed">
-              {capturedExport}
-            </pre>
+            {highlightedHtml ? (
+              <div
+                className="[&_pre]:p-5 [&_pre]:font-mono [&_pre]:text-xs [&_pre]:leading-relaxed [&_code]:font-mono"
+                // oxlint-disable-next-line eslint-plugin-react(no-danger) -- shiki output is safe
+                dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+              />
+            ) : (
+              <pre className="p-5 font-mono text-xs text-muted-foreground leading-relaxed">
+                {capturedExport}
+              </pre>
+            )}
           </div>
         </div>
       </div>

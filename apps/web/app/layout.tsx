@@ -1,4 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
@@ -33,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={glide.variable} lang="en">
+    <html className={`${glide.variable} ${GeistMono.variable}`} lang="en">
       <body className="antialiased">{children}</body>
       <GoogleAnalytics gaId="G-7XGBDRVZQR" />
     </html>
