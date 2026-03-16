@@ -79,3 +79,17 @@ export const buildWebSiteSchema = (): Record<string, unknown> => ({
   name: siteName,
   url: siteUrl,
 });
+
+export const buildSoftwareApplicationSchema = (): Record<string, unknown> => ({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  applicationCategory: "DeveloperApplication",
+  name: siteName,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  operatingSystem: "Chrome",
+  url: "https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd",
+});
