@@ -18,12 +18,12 @@ const navLinks = [
     href: "https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd",
     label: "Extension",
   },
-  { external: false, href: "/skills", label: "Skills" },
   {
     external: true,
     href: "https://www.npmjs.com/package/style-capture",
     label: "CLI",
   },
+  { external: false, href: "/skills", label: "Skills" },
 ];
 
 const linkClassName =
@@ -58,16 +58,15 @@ export const Navbar = () => {
     <header>
       <nav
         className={cn(
-          "fixed z-20 w-full transition-all duration-300",
-          isScrolled &&
-            "border-border/40 border-b bg-background/80 backdrop-blur-lg"
+          "fixed z-20 w-full bg-background/80 backdrop-blur-lg transition-[border-color,background-color,backdrop-filter] duration-300",
+          isScrolled && "border-border/40 border-b"
         )}
         data-state={menuOpen ? "active" : undefined}
       >
         <div className="mx-auto max-w-3xl px-4">
           <div className="relative flex flex-wrap items-center justify-between gap-6 py-4 sm:gap-0">
-            <div className="flex w-full justify-between gap-6 sm:w-auto">
-              <Link className="font-semibold" href="/">
+            <div className="flex w-full justify-between gap-6 sm:w-auto sm:flex-1">
+              <Link className="font-semibold tracking-[-0.02em]" href="/">
                 Style Capture
               </Link>
 
@@ -81,14 +80,14 @@ export const Navbar = () => {
                 <BarsThreeIcon
                   aria-hidden="true"
                   className={cn(
-                    "m-auto size-6 duration-200",
+                    "m-auto size-6 transition-[transform,opacity] duration-200",
                     menuOpen && "rotate-180 scale-0 opacity-0"
                   )}
                 />
                 <CrossLargeIcon
                   aria-hidden="true"
                   className={cn(
-                    "absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200",
+                    "absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 transition-[transform,opacity] duration-200",
                     menuOpen && "rotate-0 scale-100 opacity-100"
                   )}
                 />
@@ -109,6 +108,8 @@ export const Navbar = () => {
                       href={link.href}
                       key={link.href}
                       onClick={closeMenu}
+                      rel="noopener noreferrer"
+                      target="_blank"
                     >
                       {link.label}
                     </a>
@@ -123,20 +124,27 @@ export const Navbar = () => {
                     </Link>
                   )
                 )}
-                <Button
-                  render={
-                    // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
-                    <a href="https://github.com/mblode/style-capture" />
-                  }
-                  size="sm"
-                  variant="outline"
-                  onClick={closeMenu}
-                >
-                  <GithubIcon data-icon="inline-start" />
-                  Star on GitHub
-                  <StarIcon data-icon="inline-end" />
-                </Button>
               </div>
+            </div>
+
+            <div className="hidden sm:flex sm:flex-1 sm:justify-end">
+              <Button
+                render={
+                  // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
+                  <a
+                    href="https://github.com/mblode/style-capture"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  />
+                }
+                size="sm"
+                variant="outline"
+                onClick={closeMenu}
+              >
+                <GithubIcon data-icon="inline-start" />
+                Star on GitHub
+                <StarIcon data-icon="inline-end" />
+              </Button>
             </div>
           </div>
         </div>

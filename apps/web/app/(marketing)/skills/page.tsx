@@ -22,7 +22,7 @@ export default function SkillsPage(): React.JSX.Element {
 
       <div className="mx-auto max-w-3xl space-y-16 px-6">
         <div className="space-y-4">
-          <h1 className="text-balance text-4xl font-medium sm:text-5xl">
+          <h1 className="text-balance text-4xl font-medium tracking-tight leading-[1.1] sm:text-5xl sm:tracking-[-0.03em] sm:leading-[1.05]">
             Agent skill
           </h1>
           <p className="text-muted-foreground">
@@ -33,7 +33,7 @@ export default function SkillsPage(): React.JSX.Element {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-2xl font-medium">Install</h2>
+          <h2 className="text-2xl font-medium tracking-[-0.02em]">Install</h2>
           <p className="text-muted-foreground">
             Run this command to give your agent the Style Capture skill:
           </p>
@@ -43,7 +43,7 @@ export default function SkillsPage(): React.JSX.Element {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-2xl font-medium">Usage</h2>
+          <h2 className="text-2xl font-medium tracking-[-0.02em]">Usage</h2>
           <p className="text-muted-foreground">
             Once installed, point your agent at any live page:
           </p>
@@ -58,7 +58,9 @@ export default function SkillsPage(): React.JSX.Element {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-2xl font-medium">Compatible agents</h2>
+          <h2 className="text-2xl font-medium tracking-[-0.02em]">
+            Compatible agents
+          </h2>
           <ul className="list-inside list-disc space-y-2 text-muted-foreground">
             <li>Claude Code</li>
             <li>Cursor</li>
@@ -76,7 +78,7 @@ export default function SkillsPage(): React.JSX.Element {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-2xl font-medium">Options</h2>
+          <h2 className="text-2xl font-medium tracking-[-0.02em]">Options</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

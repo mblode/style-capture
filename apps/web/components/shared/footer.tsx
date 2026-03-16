@@ -1,42 +1,37 @@
-import Link from "next/link";
+import Image from "next/image";
+
+import { version } from "@/package.json";
 
 export const Footer = (): React.JSX.Element => (
-  <footer className="border-border border-t">
-    <div className="mx-auto max-w-3xl px-4 py-8 text-center text-muted-foreground text-sm">
-      <nav className="mb-4 flex justify-center gap-6">
-        <Link
-          className="transition-colors hover:text-foreground"
-          href="/privacy"
-        >
-          Privacy
-        </Link>
-        <Link className="transition-colors hover:text-foreground" href="/terms">
-          Terms
-        </Link>
-        <Link
-          className="transition-colors hover:text-foreground"
-          href="/support"
-        >
-          Support
-        </Link>
-        <a
-          className="transition-colors hover:text-foreground"
-          href="https://github.com/mblode/style-capture"
-        >
-          GitHub
-        </a>
-      </nav>
-      <p>
-        Created by{" "}
-        <a
-          className="underline underline-offset-4 transition-colors hover:text-foreground"
-          href="https://matthewblode.com"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Matthew Blode
-        </a>
-      </p>
+  <footer className="flex flex-col items-center justify-center gap-2 pt-16 pb-8 text-muted-foreground text-sm">
+    <div className="flex items-center gap-1">
+      Crafted by
+      <a
+        className="flex items-center gap-2 rounded-full py-1.5 pr-2.5 pl-1.5 transition-colors hover:text-foreground"
+        href="https://matthewblode.com"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        <Image
+          alt="Avatar of Matthew Blode"
+          className="rounded-full"
+          height={20}
+          src="/matthew-blode-profile.jpg"
+          width={20}
+        />
+        Matthew Blode
+      </a>
+    </div>
+    <div className="flex items-center gap-2 text-muted-foreground/30">
+      <span className="text-muted-foreground">v{version}</span> &bull;
+      <a
+        className="text-muted-foreground transition-colors hover:text-foreground"
+        href="https://github.com/mblode/style-capture"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        GitHub
+      </a>
     </div>
   </footer>
 );
