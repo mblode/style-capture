@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { MorphIcon } from "@/components/ui/morph-icon";
+import { MenuToggleIcon } from "@/components/ui/menu-toggle-icon";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -78,11 +78,7 @@ export const Navbar = () => {
                 onClick={toggleMenu}
                 type="button"
               >
-                <MorphIcon
-                  icon={menuOpen ? "cross" : "menu"}
-                  size={24}
-                  strokeWidth={1.25}
-                />
+                <MenuToggleIcon open={menuOpen} size={24} />
               </button>
             </div>
 
