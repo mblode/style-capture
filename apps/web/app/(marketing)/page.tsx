@@ -93,11 +93,15 @@ export default function HomePage(): React.JSX.Element {
             mappings your coding agent can act on immediately.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild size="lg">
-              <a href="https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd">
-                <ChromeIcon data-icon="inline-start" />
-                Add to Chrome - free
-              </a>
+            <Button
+              render={
+                // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
+                <a href="https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd" />
+              }
+              size="lg"
+            >
+              <ChromeIcon data-icon="inline-start" />
+              Add to Chrome
             </Button>
             <Button onClick={handleTryItNow} size="lg" variant="secondary">
               <CursorClickIcon data-icon="inline-start" />

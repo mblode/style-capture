@@ -76,7 +76,6 @@ Owns picker/background tests and doc updates.
 
 - [ ] Confirm the popup is no longer a payload dashboard and becomes a launcher with memory.
 - [ ] Keep the results page as the review workspace for stored payloads, export, and clear actions.
-- [ ] Decide whether `Shift` parent and `Alt` child traversal survive the redesign.
 - [ ] Decide whether the inspect cursor uses native `crosshair`/`cell` for MVP or a custom plus cursor asset for exact visual fidelity.
 - [ ] Define the tooltip content contract:
       `tag#id` when available, otherwise `tag.class`, rendered as a compact 2-4 segment breadcrumb.
@@ -140,7 +139,6 @@ Exit criteria:
 - [ ] Add self-targeting tests where composed path or `elementFromPoint()` touches overlay nodes.
 - [ ] Add click-to-capture tests that prove payload delivery still works after the overlay rewrite.
 - [ ] Add Escape-cancel tests.
-- [ ] If `Shift` and `Alt` remain, add parent/child retargeting tests.
 - [ ] Add background tests for `capture/start` status transitions:
       no active tab, successful injection, already-active picker, injection failure.
 - [ ] Add background tests for `capture/completed`, `capture/failed`, and storage failure handling.
