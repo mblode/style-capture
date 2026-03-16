@@ -28,11 +28,11 @@ export default function Screenshot2Export() {
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
-                CSS truth, Tailwind hints, fewer guesses.
+                Ground truth your agent can trust.
               </h1>
               <p className="max-w-[28ch] text-black/60 text-lg leading-[1.55]">
-                Computed CSS as ground truth. Tailwind suggestions where they
-                fit.
+                Computed CSS, Tailwind mappings, and open questions. Structured
+                so your agent knows what to apply and what to ask about.
               </p>
             </div>
 

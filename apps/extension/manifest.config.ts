@@ -17,7 +17,7 @@ export default defineManifest({
     type: "module",
   },
   description:
-    "Capture computed CSS from a selected DOM subtree and prepare it for Tailwind conversion.",
+    "Capture computed CSS from any element and get Tailwind mappings. Ready to paste into your AI coding agent.",
   icons: {
     128: "public/icons/icon-128.png",
     16: "public/icons/icon-16.png",

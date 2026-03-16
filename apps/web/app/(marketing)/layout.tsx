@@ -6,9 +6,9 @@ import { createPublicMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPublicMetadata({
   description:
-    "Capture real CSS from any element and map it to Tailwind classes — as a Chrome extension, CLI, or AI agent skill.",
+    "Click any element on any website. Get computed styles and Tailwind mappings your coding agent can act on immediately.",
   path: "/",
-  title: "Capture CSS, get Tailwind",
+  title: "Point at any UI, let your agent rebuild it",
 });
 
 export default function MarketingLayout({

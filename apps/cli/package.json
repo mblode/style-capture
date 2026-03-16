@@ -1,7 +1,7 @@
 {
   "name": "style-capture",
   "version": "1.0.0",
-  "description": "Capture computed CSS and HTML from web pages, map to Tailwind utilities",
+  "description": "Capture computed CSS from any web page and map to Tailwind. Structured context for AI coding agents",
   "keywords": [
     "ai",
     "claude",

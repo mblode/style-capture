@@ -12,7 +12,8 @@ const glide = localFont({
 });
 
 export const metadata: Metadata = {
-  description: "Style Capture Chrome Extension",
+  description:
+    "Give your AI coding agent the exact styles from any website. Chrome extension, CLI, and agent skill.",
   metadataBase: new URL("https://style-capture.blode.co"),
   other: {
     "apple-mobile-web-app-title": "Style Capture",

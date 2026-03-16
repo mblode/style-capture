@@ -26,7 +26,7 @@ export default function Screenshot1Capture() {
           <div className="grid grid-rows-[auto_1fr] gap-[18px]">
             <div>
               <h1 className="mt-3 mb-2.5 font-bold text-[44px] leading-[0.95] tracking-[-0.05em]">
-                Live page selection
+                Click any element. Your agent gets the rest.
               </h1>
               <p className=" text-black/60 text-lg leading-[1.55]">
                 Hover to select. Shift for parent, Alt for child.
