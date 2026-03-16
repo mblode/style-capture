@@ -2,6 +2,7 @@
 
 import {
   ApiConnectionIcon,
+  BoltIcon,
   CaptureIcon,
   ChromeIcon,
   ClipboardIcon,
@@ -21,13 +22,8 @@ import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo";
 
 const extensionSteps = [
   {
-    description: "Click the toolbar icon on any site to start picking.",
-    icon: CursorClickIcon,
-    title: "Activate",
-  },
-  {
     description:
-      "Hover to preview, click to capture. Shift to climb the DOM, Alt to descend.",
+      "Click the toolbar icon, hover to preview, click to capture. Shift to climb the DOM, Alt to descend.",
     icon: CaptureIcon,
     title: "Select",
   },
@@ -68,6 +64,12 @@ const features = [
       "Structured output for Claude Code, Cursor, or whichever coding agent you use.",
     icon: SparkleIcon,
     title: "Built for AI agents",
+  },
+  {
+    description:
+      "Results in milliseconds. No waiting for network requests or server processing.",
+    icon: BoltIcon,
+    title: "Instant results",
   },
 ];
 
@@ -140,7 +142,7 @@ export default function HomePage(): React.JSX.Element {
               Point and click to capture. No setup, no permissions prompts.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-3 @2xl:grid-cols-1">
+          <div className="grid grid-cols-1 gap-6 text-sm @sm:grid-cols-2 @2xl:grid-cols-1">
             {extensionSteps.map((step) => (
               <div className="space-y-3 border-t pt-6" key={step.title}>
                 <step.icon className="size-4 text-muted-foreground" />

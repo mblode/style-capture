@@ -1,9 +1,15 @@
 import Link from "next/link";
 
 const navLinks = [
-  { href: "/#extension", label: "Extension" },
-  { href: "/#skills", label: "Skills" },
-  { href: "/#cli", label: "CLI" },
+  {
+    href: "https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd",
+    label: "Extension",
+  },
+  {
+    href: "https://skills.sh/mblode/style-capture/style-capture",
+    label: "Skills",
+  },
+  { href: "https://www.npmjs.com/package/style-capture", label: "CLI" },
 ];
 
 export const Navbar = (): React.JSX.Element => (
@@ -12,15 +18,15 @@ export const Navbar = (): React.JSX.Element => (
       <Link className="font-semibold" href="/">
         Style Capture
       </Link>
-      <div className="hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
+      <div className="ml-auto hidden items-center gap-4 text-sm text-muted-foreground sm:flex">
         {navLinks.map((link) => (
-          <Link
+          <a
             className="transition-colors hover:text-foreground"
             href={link.href}
             key={link.href}
           >
             {link.label}
-          </Link>
+          </a>
         ))}
       </div>
     </nav>
