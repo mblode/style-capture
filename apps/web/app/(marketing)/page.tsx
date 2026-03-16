@@ -21,7 +21,11 @@ import { useEffect, useRef } from "react";
 import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Button } from "@/components/ui/button";
-import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo";
+import {
+  buildOrganizationSchema,
+  buildSoftwareApplicationSchema,
+  buildWebSiteSchema,
+} from "@/lib/seo";
 
 const useRevealOnScroll = (
   containerRef: React.RefObject<HTMLElement | null>
@@ -121,6 +125,7 @@ export default function HomePage(): React.JSX.Element {
     <div ref={containerRef}>
       <JsonLd data={buildWebSiteSchema()} />
       <JsonLd data={buildOrganizationSchema()} />
+      <JsonLd data={buildSoftwareApplicationSchema()} />
 
       {/* Hero */}
       <section className="@container py-24">
