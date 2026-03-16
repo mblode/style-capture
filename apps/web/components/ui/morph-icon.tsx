@@ -1,51 +1,76 @@
-import { forwardRef } from "react";
-import type { ComponentRef, CSSProperties } from "react";
+import type { HTMLAttributes } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { ICONS } from "./morph-icon-data";
-import type { MorphIconName } from "./morph-icon-data";
-
-interface MorphIconProps extends React.SVGAttributes<SVGSVGElement> {
-  icon: MorphIconName;
+interface MorphIconProps extends HTMLAttributes<HTMLSpanElement> {
+  icon: "cross" | "menu";
   size?: number;
   strokeWidth?: number;
 }
 
-export type { MorphIconName };
+export type MorphIconName = "cross" | "menu";
 
-const pathStyle = (d: string, opacity: number): CSSProperties => ({
-  d: `path("${d}")`,
-  opacity,
-});
+const barBase =
+  "absolute left-0 block w-full rounded-full bg-current transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none";
 
-export const MorphIcon = forwardRef<ComponentRef<"svg">, MorphIconProps>(
-  ({ icon, size = 32, strokeWidth = 1.5, className, style, ...props }, ref) => {
-    const def = ICONS[icon];
-    const [p0, p1, p2] = def.paths;
-    const [o0, o1, o2] = def.opacity;
+export const MorphIcon = ({
+  icon,
+  size = 32,
+  strokeWidth = 1.5,
+  className,
+  style,
+  ...props
+}: MorphIconProps) => {
+  const open = icon === "cross";
+  const barWidth = size * 0.643;
+  const barHeight = strokeWidth;
+  const gap = size * 0.214;
 
-    return (
-      <svg
-        ref={ref}
-        className={cn("morph-icon text-foreground", className)}
-        fill="none"
-        height={size}
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth={strokeWidth}
-        style={style}
-        viewBox="0 0 14 14"
-        width={size}
-        xmlns="http://www.w3.org/2000/svg"
-        {...props}
-      >
-        <path d={p0} style={pathStyle(p0, o0)} />
-        <path d={p1} style={pathStyle(p1, o1)} />
-        <path d={p2} style={pathStyle(p2, o2)} />
-      </svg>
-    );
-  }
-);
-
-MorphIcon.displayName = "MorphIcon";
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "morph-icon pointer-events-none relative inline-flex shrink-0 items-center justify-center text-current",
+        className
+      )}
+      style={{ height: size, width: size, ...style }}
+      {...props}
+    >
+      <span
+        className={barBase}
+        style={{
+          height: barHeight,
+          left: (size - barWidth) / 2,
+          top: size / 2 - gap,
+          transform: open
+            ? `translateY(${gap}px) rotate(45deg)`
+            : "translateY(0) rotate(0)",
+          width: barWidth,
+        }}
+      />
+      <span
+        className={barBase}
+        style={{
+          height: barHeight,
+          left: (size - barWidth) / 2,
+          opacity: open ? 0 : 1,
+          top: size / 2,
+          transform: open ? "scaleX(0)" : "scaleX(1)",
+          width: barWidth,
+        }}
+      />
+      <span
+        className={barBase}
+        style={{
+          height: barHeight,
+          left: (size - barWidth) / 2,
+          top: size / 2 + gap,
+          transform: open
+            ? `translateY(${-gap}px) rotate(-45deg)`
+            : "translateY(0) rotate(0)",
+          width: barWidth,
+        }}
+      />
+    </span>
+  );
+};
