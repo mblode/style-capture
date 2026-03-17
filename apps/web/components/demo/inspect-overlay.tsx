@@ -56,7 +56,8 @@ export const InspectOverlay = ({
   useEffect(() => {
     const style = document.createElement("style");
     style.id = CURSOR_STYLE_ID;
-    style.textContent = "html, body, body * { cursor: crosshair !important; }";
+    style.textContent =
+      "html, body, body * { cursor: crosshair !important; touch-action: none !important; }";
     document.head.append(style);
     return () => {
       style.remove();
@@ -69,6 +70,22 @@ export const InspectOverlay = ({
       return false;
     }
     return overlay.contains(target);
+  };
+
+  const resolveTarget = (event: PointerEvent | MouseEvent): Element | null => {
+    const path = event.composedPath();
+    const target = path[0] instanceof Element ? (path[0] as Element) : null;
+
+    if (target && !isOwnElement(target)) {
+      return target;
+    }
+
+    const fallback = document.elementFromPoint(event.clientX, event.clientY);
+    if (fallback && !isOwnElement(fallback)) {
+      return fallback;
+    }
+
+    return null;
   };
 
   const updateOverlay = (
@@ -138,18 +155,8 @@ export const InspectOverlay = ({
     const handlePointerMove = (event: PointerEvent): void => {
       lastPointerRef.current = { x: event.clientX, y: event.clientY };
 
-      const path = event.composedPath();
-      const target = path[0] instanceof Element ? (path[0] as Element) : null;
-
-      if (!target || isOwnElement(target)) {
-        const fallback = document.elementFromPoint(
-          event.clientX,
-          event.clientY
-        );
-        if (fallback && !isOwnElement(fallback)) {
-          currentTargetRef.current = fallback;
-          updateOverlay(fallback, event.clientX, event.clientY);
-        }
+      const target = resolveTarget(event);
+      if (!target) {
         return;
       }
 
@@ -158,7 +165,7 @@ export const InspectOverlay = ({
     };
 
     const handlePointerDown = (event: PointerEvent): void => {
-      const target = currentTargetRef.current;
+      const target = resolveTarget(event) ?? currentTargetRef.current;
       if (!target || isOwnElement(target)) {
         return;
       }
@@ -218,16 +225,33 @@ export const InspectOverlay = ({
       }
     };
 
+    const handleGotPointerCapture = (event: PointerEvent): void => {
+      const { target } = event;
+      if (target instanceof Element) {
+        target.releasePointerCapture(event.pointerId);
+      }
+    };
+
     document.addEventListener("pointermove", handlePointerMove, true);
     document.addEventListener("pointerdown", handlePointerDown, true);
     document.addEventListener("click", handleClick, true);
     document.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener(
+      "gotpointercapture",
+      handleGotPointerCapture,
+      true
+    );
 
     return () => {
       document.removeEventListener("pointermove", handlePointerMove, true);
       document.removeEventListener("pointerdown", handlePointerDown, true);
       document.removeEventListener("click", handleClick, true);
       document.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener(
+        "gotpointercapture",
+        handleGotPointerCapture,
+        true
+      );
     };
   }, [onCapture, onDeactivate]);
 
