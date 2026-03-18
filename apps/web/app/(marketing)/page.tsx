@@ -14,6 +14,9 @@ import {
   SparkleIcon,
   ArrowRightIcon,
 } from "blode-icons-react";
+import { SplitText } from "griffo/motion";
+import { stagger } from "motion";
+import { motion } from "motion/react";
 import Link from "next/link";
 
 import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
@@ -87,16 +90,43 @@ export default function HomePage(): React.JSX.Element {
       {/* Hero */}
       <section className="@container py-16 sm:py-24">
         <div className="mx-auto max-w-3xl px-6 text-center">
-          <h1 className="text-balance text-4xl font-medium tracking-tight leading-[1.1] sm:text-5xl sm:tracking-[-0.03em] sm:leading-[1.05]">
-            Point at any UI.
-            <br />
-            Let your agent rebuild it.
-          </h1>
-          <p className="mx-auto mt-4 max-w-[60ch] text-lg text-muted-foreground leading-relaxed">
+          <SplitText
+            animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+            as="h1"
+            className="text-balance text-4xl font-medium tracking-tight leading-[1.2] sm:text-5xl sm:tracking-[-0.03em] sm:leading-[1.15]"
+            initial={{ filter: "blur(8px)", opacity: 0, y: 20 }}
+            options={{ type: "words" }}
+            transition={{
+              delay: stagger(0.05),
+              duration: 0.65,
+              ease: [0.25, 1, 0.5, 1],
+            }}
+          >
+            <p>Point at any UI. Let your agent rebuild it.</p>
+          </SplitText>
+          <motion.p
+            animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+            className="mx-auto mt-4 max-w-[60ch] text-lg text-muted-foreground leading-relaxed"
+            initial={{ filter: "blur(10px)", opacity: 0, y: 8 }}
+            transition={{
+              delay: 0.6,
+              duration: 0.65,
+              ease: [0.25, 1, 0.5, 1],
+            }}
+          >
             Click any element on any website. Get computed styles and Tailwind
             mappings your coding agent can act on immediately.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          </motion.p>
+          <motion.div
+            animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-3"
+            initial={{ filter: "blur(10px)", opacity: 0, y: 4 }}
+            transition={{
+              delay: 0.8,
+              duration: 0.65,
+              ease: [0.25, 1, 0.5, 1],
+            }}
+          >
             <Button
               render={
                 // eslint-disable-next-line jsx-a11y/anchor-has-content -- content provided by Button children via base-ui render prop
@@ -126,7 +156,7 @@ export default function HomePage(): React.JSX.Element {
               <Cursor1Icon data-icon="inline-start" />
               Try it now
             </Button>
-          </div>
+          </motion.div>
         </div>
       </section>
 
