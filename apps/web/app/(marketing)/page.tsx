@@ -97,7 +97,7 @@ export default function HomePage(): React.JSX.Element {
             initial={{ filter: "blur(8px)", opacity: 0, y: 20 }}
             options={{ type: "words" }}
             transition={{
-              delay: stagger(0.05),
+              delay: stagger(0.04),
               duration: 0.65,
               ease: [0.25, 1, 0.5, 1],
             }}
@@ -107,9 +107,9 @@ export default function HomePage(): React.JSX.Element {
           <motion.p
             animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
             className="mx-auto mt-4 max-w-[60ch] text-lg text-muted-foreground leading-relaxed"
-            initial={{ filter: "blur(10px)", opacity: 0, y: 8 }}
+            initial={{ filter: "blur(8px)", opacity: 0, y: 8 }}
             transition={{
-              delay: 0.6,
+              delay: 0.35,
               duration: 0.65,
               ease: [0.25, 1, 0.5, 1],
             }}
@@ -120,9 +120,9 @@ export default function HomePage(): React.JSX.Element {
           <motion.div
             animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-3"
-            initial={{ filter: "blur(10px)", opacity: 0, y: 4 }}
+            initial={{ filter: "blur(8px)", opacity: 0, y: 4 }}
             transition={{
-              delay: 0.8,
+              delay: 0.5,
               duration: 0.65,
               ease: [0.25, 1, 0.5, 1],
             }}
