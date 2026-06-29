@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { version } from "@/package.json";
@@ -27,14 +26,16 @@ export const Footer = (): React.JSX.Element => (
       <a
         className="flex items-center gap-2 rounded-full py-1.5 pr-2.5 pl-1.5 transition-colors hover:text-foreground"
         href="https://matthewblode.com"
-        rel="noopener noreferrer"
+        rel="author noopener noreferrer"
         target="_blank"
       >
-        <Image
-          alt="Avatar of Matthew Blode"
+        {/* eslint-disable-next-line @next/next/no-img-element -- external avatar served from matthewblode.com, intentionally unoptimized to avoid next.config remote-image setup */}
+        <img
+          alt="Matthew Blode"
           className="rounded-full"
           height={20}
-          src="/matthew-blode-profile.jpg"
+          loading="lazy"
+          src="https://matthewblode.com/avatar-sm.png"
           width={20}
         />
         Matthew Blode
