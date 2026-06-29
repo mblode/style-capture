@@ -5,9 +5,9 @@ import { buildBreadcrumbSchema, createPublicMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPublicMetadata({
   description:
-    "Style Capture privacy policy — learn how we collect, use, and protect your data.",
+    "Read the Style Capture privacy policy. Learn what data the Chrome extension and website collect, how it is used, and the privacy rights you have.",
   path: "/privacy",
-  title: "Privacy Policy",
+  title: "Privacy policy for the Chrome extension",
 });
 
 const PrivacyPage = (): React.JSX.Element => (

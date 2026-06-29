@@ -7,7 +7,7 @@ export const metadata: Metadata = createPublicMetadata({
   description:
     "One slash command to capture computed styles and Tailwind mappings from any website. Works with Claude Code, Cursor, and any skills.sh-compatible agent.",
   path: "/skills",
-  title: "Agent skill",
+  title: "Agent skill to capture live UI styles",
 });
 
 export default function SkillsPage(): React.JSX.Element {
@@ -68,7 +68,7 @@ export default function SkillsPage(): React.JSX.Element {
               Any agent that supports the{" "}
               <a
                 className="text-foreground underline underline-offset-4 transition-colors hover:text-muted-foreground"
-                href="https://skills.sh"
+                href="https://www.skills.sh"
               >
                 skills.sh
               </a>{" "}

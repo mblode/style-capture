@@ -7,7 +7,7 @@ export const metadata: Metadata = createPublicMetadata({
   description:
     "Get help with the Style Capture Chrome extension. Contact us for support, feedback, or general inquiries.",
   path: "/support",
-  title: "Support",
+  title: "Support and help with the Chrome extension",
 });
 
 export default function SupportPage(): React.JSX.Element {

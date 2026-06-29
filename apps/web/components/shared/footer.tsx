@@ -1,9 +1,27 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { version } from "@/package.json";
 
+const footerLinks = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/support", label: "Support" },
+];
+
 export const Footer = (): React.JSX.Element => (
   <footer className="flex flex-col items-center justify-center gap-2 pt-16 pb-8 text-muted-foreground text-sm">
+    <nav className="flex items-center gap-4">
+      {footerLinks.map((link) => (
+        <Link
+          className="text-muted-foreground transition-colors hover:text-foreground"
+          href={link.href}
+          key={link.href}
+        >
+          {link.label}
+        </Link>
+      ))}
+    </nav>
     <div className="flex items-center gap-1">
       Crafted by
       <a
