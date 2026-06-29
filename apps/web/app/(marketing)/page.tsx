@@ -22,11 +22,7 @@ import Link from "next/link";
 import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Button } from "@/components/ui/button";
-import {
-  buildOrganizationSchema,
-  buildSoftwareApplicationSchema,
-  buildWebSiteSchema,
-} from "@/lib/seo";
+import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo";
 
 const extensionSteps = [
   {
@@ -85,7 +81,6 @@ export default function HomePage(): React.JSX.Element {
     <div>
       <JsonLd data={buildWebSiteSchema()} />
       <JsonLd data={buildOrganizationSchema()} />
-      <JsonLd data={buildSoftwareApplicationSchema()} />
 
       {/* Hero */}
       <section className="@container py-16 sm:py-24">

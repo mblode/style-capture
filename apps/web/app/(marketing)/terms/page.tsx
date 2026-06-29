@@ -6,7 +6,7 @@ import { buildBreadcrumbSchema, createPublicMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPublicMetadata({
   description:
-    "Style Capture terms of service — read our terms and conditions for using the extension.",
+    "Read the Style Capture terms of service covering acceptable use, intellectual property, disclaimers, and liability for the extension, CLI, and website.",
   path: "/terms",
   title: "Terms of Service",
 });
