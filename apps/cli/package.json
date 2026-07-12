@@ -41,22 +41,21 @@
     "fix": "npm run format && npm run lint:fix"
   },
   "dependencies": {
-    "@clack/prompts": "^1.1.0",
-    "clipboardy": "^4.0.0",
-    "commander": "^14.0.3",
-    "playwright": "^1.52.0"
+    "@clack/prompts": "^1.7.0",
+    "clipboardy": "^5.3.1",
+    "commander": "^15.0.0",
+    "playwright": "^1.61.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.5",
     "@style-capture/core": "*",
-    "@types/node": "^24.12.0",
-    "lefthook": "^2.1.4",
-    "oxfmt": "^0.40.0",
-    "oxlint": "^1.55.0",
-    "tsdown": "^0.12.0",
-    "typescript": "~5.9.3",
-    "ultracite": "^7.3.0",
-    "vitest": "^4.0.0"
+    "@types/node": "^26.1.1",
+    "lefthook": "^2.1.10",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
+    "tsdown": "^0.22.5",
+    "typescript": "7.0.2",
+    "ultracite": "7.9.3",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=22"

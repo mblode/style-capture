@@ -7,7 +7,6 @@
     "module": "ESNext",
     "types": ["chrome", "vite/client", "vitest/globals"],
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
