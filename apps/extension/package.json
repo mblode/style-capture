@@ -48,7 +48,7 @@
     "playwright-core": "^1.61.1",
     "postcss": "^8.5.17",
     "tsx": "^4.23.0",
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "ultracite": "7.9.3",
     "vite": "^8.1.4",
     "vite-plugin-zip-pack": "^1.2.4",

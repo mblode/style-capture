@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "portless style-capture npx next dev",
-    "build": "node scripts/build-well-known-skills.mjs && node scripts/next-build.mjs",
+    "build": "node scripts/build-well-known-skills.mjs && next build",
     "start": "next start",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
@@ -43,8 +43,7 @@
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",
     "tailwindcss": "^4",
-    "typescript": "7.0.2",
-    "typescript-next-build": "npm:typescript@^5.9.3",
+    "typescript": "6.0.3",
     "ultracite": "7.9.3"
   },
   "optionalDependencies": {
