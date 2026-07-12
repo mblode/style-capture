@@ -4,7 +4,7 @@ import http from "node:http";
 import { extname, join, resolve as resolvePath } from "node:path";
 
 import { chromium } from "playwright-core";
-import ts from "typescript";
+import { transformWithEsbuild } from "vite";
 
 const DEMO_ROOT = resolvePath(process.cwd(), "store/demo");
 const OUTPUT_ROOT = resolvePath(process.cwd(), "store/screenshots");
@@ -64,15 +64,13 @@ const loadBrowserScript = async (
   globalName: string
 ) => {
   const source = await readFile(filePath, "utf8");
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-    fileName: filePath,
+  const { code } = await transformWithEsbuild(source, filePath, {
+    format: "esm",
+    loader: "ts",
+    target: "es2022",
   });
 
-  return `${outputText.replaceAll(`export function ${exportName}`, `function ${exportName}`)}
+  return `${code.replaceAll(`export function ${exportName}`, `function ${exportName}`)}
 window.${globalName} = ${exportName};`;
 };
 
