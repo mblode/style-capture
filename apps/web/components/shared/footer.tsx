@@ -29,13 +29,13 @@ export const Footer = (): React.JSX.Element => (
         rel="author noopener noreferrer"
         target="_blank"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- external avatar served from matthewblode.com, intentionally unoptimized to avoid next.config remote-image setup */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- self-hosted 20px avatar, plain img avoids next/image overhead */}
         <img
           alt="Matthew Blode"
           className="rounded-full"
           height={20}
           loading="lazy"
-          src="https://matthewblode.com/avatar-sm.png"
+          src="/avatar-sm.png"
           width={20}
         />
         Matthew Blode
