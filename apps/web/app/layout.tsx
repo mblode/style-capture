@@ -34,6 +34,10 @@ export default function RootLayout({
 }>) {
   return (
     <html className={`${glide.variable} ${GeistMono.variable}`} lang="en">
+      <head>
+        <link href="https://us.i.posthog.com" rel="preconnect" />
+        <link href="https://us-assets.i.posthog.com" rel="dns-prefetch" />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );
