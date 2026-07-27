@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html className={`${glide.variable} ${GeistMono.variable}`} lang="en">
       <head>
-        <link href="https://r.blode.co" rel="preconnect" />
+        <link href={process.env.NEXT_PUBLIC_POSTHOG_HOST} rel="preconnect" />
       </head>
       <body className="antialiased">{children}</body>
     </html>
