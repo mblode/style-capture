@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const siteName = "Style Capture";
-export const siteUrl = "https://style-capture.blode.co";
+export const siteUrl = "https://blode.co/style-capture";
 const defaultOgImage = `${siteUrl}/opengraph-image.png`;
 
 interface PublicMetadataOptions {
@@ -20,11 +20,11 @@ export const createPublicMetadata = ({
   path,
   title,
 }: PublicMetadataOptions): Metadata => {
-  const url = new URL(path, siteUrl).toString();
+  const url = path === "/" ? siteUrl : `${siteUrl}${path}`;
 
   return {
     alternates: {
-      canonical: path,
+      canonical: url,
     },
     description,
     openGraph: {
@@ -59,7 +59,7 @@ export const buildBreadcrumbSchema = (
   "@type": "BreadcrumbList",
   itemListElement: items.map((item, index) => ({
     "@type": "ListItem",
-    item: new URL(item.path, siteUrl).toString(),
+    item: item.path === "/" ? siteUrl : `${siteUrl}${item.path}`,
     name: item.name,
     position: index + 1,
   })),

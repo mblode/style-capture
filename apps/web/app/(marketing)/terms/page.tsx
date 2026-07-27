@@ -35,7 +35,7 @@ const TermsPage = (): React.JSX.Element => (
     <p>
       We operate the website{" "}
       <a
-        href="https://style-capture.blode.co"
+        href="https://blode.co/style-capture"
         rel="noopener noreferrer"
         target="_blank"
       >

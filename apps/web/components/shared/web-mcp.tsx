@@ -68,7 +68,7 @@ const tools: WebMcpTool[] = [
       "Return the command to install the Style Capture agent skill via skills.sh.",
     execute: () => ({
       command: "npx skills add mblode/style-capture -g --all -y",
-      docs: "https://style-capture.blode.co/skills",
+      docs: "https://blode.co/style-capture/skills",
       usageExample: "/style-capture https://linear.app .hero",
     }),
     inputSchema: {

@@ -1,4 +1,3 @@
-import { GoogleAnalytics } from "@next/third-parties/google";
 import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
@@ -15,7 +14,7 @@ const glide = localFont({
 export const metadata: Metadata = {
   description:
     "Give your AI coding agent the exact styles from any website. Chrome extension, CLI, and agent skill.",
-  metadataBase: new URL("https://style-capture.blode.co"),
+  metadataBase: new URL("https://blode.co"),
   other: {
     "apple-mobile-web-app-title": "Style Capture",
   },
@@ -36,7 +35,6 @@ export default function RootLayout({
   return (
     <html className={`${glide.variable} ${GeistMono.variable}`} lang="en">
       <body className="antialiased">{children}</body>
-      <GoogleAnalytics gaId="G-7XGBDRVZQR" />
     </html>
   );
 }

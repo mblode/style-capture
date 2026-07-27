@@ -52,7 +52,11 @@ export const BrowserFrame = ({
         alt=""
         className="size-5 shrink-0"
         height={20}
-        src={active ? "/store-icon-active2.png" : "/store-icon.png"}
+        src={
+          active
+            ? "/style-capture/store-icon-active2.png"
+            : "/style-capture/store-icon.png"
+        }
         width={20}
       />
     </div>
