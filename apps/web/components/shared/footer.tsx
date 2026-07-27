@@ -25,7 +25,7 @@ export const Footer = (): React.JSX.Element => (
       Crafted by
       <a
         className="flex items-center gap-2 rounded-full py-1.5 pr-2.5 pl-1.5 transition-colors hover:text-foreground"
-        href="https://matthewblode.com"
+        href="https://blode.co"
         rel="author noopener noreferrer"
         target="_blank"
       >
@@ -35,7 +35,7 @@ export const Footer = (): React.JSX.Element => (
           className="rounded-full"
           height={20}
           loading="lazy"
-          src="/avatar-sm.png"
+          src="/style-capture/avatar-sm.png"
           width={20}
         />
         Matthew Blode

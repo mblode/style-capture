@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
-    "@next/third-parties": "^16.2.10",
     "@style-capture/core": "*",
     "@tailwindcss/typography": "^0.5.20",
     "blode-icons-react": "^0.4.1",
@@ -26,6 +25,7 @@
     "griffo": "^1.1.1",
     "motion": "^12.42.2",
     "next": "^16.2.10",
+    "posthog-js": "^1.407.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "shadcn": "^4.13.0",

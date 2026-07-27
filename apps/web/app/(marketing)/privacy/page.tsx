@@ -35,11 +35,11 @@ const PrivacyPage = (): React.JSX.Element => (
         <li>
           Visit our website at{" "}
           <a
-            href="https://style-capture.blode.co"
+            href="https://blode.co/style-capture"
             rel="noopener noreferrer"
             target="_blank"
           >
-            https://style-capture.blode.co
+            https://blode.co/style-capture
           </a>{" "}
           or any website of ours that links to this Privacy Notice
         </li>

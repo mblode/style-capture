@@ -19,7 +19,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "turbo build && changeset publish",
-    "prepare": "lefthook install"
+    "prepare": "if [ -z \"$VERCEL\" ]; then lefthook install; fi"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
