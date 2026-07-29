@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 
 import { siteUrl } from "@/lib/seo";
 
-const body = `# Content preferences for automated agents
-# See https://contentsignals.org
-Content-Signal: search=yes, ai-input=yes, ai-train=no
-
-User-agent: *
+// AI-open on purpose: crawl, index, ground and train are all permitted, so a
+// single `*` group states the whole policy. No `Content-Signal:` line: signals
+// are a reservation mechanism, so silence already means no restriction is
+// expressed, and an all-yes signal only adds an unknown-directive warning in
+// Search Console.
+const body = `User-agent: *
 Allow: /
-Content-Signal: search=yes, ai-input=yes, ai-train=no
 
 Sitemap: ${siteUrl}/sitemap.xml
 `;
