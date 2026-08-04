@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   assetPrefix: "/style-capture",
   basePath: "/style-capture",
-  typescript: { ignoreBuildErrors: true },
   reactCompiler: true,
   // 16.3: run the React Compiler through Turbopack's native Rust pass instead
   // of the Babel plugin, so no Babel step is needed in the build.
