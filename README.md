@@ -1,27 +1,51 @@
-<img src=".github/assets/logo.png" width="50" height="50" alt="Style Capture logo" />
+<div align="center">
 
-**[Style Capture](https://blode.co/style-capture)** is a Chrome extension and CLI that captures computed CSS from any element on any website, maps it to Tailwind utilities, and gives your AI coding agent everything it needs to rebuild the UI.
+# [Style Capture](https://blode.co/style-capture)
+
+**Click any element on any website and hand your coding agent its computed CSS, mapped to Tailwind**
+
+Point at the UI you want, paste the capture into your agent, and let it rebuild the thing.
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/style-capture">
+    <img src="https://img.shields.io/npm/v/style-capture?style=flat&colorA=000000&colorB=000000" />
+  </a>
+  <a href="https://github.com/mblode/style-capture/blob/main/LICENSE.md">
+    <img src="https://img.shields.io/github/license/mblode/style-capture?style=flat&colorA=000000&colorB=000000" />
+  </a>
+</p>
+
+</div>
+
+## Demo
+
+Compare the three ways to capture, and add the extension to Chrome.
+
+<p>
+<a href="https://blode.co/style-capture">
+<img alt="View demo" src=".github/assets/demo.svg" width="200" />
+</a>
+</p>
+
+## Install
+
+```bash
+npm install -g style-capture
+```
+
+## Quickstart
+
+```bash
+npx style-capture https://linear.app "main > section:first-child"
+```
+
+The capture goes to stdout. Add `--mode full` for every computed property rather than the curated set, or run `npx style-capture` with no arguments for an interactive prompt.
 
 ## Chrome extension
 
-Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd).
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd), then click the toolbar icon on any page. Hover to preview the element, click to capture it to your clipboard, or press Escape to cancel.
 
-1. Click the Style Capture icon on any website
-2. Hover and click the element you want to capture
-3. Paste into Claude Code, Cursor, or any AI agent
-
-## CLI
-
-```bash
-npx style-capture <url> <selector>
-```
-
-```bash
-npx style-capture https://stripe.com ".hero-section"
-npx style-capture https://linear.app "main > section:first-child" --mode full
-```
-
-For frequent use, install globally with `npm install -g style-capture`.
+The extension asks for `activeTab`, `scripting`, and `storage`, and holds no host permissions.
 
 ## Agent skill
 
@@ -31,31 +55,29 @@ Install the slash command for Claude Code or any [skills.sh](https://skills.sh)-
 npx skills add mblode/style-capture -g --all -y
 ```
 
-Describe the element in natural language — no CSS selectors needed:
+Then describe the element in words, with no selector to work out:
 
-```
+```text
 /style-capture https://stripe.com the pricing table
 /style-capture https://linear.app the hero section with the gradient
 ```
 
 ## Output
 
-A `<style_capture>` block containing:
+A `<style_capture>` block containing four parts:
 
-- **html_capture** — sanitised HTML of the subtree
-- **css_capture** — computed CSS grouped by element
-- **tailwind_hints** — Tailwind utilities with confidence scores
-- **open_questions** — ambiguous mappings flagged for review
+- **html_capture:** the subtree's HTML, with form state, inline handlers, and script tags stripped out.
+- **css_capture:** computed CSS grouped by element, so the agent reads real values rather than source declarations.
+- **tailwind_hints:** the Tailwind utility for each property, with a confidence score.
+- **open_questions:** the mappings that were ambiguous, flagged for review.
 
 ## Privacy
 
-All processing happens locally. Nothing leaves your device.
+Every capture runs locally, in your browser or in your own headless Chromium. Nothing is uploaded, stored, or sent anywhere.
 
-## Licence
+## License
 
-© 2026 Matthew Blode
-
-[MIT](LICENSE.md)
+MIT
 
 ---
 
