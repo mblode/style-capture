@@ -23,7 +23,7 @@ Compare the three ways to capture, and add the extension to Chrome.
 
 <p>
 <a href="https://blode.co/style-capture">
-<img alt="View demo" src=".github/assets/demo.svg" width="200" />
+<img alt="Visit the site" src=".github/assets/demo.svg" width="200" />
 </a>
 </p>
 
