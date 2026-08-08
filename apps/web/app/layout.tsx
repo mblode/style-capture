@@ -1,4 +1,3 @@
-import { GeistMono } from "geist/font/mono";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
@@ -6,9 +5,19 @@ import "./globals.css";
 
 const glide = localFont({
   display: "swap",
-  src: [{ path: "../public/glide-variable.woff2" }],
+  src: [
+    { path: "./fonts/glide-variable.woff2", style: "normal" },
+    { path: "./fonts/glide-variable-italic.woff2", style: "italic" },
+  ],
   variable: "--font-glide",
-  weight: "400 900",
+  weight: "100 950",
+});
+
+const glideMono = localFont({
+  display: "swap",
+  src: "./fonts/glide-mono.woff2",
+  variable: "--font-glide-mono",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -33,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={`${glide.variable} ${GeistMono.variable}`} lang="en">
+    <html className={`${glide.variable} ${glideMono.variable}`} lang="en">
       <head>
         <link href={process.env.NEXT_PUBLIC_POSTHOG_HOST} rel="preconnect" />
       </head>
