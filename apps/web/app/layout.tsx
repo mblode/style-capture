@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 
 import "./globals.css";
 
-import { siteUrl } from "@/lib/seo";
+import { defaultOgImage, siteUrl } from "@/lib/seo";
 
 const glide = localFont({
   display: "swap",
@@ -29,6 +29,12 @@ export const metadata: Metadata = {
   // generated image routes, so `https://blode.co` would resolve a relative
   // og:image against blode.co/opengraph-image and 404.
   metadataBase: new URL(siteUrl),
+  // Routes that do not go through `createPublicMetadata` (/store/*, not-found)
+  // inherit a card from here. Without it they fall back to the app/ image file
+  // convention, which double-prefixes the zone path.
+  openGraph: {
+    images: [{ height: 630, url: defaultOgImage, width: 1200 }],
+  },
   other: {
     "apple-mobile-web-app-title": "Style Capture",
   },

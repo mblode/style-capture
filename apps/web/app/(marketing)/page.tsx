@@ -21,6 +21,7 @@ import Link from "next/link";
 
 import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
 import { JsonLd } from "@/components/shared/json-ld";
+import { ZoneBreadcrumb } from "@/components/shared/zone-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { buildHomeGraph } from "@/lib/seo";
 
@@ -80,6 +81,10 @@ export default function HomePage(): React.JSX.Element {
   return (
     <div>
       <JsonLd data={buildHomeGraph()} />
+
+      <div className="mx-auto max-w-3xl px-6 pt-8">
+        <ZoneBreadcrumb product="Style Capture" />
+      </div>
 
       {/* Hero */}
       <section className="@container py-16 sm:py-24">

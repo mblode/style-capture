@@ -14,10 +14,7 @@ export const metadata: Metadata = createPublicMetadata({
 const TermsPage = (): React.JSX.Element => (
   <article className="prose mx-auto max-w-3xl px-4 py-6 md:py-10">
     <JsonLd
-      data={buildBreadcrumbSchema([
-        { name: "Home", path: "/" },
-        { name: "Terms of Service", path: "/terms" },
-      ])}
+      data={buildBreadcrumbSchema({ name: "Terms of service", path: "/terms" })}
     />
 
     <h1 className="h1">Terms of service</h1>

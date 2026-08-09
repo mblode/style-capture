@@ -15,10 +15,7 @@ export default function SupportPage(): React.JSX.Element {
   return (
     <div className="py-12 md:py-20">
       <JsonLd
-        data={buildBreadcrumbSchema([
-          { name: "Home", path: "/" },
-          { name: "Support", path: "/support" },
-        ])}
+        data={buildBreadcrumbSchema({ name: "Support", path: "/support" })}
       />
 
       <div className="mx-auto max-w-2xl px-6">

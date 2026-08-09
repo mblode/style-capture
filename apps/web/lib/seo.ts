@@ -5,7 +5,14 @@ import { basePath } from "@/lib/config";
 const siteName = "Style Capture";
 const host = "https://blode.co";
 export const siteUrl = `${host}${basePath}`;
-const defaultOgImage = `${siteUrl}/opengraph-image.png`;
+/**
+ * Served from `public/`, not the `app/opengraph-image.png` file convention.
+ * Under that convention Next joins `basePath` onto the segment and then
+ * `resolveUrl` joins `metadataBase.pathname` on again, producing
+ * `/style-capture/style-capture/opengraph-image.png`. Absolute here so nothing
+ * downstream can prefix it a second time.
+ */
+export const defaultOgImage = `${siteUrl}/opengraph-image.png`;
 const repoUrl = "https://github.com/mblode/style-capture";
 
 export const homeDescription =
@@ -59,17 +66,36 @@ export const createPublicMetadata = ({
   };
 };
 
+const listItem = (position: number, name: string, item: string) => ({
+  "@type": "ListItem",
+  item,
+  name,
+  position,
+});
+
+/**
+ * Every trail on this zone starts at the blode.co root, never at
+ * `blode.co/style-capture`. A trail rooted at the zone tells Google the zone is
+ * a site of its own, which is the opposite of what the contract is for. The
+ * shared prefix is why callers pass only their own page: the zone-rooted
+ * version cannot be expressed.
+ */
+const hostCrumbs = [
+  listItem(1, "Matthew Blode", `${host}/`),
+  listItem(2, "Projects", `${host}/projects`),
+  listItem(3, siteName, siteUrl),
+];
+
 export const buildBreadcrumbSchema = (
-  items: BreadcrumbItem[]
+  page: BreadcrumbItem
 ): Record<string, unknown> => ({
   "@context": "https://schema.org",
+  "@id": `${siteUrl}${page.path}#breadcrumb`,
   "@type": "BreadcrumbList",
-  itemListElement: items.map((item, index) => ({
-    "@type": "ListItem",
-    item: item.path === "/" ? siteUrl : `${siteUrl}${item.path}`,
-    name: item.name,
-    position: index + 1,
-  })),
+  itemListElement: [
+    ...hostCrumbs,
+    listItem(4, page.name, `${siteUrl}${page.path}`),
+  ],
 });
 
 /**
@@ -127,21 +153,7 @@ export const buildHomeGraph = (): Record<string, unknown> => ({
     {
       "@id": schemaId.breadcrumb,
       "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          item: `${host}/`,
-          name: "Matthew Blode",
-          position: 1,
-        },
-        {
-          "@type": "ListItem",
-          item: `${host}/projects`,
-          name: "Projects",
-          position: 2,
-        },
-        { "@type": "ListItem", item: siteUrl, name: siteName, position: 3 },
-      ],
+      itemListElement: hostCrumbs,
     },
   ],
 });
