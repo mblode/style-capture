@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { asset } from "@/lib/config";
 import { version } from "@/package.json";
 
 const footerLinks = [
@@ -34,7 +35,7 @@ export const Footer = (): React.JSX.Element => (
           className="rounded-full"
           height={20}
           loading="lazy"
-          src="/style-capture/avatar-sm.png"
+          src={asset("/avatar-sm.png")}
           width={20}
         />
         Matthew Blode

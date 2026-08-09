@@ -22,7 +22,7 @@ import Link from "next/link";
 import { InspectRenderer, useInspect } from "@/components/demo/demo-section";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Button } from "@/components/ui/button";
-import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo";
+import { buildHomeGraph } from "@/lib/seo";
 
 const extensionSteps = [
   {
@@ -79,8 +79,7 @@ export default function HomePage(): React.JSX.Element {
   const handleTryItNow = inspect.activate;
   return (
     <div>
-      <JsonLd data={buildWebSiteSchema()} />
-      <JsonLd data={buildOrganizationSchema()} />
+      <JsonLd data={buildHomeGraph()} />
 
       {/* Hero */}
       <section className="@container py-16 sm:py-24">

@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 
 import "./globals.css";
 
+import { siteUrl } from "@/lib/seo";
+
 const glide = localFont({
   display: "swap",
   src: [
@@ -23,7 +25,10 @@ const glideMono = localFont({
 export const metadata: Metadata = {
   description:
     "Give your AI coding agent the exact styles from any website. Chrome extension, CLI, and agent skill.",
-  metadataBase: new URL("https://blode.co"),
+  // The zone URL, not the bare origin: Next does not prefix `basePath` onto
+  // generated image routes, so `https://blode.co` would resolve a relative
+  // og:image against blode.co/opengraph-image and 404.
+  metadataBase: new URL(siteUrl),
   other: {
     "apple-mobile-web-app-title": "Style Capture",
   },
