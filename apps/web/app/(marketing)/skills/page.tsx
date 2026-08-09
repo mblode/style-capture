@@ -14,10 +14,7 @@ export default function SkillsPage(): React.JSX.Element {
   return (
     <div className="py-24">
       <JsonLd
-        data={buildBreadcrumbSchema([
-          { name: "Home", path: "/" },
-          { name: "Agent skill", path: "/skills" },
-        ])}
+        data={buildBreadcrumbSchema({ name: "Agent skill", path: "/skills" })}
       />
 
       <div className="mx-auto max-w-3xl space-y-16 px-6">

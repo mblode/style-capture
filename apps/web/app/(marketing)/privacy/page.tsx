@@ -13,10 +13,7 @@ export const metadata: Metadata = createPublicMetadata({
 const PrivacyPage = (): React.JSX.Element => (
   <article className="prose mx-auto max-w-3xl px-4 py-6 md:py-10">
     <JsonLd
-      data={buildBreadcrumbSchema([
-        { name: "Home", path: "/" },
-        { name: "Privacy Policy", path: "/privacy" },
-      ])}
+      data={buildBreadcrumbSchema({ name: "Privacy policy", path: "/privacy" })}
     />
 
     <div>
