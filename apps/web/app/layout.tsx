@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 
 import "./globals.css";
 
-import { defaultOgImage, siteUrl } from "@/lib/seo";
+import { defaultOgImage, personName, siteUrl } from "@/lib/seo";
 
 const glide = localFont({
   display: "swap",
@@ -30,10 +30,13 @@ export const metadata: Metadata = {
   // og:image against blode.co/opengraph-image and 404.
   metadataBase: new URL(siteUrl),
   // Routes that do not go through `createPublicMetadata` (/store/*, not-found)
-  // inherit a card from here. Without it they fall back to the app/ image file
-  // convention, which double-prefixes the zone path.
+  // inherit their whole card from here. Without it they fall back to the app/
+  // image file convention, which double-prefixes the zone path, and they carry
+  // no og:site_name at all. Their og:title is "Style Capture" from the title
+  // default below, so the product is still named once site_name is the person.
   openGraph: {
     images: [{ height: 630, url: defaultOgImage, width: 1200 }],
+    siteName: personName,
   },
   other: {
     "apple-mobile-web-app-title": "Style Capture",

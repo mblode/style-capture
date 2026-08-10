@@ -3,6 +3,13 @@ import type { Metadata } from "next";
 import { basePath } from "@/lib/config";
 
 const siteName = "Style Capture";
+/**
+ * `og:site_name`, deliberately the person and not the product. The 33 zones are
+ * one site, and the product is already in `og:title`, so this is the only slot
+ * in the card that can say who made the thing.
+ */
+export const personName = "Matthew Blode";
+const titleTemplate = `%s | ${siteName}`;
 const host = "https://blode.co";
 export const siteUrl = `${host}${basePath}`;
 /**
@@ -34,7 +41,16 @@ export const createPublicMetadata = ({
   path,
   title,
 }: PublicMetadataOptions): Metadata => {
-  const url = path === "/" ? siteUrl : `${siteUrl}${path}`;
+  const isRoot = path === "/";
+  const url = isRoot ? siteUrl : `${siteUrl}${path}`;
+
+  /**
+   * Card titles have no template mechanism, so the suffix is applied by hand.
+   * It has to be, because `siteName` below is the person: without it a share of
+   * /privacy reads "Privacy policy for the Chrome extension" over
+   * "Matthew Blode" and nothing on the card names Style Capture.
+   */
+  const cardTitle = `${title} | ${siteName}`;
 
   return {
     alternates: {
@@ -51,17 +67,24 @@ export const createPublicMetadata = ({
           width: 1200,
         },
       ],
-      siteName,
-      title,
+      siteName: personName,
+      title: cardTitle,
       type: "website",
       url,
     },
-    title,
+    /**
+     * The root call is the marketing layout, the segment every inner page
+     * inherits from. A plain string there resets the root layout's template to
+     * null for its children, which is why /privacy and /terms shipped a bare
+     * document title with no product suffix. Re-declaring the template here
+     * restores it.
+     */
+    title: isRoot ? { default: title, template: titleTemplate } : title,
     twitter: {
       card: "summary_large_image",
       description,
       images: [defaultOgImage],
-      title,
+      title: cardTitle,
     },
   };
 };
