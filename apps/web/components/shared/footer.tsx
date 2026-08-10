@@ -29,9 +29,16 @@ export const Footer = (): React.JSX.Element => (
         href="https://blode.co"
         rel="author"
       >
+        {/*
+          Decorative, so alt="". The link's own text already reads "Matthew
+          Blode"; any alt here makes its accessible name "Matthew Blode Matthew
+          Blode". Note this comment sits ABOVE the disable directive below:
+          putting it between the directive and the <img> detaches the two and
+          the rule starts firing again.
+        */}
         {/* eslint-disable-next-line @next/next/no-img-element -- self-hosted 20px avatar, plain img avoids next/image overhead */}
         <img
-          alt="Matthew Blode"
+          alt=""
           className="rounded-full"
           height={20}
           loading="lazy"
