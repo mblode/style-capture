@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 
 import "./globals.css";
 
-import { defaultOgImage, personName, siteUrl } from "@/lib/seo";
+import { defaultOgImage, personName, siteUrl, twitterHandle } from "@/lib/seo";
 
 const glide = localFont({
   display: "swap",
@@ -23,6 +23,10 @@ const glideMono = localFont({
 });
 
 export const metadata: Metadata = {
+  // Scalar metadata fields merge down, so these two reach every route from
+  // here. `twitter.creator` does not: see the note in `createPublicMetadata`.
+  authors: [{ name: personName, url: "https://blode.co" }],
+  creator: personName,
   description:
     "Give your AI coding agent the exact styles from any website. Chrome extension, CLI, and agent skill.",
   // The zone URL, not the bare origin: Next does not prefix `basePath` onto
@@ -40,6 +44,12 @@ export const metadata: Metadata = {
   },
   other: {
     "apple-mobile-web-app-title": "Style Capture",
+  },
+  // For the routes that bypass `createPublicMetadata`. Next still synthesises
+  // twitter:title and twitter:image from `title` and `openGraph` alongside it.
+  twitter: {
+    card: "summary_large_image",
+    creator: twitterHandle,
   },
   title: {
     default: "Style Capture",
