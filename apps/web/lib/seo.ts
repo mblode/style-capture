@@ -15,13 +15,11 @@ const titleTemplate = `%s | ${siteName}`;
 const host = "https://blode.co";
 export const siteUrl = `${host}${basePath}`;
 /**
- * Served from `public/`, not the `app/opengraph-image.png` file convention.
- * Under that convention Next joins `basePath` onto the segment and then
- * `resolveUrl` joins `metadataBase.pathname` on again, producing
- * `/style-capture/style-capture/opengraph-image.png`. Absolute here so nothing
- * downstream can prefix it a second time.
+ * Extensionless: the card is `app/opengraph-image.tsx`, which serves at
+ * `/style-capture/opengraph-image`. Absolute so page-level `openGraph` blocks
+ * that replace the layout still point at a real URL.
  */
-export const defaultOgImage = `${siteUrl}/opengraph-image.png`;
+export const defaultOgImage = `${siteUrl}/opengraph-image`;
 const repoUrl = "https://github.com/mblode/style-capture";
 
 export const homeDescription =

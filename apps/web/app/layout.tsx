@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 
 import "./globals.css";
 
-import { defaultOgImage, personName, siteUrl, twitterHandle } from "@/lib/seo";
+import { personName, siteUrl, twitterHandle } from "@/lib/seo";
 
 const glide = localFont({
   display: "swap",
@@ -29,17 +29,17 @@ export const metadata: Metadata = {
   creator: personName,
   description:
     "Give your AI coding agent the exact styles from any website. Chrome extension, CLI, and agent skill.",
-  // The zone URL, not the bare origin: Next does not prefix `basePath` onto
-  // generated image routes, so `https://blode.co` would resolve a relative
-  // og:image against blode.co/opengraph-image and 404.
+  // The zone URL, not the bare origin (Rule 11). Only correct because the card
+  // is a generated `opengraph-image.tsx` route: Next does not prefix those with
+  // `basePath`, so `metadataBase` supplies the prefix exactly once. Against the
+  // static PNG this replaced, the two would have stacked into
+  // `/style-capture/style-capture/…`.
   metadataBase: new URL(siteUrl),
-  // Routes that do not go through `createPublicMetadata` (/store/*, not-found)
-  // inherit their whole card from here. Without it they fall back to the app/
-  // image file convention, which double-prefixes the zone path, and they carry
-  // no og:site_name at all. Their og:title is "Style Capture" from the title
-  // default below, so the product is still named once site_name is the person.
+  // No `images` here: `app/opengraph-image.tsx` is the card. Next reuses it for
+  // `twitter:image` too when there is no `twitter-image` file. Routes that
+  // bypass `createPublicMetadata` (/store/*, not-found) still get the card via
+  // the file convention, and siteName from here.
   openGraph: {
-    images: [{ height: 630, url: defaultOgImage, width: 1200 }],
     siteName: personName,
   },
   other: {
