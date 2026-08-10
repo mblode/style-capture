@@ -9,6 +9,8 @@ const siteName = "Style Capture";
  * in the card that can say who made the thing.
  */
 export const personName = "Matthew Blode";
+/** Matches `twitterHandle` in blode-co's `lib/site.ts`. */
+export const twitterHandle = "@mattblode";
 const titleTemplate = `%s | ${siteName}`;
 const host = "https://blode.co";
 export const siteUrl = `${host}${basePath}`;
@@ -80,8 +82,15 @@ export const createPublicMetadata = ({
      * restores it.
      */
     title: isRoot ? { default: title, template: titleTemplate } : title,
+    /**
+     * `creator` is restated here rather than inherited. Object-valued metadata
+     * fields are replaced wholesale by a child declaration, so this block
+     * discards the root layout's `twitter` entirely — unlike `authors` and
+     * `creator` at the top level, which merge and need saying only once.
+     */
     twitter: {
       card: "summary_large_image",
+      creator: twitterHandle,
       description,
       images: [defaultOgImage],
       title: cardTitle,
