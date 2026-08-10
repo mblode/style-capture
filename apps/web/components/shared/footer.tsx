@@ -55,13 +55,6 @@ export const Footer = (): React.JSX.Element => (
           and no rel. See blode-co/apps/web/.claude/knowledge/zone-conventions.md. */}
       <a
         className="text-muted-foreground transition-colors hover:text-foreground"
-        href="https://blode.co/projects"
-      >
-        All projects
-      </a>
-      <span aria-hidden="true">·</span>
-      <a
-        className="text-muted-foreground transition-colors hover:text-foreground"
         href="https://github.com/mblode/style-capture"
         rel="noopener noreferrer"
         target="_blank"
