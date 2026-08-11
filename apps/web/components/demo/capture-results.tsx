@@ -74,9 +74,9 @@ export const CaptureResults = ({
                 {rootElement?.tagName ?? "element"}
               </span>
               <span className="text-muted-foreground">
-                {" · "}
-                {captureResult.summary.elementCount} element
-                {captureResult.summary.elementCount === 1 ? "" : "s"}
+                {` · ${captureResult.summary.elementCount} element${
+                  captureResult.summary.elementCount === 1 ? "" : "s"
+                }`}
               </span>
             </p>
             <div className="flex items-center gap-2">
