@@ -49,7 +49,7 @@ export const Footer = (): React.JSX.Element => (
       </a>
     </div>
     <div className="flex items-center gap-2 text-muted-foreground/30">
-      <span className="text-muted-foreground">v{version}</span>
+      <span className="text-muted-foreground">{`v${version}`}</span>
       <span aria-hidden="true">·</span>
       {/* The edge back to the hub: same origin behind a rewrite, so same tab
           and no rel. See blode-co/apps/web/.claude/knowledge/zone-conventions.md. */}

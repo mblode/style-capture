@@ -42,7 +42,10 @@ export const MorphIcon = ({
   style,
   ...props
 }: MorphIconProps) => {
-  const prefersReducedMotion = useReducedMotion();
+  // Coerce null (SSR / pre-mount) to false so the first client paint matches
+  // the server. Prefer-reduced-motion still gets an instant transition once the
+  // media query resolves — DOM structure stays identical either way.
+  const prefersReducedMotion = useReducedMotion() ?? false;
   const def = ICONS[icon];
   const [p0, p1, p2] = def.paths;
   const [o0, o1, o2] = def.opacity;
