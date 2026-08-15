@@ -1,4 +1,5 @@
 import { renderZoneOgImage } from "@/app/og-image-shared";
+import { OgLogo } from "@/app/og-logo";
 
 export {
   OG_CONTENT_TYPE as contentType,
@@ -21,11 +22,9 @@ export const alt = "Style Capture";
  */
 export default function OpengraphImage() {
   return renderZoneOgImage({
-    badge: "STYLE",
-    eyebrow: "blode.co/style-capture",
-    // Shorter than the meta description, which runs long for the SERP. A card
-    // is read in a feed, at a glance.
-    subtitle: "Point at any UI. Get styles your coding agent can rebuild.",
+    background: "#fef3c7",
+    color: "#451a03",
+    logo: <OgLogo />,
     title: "Style Capture",
   });
 }
