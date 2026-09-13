@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 import { basePath } from "./lib/config";
+import {
+  DEFAULT_POSTHOG_ORIGIN,
+  buildContentSecurityPolicy,
+} from "./lib/content-security-policy";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -9,27 +13,12 @@ const isDev = process.env.NODE_ENV === "development";
 // `connect-src 'self'`, which silently blocks PostHog outright — the exact
 // state blode.co/dnd-grid shipped before this sweep.
 const posthogOrigin =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://r.blode.co";
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? DEFAULT_POSTHOG_ORIGIN;
 
-// Everything this app loads is same-origin: fonts are `next/font/local`, the
-// share card lives in `public/`, and the only off-site links are navigations
-// rather than subresources. So the policy is 'self' plus the analytics origin.
-// 'unsafe-inline' covers Next's own bootstrap script and inline styles.
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} ${posthogOrigin}`,
-  `connect-src 'self' ${posthogOrigin}`,
-  "img-src 'self' data:",
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  // SAMEORIGIN rather than DENY, and this is the pair that says so: blode.co
-  // serves this app through a rewrite, so 'self' is blode.co.
-  "frame-ancestors 'self'",
-  "upgrade-insecure-requests",
-].join("; ");
+const contentSecurityPolicy = buildContentSecurityPolicy({
+  isDev,
+  posthogOrigin,
+});
 
 const securityHeaders = [
   { key: "Content-Security-Policy", value: contentSecurityPolicy },
