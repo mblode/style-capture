@@ -22,7 +22,7 @@
     "prepare": "if [ -z \"$VERCEL\" ]; then lefthook install; fi"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
+    "@changesets/cli": "^3.0.1",
     "lefthook": "^2.1.10",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",
