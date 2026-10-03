@@ -103,7 +103,7 @@ describe("mapCaptureToTailwind()", () => {
             "div.flex.flex-col:nth-child(1) > div.group/card.flex:nth-child(1)",
           styles: {
             color: "rgb(44, 37, 33)",
-            "font-family": 'glide, "glide Fallback"',
+            "font-family": 'brand-sans, "brand-sans Fallback"',
             "font-size": "24px",
             "font-weight": "500",
             height: "32px",
@@ -117,13 +117,13 @@ describe("mapCaptureToTailwind()", () => {
     const rootMapping = result.elements["node-0"];
 
     expect(rootMapping.className).toBe(
-      'w-[352px] h-8 text-[#2c2521] [font-family:glide,"glide_Fallback"] text-2xl font-medium leading-8 origin-[176px_16px]'
+      'w-[352px] h-8 text-[#2c2521] [font-family:brand-sans,"brand-sans_Fallback"] text-2xl font-medium leading-8 origin-[176px_16px]'
     );
     expect(rootMapping.suggestedClassName).toBe(
       "text-[#2c2521] text-2xl font-medium leading-8"
     );
     expect(rootMapping.reviewClassName).toBe(
-      'w-[352px] h-8 [font-family:glide,"glide_Fallback"] origin-[176px_16px]'
+      'w-[352px] h-8 [font-family:brand-sans,"brand-sans_Fallback"] origin-[176px_16px]'
     );
     expect(result.summary).toMatchObject({
       cleanUtilityCount: 4,
@@ -135,7 +135,7 @@ describe("mapCaptureToTailwind()", () => {
       expect.arrayContaining([
         "w-[352px]: Computed size values are often layout-dependent.",
         "h-8: Computed size values are often layout-dependent.",
-        '[font-family:glide,"glide_Fallback"]: Font family required an arbitrary property utility.',
+        '[font-family:brand-sans,"brand-sans_Fallback"]: Font family required an arbitrary property utility.',
         "origin-[176px_16px]: transform-origin required an arbitrary value.",
       ])
     );

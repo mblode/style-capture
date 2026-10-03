@@ -47,7 +47,7 @@ export const FORMAT_EVAL_FIXTURES: FormatEvalFixture[] = [
             "border-top-style": "solid",
             color: "oklab(0.144787 0.00000661612 0.00000289828 / 0.9)",
             "font-family":
-              'glide, "glide Fallback", system-ui, -apple-system, "system-ui", "Segoe UI", sans-serif',
+              'brand-sans, "brand-sans Fallback", system-ui, -apple-system, "system-ui", "Segoe UI", sans-serif',
             height: "56px",
             "line-height": "28px",
             "margin-bottom": "20px",
