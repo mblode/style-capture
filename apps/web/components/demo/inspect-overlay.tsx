@@ -290,7 +290,7 @@ export const InspectOverlay = ({
           display: "none",
           filter: "drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3))",
           fontFamily:
-            '"Glide", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            '"Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
           fontSize: "13px",
           left: 0,
           lineHeight: "16px",

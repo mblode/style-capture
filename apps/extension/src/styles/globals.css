@@ -5,10 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @font-face {
-  font-family: "Glide";
+  font-family: "Inter";
   font-weight: 100 950;
   font-display: swap;
-  src: url("/glide-variable.woff2") format("woff2");
+  src: url("/inter-variable.woff2") format("woff2");
 }
 
 @theme inline {
@@ -75,8 +75,8 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
-  --font-sans: "Glide", sans-serif;
-  --font-display: "Glide", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Inter", sans-serif;
   --font-mono:
     ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;

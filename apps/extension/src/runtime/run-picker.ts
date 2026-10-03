@@ -685,7 +685,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
       max-width: min(${LABEL_MAX_WIDTH}px, calc(100vw - 16px));
       filter: drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3));
       font-family:
-        "Glide",
+        "Inter",
         ui-sans-serif,
         system-ui,
         -apple-system,
