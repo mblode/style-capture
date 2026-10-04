@@ -52,7 +52,7 @@
     "ultracite": "7.9.3",
     "vite": "^8.1.4",
     "vite-plugin-zip-pack": "^1.2.4",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": ">=24"
