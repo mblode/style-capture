@@ -79,6 +79,7 @@ interface CaptureResult {
   rootElementId: string;
   rootOuterHtml: string;
   settings: CaptureSettings;
+  states?: Partial<Record<CaptureState, StateCaptureResult>>;
   summary: {
     elementCount: number;
     pseudoElementCount: number;
@@ -99,6 +100,41 @@ interface CaptureResult {
 - `boundingBox`
 - `styles`
 - `pseudo.before` / `pseudo.after`
+
+## State Capture
+
+`states` is an optional, additive field; `version` stays `1` and consumers that ignore it are unaffected. `elements` is always the resting capture.
+
+```ts
+type CaptureState = "hover" | "focus" | "focus-visible" | "active" | "disabled";
+type StateCaptureResult =
+  | { applicable: true; styles: Record<string, Record<string, string>> } // by element id
+  | { applicable: false; reason: string };
+```
+
+The CLI produces it with `--state` (repeatable or comma list; `all` is hover, focus-visible and active) and `--state-scope element|subtree` (default `element`):
+
+- It opens a CDP session and calls `CSS.forcePseudoState` on the matched element (and its descendants for `subtree`), so no mouse or keyboard is involved.
+- It waits for the longest computed `transition-duration` plus `transition-delay` (capped at 1s) and two animation frames, then runs the same snapshot code as the resting capture. The state is cleared and settled again before the next one.
+- State styles are matched to resting elements by `selector`, so an element that appears only in a state is ignored.
+- State captures add `outline-color`, `outline-offset`, `outline-style` and `outline-width` to the curated property set (resting capture too, but only when `--state` is used), because focus rings live there.
+- `disabled` is not forced: it reads the element as-is when it has `disabled` or `aria-disabled="true"`, and is `applicable: false` otherwise.
+
+`diffStateStyles` in `packages/core` returns the properties that differ from the resting capture per element, `{ before, after }`, where a property missing on one side shows as `(default)`. The export adds, after `tailwind_hints` and `open_questions`:
+
+```text
+<states>
+<state name="hover">
+<css_capture>#cta{background-color:rgb(0, 0, 200);...}</css_capture>
+<state_diff>
+0 background-color:rgb(0, 0, 255)->rgb(0, 0, 200);transform:(default)->matrix(1.05, 0, 0, 1.05, 0, 0)
+</state_diff>
+</state>
+<state name="disabled" applicable="false">not applicable: element is not disabled</state>
+</states>
+```
+
+Diff lines start with the element's compact ref (the `data-lc` value in `html_capture`).
 
 ## Tailwind Mapping and Export
 

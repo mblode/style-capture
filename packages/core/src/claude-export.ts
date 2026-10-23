@@ -1,3 +1,4 @@
+import { formatStatesSection } from "./state-export.ts";
 import type { TailwindMappingResult } from "./tailwind-mapper.ts";
 import type {
   CaptureResult,
@@ -31,6 +32,7 @@ export interface ClaudeCapturePrompt {
   instruction: string;
   metadata: ClaudePromptMetadata;
   openQuestions: ClaudePromptEntry[];
+  states: string[];
   tailwindHints: ClaudePromptEntry[];
 }
 
@@ -370,6 +372,7 @@ export const buildClaudeCapturePrompt = (
       url: capture.metadata.url,
     },
     openQuestions: buildOpenQuestionEntries(mapping, annotation.refs),
+    states: formatStatesSection(capture, annotation.refs, annotation.selectors),
     tailwindHints: buildTailwindHintEntries(capture, mapping, annotation.refs),
   };
 };
@@ -407,6 +410,6 @@ export const formatCaptureForClaudeMarkdown = (
     );
   }
 
-  sections.push("</style_capture>");
+  sections.push(...prompt.states, "</style_capture>");
   return sections.join("\n").trim();
 };

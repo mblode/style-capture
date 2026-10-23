@@ -48,6 +48,18 @@ export interface CaptureMetadata {
   userAgent?: string;
 }
 
+export type CaptureState =
+  | "active"
+  | "disabled"
+  | "focus"
+  | "focus-visible"
+  | "hover";
+
+/** Styles per element id (same ids as `CaptureResult.elements`) in one state. */
+export type StateCaptureResult =
+  | { applicable: true; styles: Record<string, Record<string, string>> }
+  | { applicable: false; reason: string };
+
 export interface CaptureResult {
   elements: Record<string, ElementSnapshot>;
   metadata: CaptureMetadata;
@@ -55,6 +67,8 @@ export interface CaptureResult {
   rootElementId: string;
   rootOuterHtml: string;
   settings: CaptureSettings;
+  /** Optional per-state captures; `elements` stays the resting capture. */
+  states?: Partial<Record<CaptureState, StateCaptureResult>>;
   summary: CaptureSummary;
   version: 1;
 }

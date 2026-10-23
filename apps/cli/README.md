@@ -28,6 +28,15 @@ Run without arguments for interactive mode:
 npx style-capture
 ```
 
+Measure a component in its interactive states, not only at rest. `--state` takes `hover`, `focus`, `focus-visible`, `active` and `disabled` (repeat it or use a comma list); `--state all` means hover, focus-visible and active. The state is forced through the DevTools protocol, so no mouse is needed, and the capture waits for the element's transition to finish (1s cap). Add `--state-scope subtree` to force the state on descendants as well:
+
+```bash
+npx style-capture https://example.com "#cta" --state hover,focus-visible
+npx style-capture https://example.com "#cta" --state all --state-scope subtree
+```
+
+The output gains a `<states>` block with a `css_capture` and a `state_diff` per state; the diff lists only the properties that change from the resting capture (`before->after`). `disabled` reads the element as-is when it already has `disabled` or `aria-disabled`, and reports not applicable otherwise.
+
 For frequent use, install globally with `npm install -g style-capture`.
 
 ## Agent skill
@@ -53,6 +62,7 @@ A `<style_capture>` block containing:
 - **css_capture** — computed CSS grouped by element
 - **tailwind_hints** — Tailwind utilities with confidence scores
 - **open_questions** — ambiguous mappings flagged for review
+- **states** — with `--state`: per-state css_capture and a state_diff against the resting capture
 
 Paste into Claude Code, Cursor, or any AI tool.
 

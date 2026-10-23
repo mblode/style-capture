@@ -15,6 +15,7 @@ export {
   MESSAGE_TYPE_CAPTURE_COMPLETED,
   MESSAGE_TYPE_CAPTURE_FAILED,
 } from "./messages.ts";
+export { diffStateStyles, type StyleChange } from "./state-diff.ts";
 export {
   mapCaptureToTailwind,
   type TailwindElementMapping,
@@ -28,8 +29,10 @@ export type {
   CaptureMode,
   CaptureResult,
   CaptureSettings,
+  CaptureState,
   CaptureSummary,
   ElementSnapshot,
   PseudoElementKind,
   PseudoElementSnapshot,
+  StateCaptureResult,
 } from "./types.ts";

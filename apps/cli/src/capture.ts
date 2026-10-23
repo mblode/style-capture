@@ -9,10 +9,11 @@ import type { Page } from "playwright";
 export const captureElement = async (
   page: Page,
   selector: string,
-  settings: CaptureSettings
+  settings: CaptureSettings,
+  extraProperties: string[] = []
 ): Promise<CaptureResult> => {
   const result = await page.evaluate(
-    ({ selector: sel, settings: opts }) => {
+    ({ extraProperties: extra, selector: sel, settings: opts }) => {
       const OMITTED_ELEMENT_NAMES = new Set([
         "base",
         "iframe",
@@ -142,6 +143,7 @@ export const captureElement = async (
         "white-space",
         "width",
         "z-index",
+        ...extra,
       ];
 
       const rootEl = document.querySelector(sel);
@@ -546,7 +548,7 @@ export const captureElement = async (
         version: 1 as const,
       };
     },
-    { selector, settings }
+    { extraProperties, selector, settings }
   );
 
   return result as CaptureResult;

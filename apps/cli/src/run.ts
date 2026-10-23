@@ -1,4 +1,4 @@
-import type { CaptureSettings } from "@style-capture/core";
+import type { CaptureSettings, CaptureState } from "@style-capture/core";
 import {
   createDefaultSettings,
   formatCaptureForClaudeMarkdown,
@@ -6,11 +6,15 @@ import {
 } from "@style-capture/core";
 import { chromium } from "playwright";
 
+import { captureStates, STATE_EXTRA_PROPERTIES } from "./capture-states.ts";
 import { captureElement } from "./capture.ts";
+import type { StateScope } from "./states.ts";
 
 export interface RunOptions {
   mode?: "curated" | "full";
   selector: string;
+  stateScope?: StateScope;
+  states?: CaptureState[];
   url: string;
 }
 
@@ -42,7 +46,22 @@ export const run = async (options: RunOptions): Promise<string> => {
       );
     }
 
-    const capture = await captureElement(page, options.selector, settings);
+    const capture = await captureElement(
+      page,
+      options.selector,
+      settings,
+      options.states?.length ? STATE_EXTRA_PROPERTIES : []
+    );
+    if (options.states?.length) {
+      capture.states = await captureStates(
+        page,
+        options.selector,
+        settings,
+        options.states,
+        options.stateScope ?? "element",
+        capture
+      );
+    }
     const mapping = mapCaptureToTailwind(capture);
     const output = formatCaptureForClaudeMarkdown(capture, mapping);
 

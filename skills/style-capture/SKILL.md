@@ -99,6 +99,8 @@ Options:
 
 - `--mode curated` (default) — common visual CSS properties only
 - `--mode full` — all computed styles
+- `--state hover,focus-visible,active` — also measure those states (`focus`, `disabled` and `all` work too); adds a `<states>` block with a `state_diff` of what each state changes. Use it for buttons, links and inputs.
+- `--state-scope subtree` — force the state on descendants as well
 
 ## Arguments
 
@@ -123,6 +125,7 @@ The output is a `<style_capture>` XML block containing:
 - **css_capture** — computed CSS grouped by element
 - **tailwind_hints** — suggested Tailwind utility classes with confidence scores
 - **open_questions** — low-confidence mappings flagged for review
+- **states** — only with `--state`: per-state css_capture and `state_diff` (before->after for changed properties)
 
 Use this output to faithfully recreate or refactor the captured UI in code.
 
