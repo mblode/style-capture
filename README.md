@@ -50,7 +50,6 @@ npx style-capture https://example.com "#cta" --state all --state-scope subtree
 
 The output gains a `<states>` block with a `css_capture` and a `state_diff` per state; the diff lists only the properties that change from the resting capture (`before->after`). `disabled` reads the element as-is when it already has `disabled` or `aria-disabled`, and reports not applicable otherwise.
 
-
 ## Chrome extension
 
 Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/style-capture/gnolhcpajlndieinmodljdhcbmdmmepd), then click the toolbar icon on any page. Hover to preview the element, click to capture it to your clipboard, or press Escape to cancel.
@@ -83,9 +82,17 @@ A `<style_capture>` block containing four parts:
 
 With `--state`, a `<states>` block follows with each state's `css_capture` and a `state_diff` of what changed.
 
+## Capture bundles
+
+Use `--out <new-directory>` to keep source screenshots, available fonts and images, matched CSS, static replay HTML and capture metadata together. Control the browser with `--viewport 1440x900`, `--dpr 2`, `--color-scheme light` and `--surface component-demo`. Requested CSS states receive their own evidence and assets.
+
+The updated extension adds **Download local capture bundle** in Settings. It downloads one JSON file using the existing extension permissions. Extension font and asset coverage is more limited than the CLI; gaps are recorded explicitly.
+
+See [capture bundles](docs/capture-bundles.md) for source-checkout usage, output contents and fidelity limits. These source capabilities require the corresponding published CLI or updated extension build.
+
 ## Privacy
 
-Every capture runs locally, in your browser or in your own headless Chromium. Nothing is uploaded, stored, or sent anywhere.
+Every capture is processed locally, in your browser or your own headless Chromium. Bundle mode writes local files and requests assets from their original hosts. No capture is uploaded to an AI service.
 
 ## License
 

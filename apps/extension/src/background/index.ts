@@ -8,6 +8,7 @@ import type { ExtensionMessage } from "@/lib/messages.ts";
 import { getSettings } from "@/lib/storage.ts";
 import { mapCaptureToTailwind } from "@/lib/tailwind-mapper.ts";
 import type { CaptureResult, CaptureSettings } from "@/lib/types.ts";
+import { downloadBundle } from "@/runtime/download-bundle.ts";
 import { runPicker } from "@/runtime/run-picker.ts";
 import type { PickerRunResult } from "@/runtime/run-picker.ts";
 
@@ -93,6 +94,38 @@ const handleCaptureCompleted = async (
     return;
   }
 
+  if (capture.settings.downloadBundle) {
+    let screenshot: string | null = null;
+    let screenshotGap: string | null = null;
+    const tab = await chrome.tabs.get(tabId);
+    try {
+      if (!tab.active) throw new Error("Source tab is no longer active.");
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        func: async () => {
+          // oxlint-disable-next-line promise/avoid-new -- wait for removed picker overlays to paint
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          });
+        },
+      });
+      screenshot = await chrome.tabs.captureVisibleTab(tab.windowId, {
+        format: "png",
+      });
+      const afterCapture = await chrome.tabs.get(tabId);
+      if (!afterCapture.active || afterCapture.url !== tab.url) {
+        screenshot = null;
+        throw new Error("Source tab changed during screenshot capture.");
+      }
+    } catch (error) {
+      screenshotGap = `Viewport screenshot unavailable: ${error instanceof Error ? error.message : String(error)}`;
+    }
+    await chrome.scripting.executeScript({
+      args: [capture, screenshot, screenshotGap],
+      func: downloadBundle,
+      target: { tabId },
+    });
+  }
   const mapping = mapCaptureToTailwind(capture);
   const markdown = formatCaptureForClaudeMarkdown(capture, mapping);
 

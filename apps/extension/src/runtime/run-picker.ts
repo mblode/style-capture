@@ -481,6 +481,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
       }
 
       if (
+        !includeAll &&
         parentStyles &&
         INHERITED_PROPERTIES.has(property) &&
         parentStyles[property] === trimmedValue
@@ -524,10 +525,28 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     };
   };
 
+  const documentRoot = document;
+  const nodePath = (element: Node, ancestor?: Node): number[] => {
+    const boundary = ancestor ?? documentRoot;
+    const steps: number[] = [];
+    let node: Node | null = element;
+    while (node && node !== boundary) {
+      const parent: ParentNode | null = node.parentNode;
+      if (!parent)
+        throw new Error("Selected element is no longer in the document.");
+      steps.unshift([...parent.childNodes].indexOf(node as ChildNode));
+      node = parent;
+    }
+    return steps;
+  };
+
   const buildCapture = (
     root: Element,
     currentSettings: CaptureSettings
   ): CaptureResult => {
+    const rawIndices = new Map(
+      [root, ...root.querySelectorAll("*")].map((node, index) => [node, index])
+    );
     const elements: Record<string, ElementSnapshot> = {};
     const order: string[] = [];
     const idByElement = new WeakMap<Element, string>();
@@ -544,6 +563,8 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
       order.push(id);
 
       const snapshot = {
+        domPath: nodePath(element, root),
+        subtreeIndex: rawIndices.get(element),
         attributes: getSafeAttributes(element),
         boundingBox: getBoundingBox(element.getBoundingClientRect()),
         children: [] as string[],
@@ -629,6 +650,7 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     return {
       elements,
       metadata: {
+        rootDomPath: nodePath(root),
         url: window.location.href,
       },
       order,
@@ -930,7 +952,13 @@ export const runPicker = (settings: CaptureSettings): PickerRunResult => {
     event.stopImmediatePropagation();
 
     try {
-      const capture = buildCapture(target, settings);
+      const capture = buildCapture(
+        target,
+        settings.downloadBundle
+          ? { ...settings, captureMode: "full" }
+          : settings
+      );
+      if (settings.downloadBundle) cleanup();
       tooltipPanel.textContent = "Copied to clipboard";
       (async () => {
         try {

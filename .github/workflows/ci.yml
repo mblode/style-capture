@@ -24,6 +24,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Install Chromium for browser tests
+        run: npx --no-install playwright install --with-deps chromium
+
       - name: Changeset Status
         if: github.event_name == 'pull_request'
         run: npx changeset status --since origin/main

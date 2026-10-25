@@ -32,6 +32,7 @@ export type {
   CaptureState,
   CaptureSummary,
   ElementSnapshot,
+  PixelClip,
   PseudoElementKind,
   PseudoElementSnapshot,
   StateCaptureResult,
