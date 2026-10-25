@@ -1,5 +1,11 @@
 # style-capture
 
+## 1.3.1
+
+### Patch Changes
+
+- c89cdbc: Point the installed command and start script to the compiled ES module so the published CLI launches correctly.
+
 ## 1.3.0
 
 ### Minor Changes
