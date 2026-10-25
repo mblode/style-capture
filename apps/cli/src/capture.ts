@@ -264,6 +264,7 @@ export const captureElement = async (
             continue;
           }
           if (
+            !includeAll &&
             parentStyles &&
             INHERITED_PROPERTIES.has(property) &&
             parentStyles[property] === trimmed
@@ -439,13 +440,29 @@ export const captureElement = async (
         return clone.outerHTML;
       };
 
+      const rawIndices = new Map(
+        [rootEl, ...rootEl.querySelectorAll("*")].map((element, index) => [
+          element,
+          index,
+        ])
+      );
       const captureEl = (element: Element, parentId: string | null): string => {
         const id = `node-${nextId}`;
         nextId += 1;
         idByElement.set(element, id);
         order.push(id);
 
+        const domPath: number[] = [];
+        let current: Node = element;
+        while (current !== rootEl && current.parentNode) {
+          domPath.unshift(
+            Array.prototype.indexOf.call(current.parentNode.childNodes, current)
+          );
+          current = current.parentNode;
+        }
         const snapshot = {
+          domPath,
+          subtreeIndex: rawIndices.get(element),
           attributes: getSafeAttributes(element),
           boundingBox: getBoundingBox(element.getBoundingClientRect()),
           children: [] as string[],

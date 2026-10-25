@@ -2,6 +2,7 @@ import type {
   CaptureResult,
   CaptureSettings,
   CaptureState,
+  PixelClip,
   StateCaptureResult,
 } from "@style-capture/core";
 import type { Page } from "playwright";
@@ -10,6 +11,23 @@ import { captureElement } from "./capture.ts";
 import type { StateScope } from "./states.ts";
 
 const MAX_TRANSITION_WAIT_MS = 1000;
+
+export type StateCaptureHook = (
+  state: CaptureState,
+  capture: CaptureResult
+) => Promise<{
+  screenshot?: string;
+  replay?: string;
+  gaps: string[];
+  pixelClip?: PixelClip;
+}>;
+
+const snapshot = (capture: CaptureResult) => ({
+  elements: capture.elements,
+  order: capture.order,
+  rootElementId: capture.rootElementId,
+  rootOuterHtml: capture.rootOuterHtml,
+});
 
 /** Not in the curated set, but what focus-visible and similar states change. */
 export const STATE_EXTRA_PROPERTIES = [
@@ -87,12 +105,17 @@ const alignStyles = (
 ): Record<string, Record<string, string>> => {
   const bySelector = new Map<string, Record<string, string>>();
   for (const element of Object.values(stateCapture.elements)) {
-    bySelector.set(element.selector, element.styles);
+    bySelector.set(
+      JSON.stringify(element.domPath ?? element.selector),
+      element.styles
+    );
   }
 
   const styles: Record<string, Record<string, string>> = {};
   for (const [id, element] of Object.entries(base.elements)) {
-    const found = bySelector.get(element.selector);
+    const found = bySelector.get(
+      JSON.stringify(element.domPath ?? element.selector)
+    );
     if (found) {
       styles[id] = found;
     }
@@ -106,7 +129,8 @@ const captureForcedState = async (
   settings: CaptureSettings,
   state: Exclude<CaptureState, "disabled">,
   scope: StateScope,
-  base: CaptureResult
+  base: CaptureResult,
+  onCapture?: StateCaptureHook
 ): Promise<StateCaptureResult> => {
   const cdp = await page.context().newCDPSession(page);
   try {
@@ -145,7 +169,16 @@ const captureForcedState = async (
         settings,
         STATE_EXTRA_PROPERTIES
       );
-      return { applicable: true, styles: alignStyles(base, stateCapture) };
+      return {
+        applicable: true,
+        styles: alignStyles(base, stateCapture),
+        ...(onCapture
+          ? {
+              snapshot: snapshot(stateCapture),
+              evidence: await onCapture(state, stateCapture),
+            }
+          : {}),
+      };
     } finally {
       await force([]);
       await settle(page, selector, scope);
@@ -162,7 +195,8 @@ export const captureStates = async (
   settings: CaptureSettings,
   states: CaptureState[],
   scope: StateScope,
-  base: CaptureResult
+  base: CaptureResult,
+  onCapture?: StateCaptureHook
 ): Promise<NonNullable<CaptureResult["states"]>> => {
   const result: NonNullable<CaptureResult["states"]> = {};
 
@@ -171,6 +205,12 @@ export const captureStates = async (
       result.disabled = (await isDisabled(page, selector))
         ? {
             applicable: true,
+            ...(onCapture
+              ? {
+                  snapshot: snapshot(base),
+                  evidence: await onCapture(state, base),
+                }
+              : {}),
             styles: Object.fromEntries(
               Object.entries(base.elements).map(([id, el]) => [id, el.styles])
             ),
@@ -186,7 +226,8 @@ export const captureStates = async (
         settings,
         state,
         scope,
-        base
+        base,
+        onCapture
       );
     }
   }

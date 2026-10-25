@@ -156,6 +156,17 @@ export const OptionsApp = (): React.JSX.Element => {
 
       <div className="grid gap-3">
         <ToggleRow
+          checked={settings.downloadBundle ?? false}
+          id="download-bundle"
+          label="Download local capture bundle"
+          onCheckedChange={(value) => updateSetting("downloadBundle", value)}
+        />
+        <p className="text-muted-foreground text-sm">
+          Includes a visible screenshot, computed HTML and available assets.
+          Blocked resources and font verification gaps are listed in the
+          download.
+        </p>
+        <ToggleRow
           checked={settings.includePseudoElements}
           id="pseudo-elements"
           label="Pseudo-elements"
