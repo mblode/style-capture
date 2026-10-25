@@ -42,3 +42,18 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check CLI executable
+        run: |
+          node --input-type=module <<'NODE'
+          import { accessSync, constants, readFileSync } from 'node:fs';
+          import { resolve } from 'node:path';
+          import { execFileSync } from 'node:child_process';
+          const directory = 'apps/cli';
+          const pkg = JSON.parse(readFileSync(`${directory}/package.json`, 'utf8'));
+          for (const entry of Object.values(pkg.bin)) {
+            const executable = resolve(directory, entry);
+            accessSync(executable, constants.X_OK);
+            execFileSync(process.execPath, [executable, '--help'], { stdio: 'inherit' });
+          }
+          NODE
